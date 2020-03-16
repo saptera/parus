@@ -3,14 +3,14 @@ from scipy import signal as sig
 
 """Function list:
 # Neuronal signal filters:
-    spk_lowpass(x, fpass, fs):  Digital lowpass Butterworth filter for neurological signals.
-    spk_highpass(x, fpass, fs):  Digital highpass Butterworth filter for neurological signals.
-    spk_bandpass(x, fpass, fs):  Digital bandpass Butterworth filter for neurological signals.
-    spk_notch(x, fnotch, fs):  Digital notch filter for neurological signals.
+    spk_lowpass(x, fpass, fs): Digital lowpass Butterworth filter for neurological signals.
+    spk_highpass(x, fpass, fs): Digital highpass Butterworth filter for neurological signals.
+    spk_bandpass(x, fpass, fs): Digital bandpass Butterworth filter for neurological signals.
+    spk_notch(x, fnotch, fs): Digital notch filter for neurological signals.
 # Noise generators:
-    noise_white(size, mode, amp., seed):  White noise generator.
-    noise_freq_decr(size, mode, amp., seed):  Pink and brown(red) noise generator.
-    noise_freq_incr(size, mode, amp., seed):  Blue(Azure) and violet(purple) noise generator.
+    noise_white(size, mode=0, amp=1.0, seed=None): White noise generator.
+    noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown(red) noise generator.
+    noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue(Azure) and violet(purple) noise generator.
 """
 
 
@@ -124,7 +124,7 @@ def spk_notch(x, fnotch, fs):
 
 # Noise generators --------------------------------------------------------------------------------------------------- #
 
-def noise_white(size, mode=0, amp=1., seed=None):
+def noise_white(size, mode=0, amp=1.0, seed=None):
     """ White noise generator.
 
     White noise is a signal, with a flat frequency spectrum when plotted as a linear function of frequency.
@@ -156,7 +156,7 @@ def noise_white(size, mode=0, amp=1., seed=None):
     return noise
 
 
-def noise_freq_decr(size, mode=0, amp=1., seed=None):
+def noise_freq_decr(size, mode=0, amp=1.0, seed=None):
     """ Pink and brown(red) noise generator.
 
     Pink noise's power density decreases 3 dB per octave
@@ -201,7 +201,7 @@ def noise_freq_decr(size, mode=0, amp=1., seed=None):
     return noise
 
 
-def noise_freq_incr(size, mode=0, amp=1., seed=None):
+def noise_freq_incr(size, mode=0, amp=1.0, seed=None):
     """ Blue(Azure) and violet(purple) noise generator.
 
     Blue noise's power density increases 3 dB per octave,

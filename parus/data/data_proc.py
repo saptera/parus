@@ -4,6 +4,12 @@ import pickle as pkl
 import numpy as np
 from parus.utils.base_func import arr_rand_samp
 
+"""Function list:
+neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
+nsd_read(nsd_file): Read neuronal signal labelled data file.
+nsd_write(nsd_file, sig_data): Write neuronal signal labelled data file.
+"""
+
 
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
