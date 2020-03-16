@@ -215,8 +215,13 @@ class MplSigCanvas(FigureCanvasQTAgg):
         sig_idx = (self.__t >= tmin) & (self.__t <= tmax)
         self.__t_search = self.__t[sig_idx]
         self.__v_search = self.__v[sig_idx]
-        # Set annotation search range
+        # Set annotation
         if ano_sid is not None:
+            # Re-plot selected annotation
+            sid_temp = ano_sid
+            self.uns_ano()
+            self.sel_ano(self.__ano_name[sid_temp])
+            # Set annotation search range
             self.__ano_search = self.__ano_search[(self.__ano_search >= tmin) & (self.__ano_search <= tmax)]
         self.__ano_trh = (tmax - tmin) * 0.005  # Set new threshold for annotation searching
         # Update for assistive vertical line location
