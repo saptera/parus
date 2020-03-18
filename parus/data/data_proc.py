@@ -1,13 +1,16 @@
+import os
 import copy
 import zlib
 import pickle as pkl
 import numpy as np
+import matplotlib.pyplot as plt
 from parus.utils.base_func import arr_rand_samp
 
 """Function list:
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
 nsd_read(nsd_file): Read neuronal signal labelled data file.
 nsd_write(nsd_file, sig_data): Write neuronal signal labelled data file.
+nsd_plot(nsd_file): Plot neuronal signal labelled data.
 """
 
 
@@ -49,7 +52,7 @@ def nsd_read(nsd_file):
     """ Read neuronal signal labelled data file.
 
     Args:
-        nsd_file (str): File contained neuronal signal labelled data.
+        nsd_file (str): File contained neuronal signal labelled data (*.nsd).
 
     Returns:
         dict[str, np.ndarray]: Labelled neuronal signal sample, structure as follows:
@@ -65,7 +68,7 @@ def nsd_write(nsd_file, sig_data):
     """ Write neuronal signal labelled data file.
 
     Args:
-        nsd_file (str): Labelling file to write HeatMap labels (*.pkl).
+        nsd_file (str): Labelling file to write neuronal signal labelled data (*.nsd).
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
                                           {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
 
@@ -80,3 +83,20 @@ def nsd_write(nsd_file, sig_data):
     else:
         print('Illegal data, file not created!')
         return False
+
+
+def nsd_plot(nsd_file):
+    """ Plot neuronal signal labelled data.
+
+    Args:
+        nsd_file (str): File contained neuronal signal labelled data (*.nsd).
+    """
+    sig_data = nsd_read(nsd_file)
+    t = np.asarray(list(range(len(sig_data['sig']))))
+    mrk_idx = np.where(sig_data['lbl'] == 1)
+    mrk_sig = sig_data['sig'][mrk_idx]
+    plt.figure("Signal of [%s]" % os.path.split(nsd_file)[1].rstrip('.nsd'))
+    plt.xlabel('Data Point')
+    plt.ylabel('Amplitude')
+    plt.plot(t, sig_data['sig'], zorder=1)
+    plt.scatter(mrk_idx, mrk_sig, marker='x', c='r', alpha=0.8, zorder=2)
