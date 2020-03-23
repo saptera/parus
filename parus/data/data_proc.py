@@ -95,7 +95,10 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
         rng_srch (int): Range to search local extremum.
         rng_asgn (int): Range to assign values.
         val_lst (tuple or list or np.ndarray): List of value to be assigned.
-        method (str): {'min' OR 'max'}: Local extremum search method. (default: 'min')
+        method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'min')
+                                                  'min':  detect minimum of signal within [-rng_srch, rng_srch]
+                                                  'max':  detect maximum of signal within [-rng_srch, rng_srch]
+                                                  'none': keep original label from [sig_data], ignoring [rng_srch]
 
     Returns:
         dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
@@ -105,29 +108,30 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
     # Verify inputs
     if len(val_lst) != rng_asgn * 2 + 1:
         raise ValueError("Length of [val_lst] must be equal to [rng_asgn] * 2 + 1.")
-    if method not in ['min', 'max']:
-        raise ValueError("Invalid type for [method]. Expected 'min' or 'max'.")
+    if method not in ['min', 'max', 'none']:
+        raise ValueError("Invalid type for [method]. Expected 'min', 'max' or 'none'.")
     # Search around the labels
     idx = sig_data['lbl'].nonzero()[0]
     lbl = np.zeros(sig_data['lbl'].shape, dtype=np.float64)  # INIT VAR
     for i in idx:
-        # Get search range
-        if i - rng_srch < 0:
-            lst_min = 0
+        if method == 'none':
+            loc = i
         else:
-            lst_min = i.item() - rng_srch
-        if i + rng_srch >= len(sig_data['sig']):
-            lst_max = len(sig_data['sig'])
-        else:
-            lst_max = i.item() + rng_srch + 1
-        lst_srch = list(range(lst_min, lst_max))
-        # Search for local extremum
-        if method == 'min':
-            loc = lst_srch[np.argmin(sig_data['sig'][lst_srch]).item()]
-        elif method == 'max':
-            loc = lst_srch[np.argmax(sig_data['sig'][lst_srch]).item()]
-        else:
-            return
+            # Get search range
+            if i - rng_srch < 0:
+                lst_min = 0
+            else:
+                lst_min = i.item() - rng_srch
+            if i + rng_srch >= len(sig_data['sig']):
+                lst_max = len(sig_data['sig'])
+            else:
+                lst_max = i.item() + rng_srch + 1
+            lst_srch = list(range(lst_min, lst_max))
+            # Search for local extremum
+            if method == 'min':
+                loc = lst_srch[np.argmin(sig_data['sig'][lst_srch]).item()]
+            else:
+                loc = lst_srch[np.argmax(sig_data['sig'][lst_srch]).item()]
         # Assign value to original
         for j in range(rng_asgn * 2 + 1):
             curr_idx = loc - rng_asgn + j
