@@ -1,16 +1,16 @@
 import sys
 import os
 import numpy as np
+from scipy.stats import norm
 
 """Function list:
 x64_sys(): Check if current system architecture is 64-bit based.
 make_outdir(out_dir, err_msg): Recursive create an output leaf directory for data.
 altmk_outdirs(out_dir, alt_dir, err_msg): Recursive create an output leaf directory with alternative directory.
-prog_print(iteration, total, prefix, suffix): Create a terminal progress bar for a loop.
-os_rand_num(size, norm, digits): Generate cryptographically secure pseudo-random number.
-os_rand_range(lower, higher, size, digits): Generate cryptographically secure pseudo-random number in a range.
-arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
 search_files(base_dir, fpre, fsuf):  Find all files meets the search conditions.
+prog_print(iteration, total, prefix, suffix): Create a terminal progress bar for a loop.
+arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
+norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
 """
 
 
@@ -67,89 +67,6 @@ def altmk_outdirs(out_dir, alt_dir, err_msg='Invalid output directory!'):
     return out_dir
 
 
-def prog_print(iteration, total, prefix=str(), suffix=str()):
-    """Create a terminal progress bar for a loop.
-
-    Args:
-        iteration (int): Current iteration.
-        total (int): Total iterations.
-        prefix (str): Prefix string of progress bar. (default: str())
-        suffix (str): Suffix string of progress bar. (default: str())
-
-    Returns:
-    """
-    # Basic settings
-    decimals = 2  # Decimals in percent completed
-    length = 50  # Character length of bar
-    fill = '>'  # Bar fill character
-    # Create percentage bar
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / total))
-    filled = int(length * iteration // total)
-    bar = fill * filled + '-' * (length - filled)
-    # Print session
-    sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
-    sys.stdout.flush()
-    if iteration == total:  # Print a new line at 100%
-        print('')
-
-
-def os_rand_num(size=8, norm=True, digits=None):
-    """ Generate randomized number by system random function.
-
-    Args:
-        size (int): Byte size of generated random number. (default: 8)
-        norm (bool): Normalized mode, random range (0, 1]. (default: True)
-        digits (int or None): If defined, round random number with defined significant digits,
-                              only effective when norm = True. (default: None)
-
-    Returns:
-        float: Randomized normalized number (norm: True; digits: defined or None).
-        int: Randomized integer number based on 2 (norm: False).
-    """
-    rand_num = int.from_bytes(os.urandom(size), byteorder="big")
-    if norm:
-        size_base = (1 << (size * 8)) - 1    # Calculate maximum number defined by size (each byte = 8 bits)
-        rand_num /= size_base
-        if digits is not None:
-            rand_num = round(rand_num, digits)
-    return rand_num
-
-
-def os_rand_range(lower, higher, size=8, digits=None):
-    """ Generate cryptographically secure pseudo-random number in a range.
-
-    Args:
-        lower (float): Lower bound of the required range.
-        higher (float): Higher bound of the required range.
-        size (int): Byte size of generated random number. (default: 8)
-        digits (int or None): If defined, round random number with defined significant digits. (default: None)
-
-    Returns:
-        float: Randomized normalized number.
-    """
-    length = higher - lower
-    rand_num = os_rand_num(size=size, norm=True) * length + lower
-    if digits is not None:
-        rand_num = round(rand_num, digits)
-    return rand_num
-
-
-def arr_rand_samp(arr, n_samp):
-    """ Random sampling of unique samples from a NumPy array.
-
-    Args:
-        arr (np.ndarray): Input array.
-        n_samp (int): Number of samples.
-
-    Returns:
-        np.ndarray: {1D} Samples from original array.
-    """
-    mask = np.array([True]*n_samp + [False]*(arr.size - n_samp))
-    np.random.shuffle(mask)
-    mask = np.reshape(mask, arr.shape)
-    return arr[mask]
-
-
 def search_files(base_dir, fpre=str(), fsuf=str()):
     """ Find all files meets the search conditions.
 
@@ -179,3 +96,68 @@ def search_files(base_dir, fpre=str(), fsuf=str()):
     for i in range(len(dlst)):
         dlst[i] = os.path.relpath(dlst[i], base)
     return flst, dlst
+
+
+def prog_print(iteration, total, prefix=str(), suffix=str()):
+    """Create a terminal progress bar for a loop.
+
+    Args:
+        iteration (int): Current iteration.
+        total (int): Total iterations.
+        prefix (str): Prefix string of progress bar. (default: str())
+        suffix (str): Suffix string of progress bar. (default: str())
+
+    Returns:
+    """
+    # Basic settings
+    decimals = 2  # Decimals in percent completed
+    length = 50  # Character length of bar
+    fill = '>'  # Bar fill character
+    # Create percentage bar
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / total))
+    filled = int(length * iteration // total)
+    bar = fill * filled + '-' * (length - filled)
+    # Print session
+    sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
+    sys.stdout.flush()
+    if iteration == total:  # Print a new line at 100%
+        print('')
+
+
+def arr_rand_samp(arr, n_samp):
+    """ Random sampling of unique samples from a NumPy array.
+
+    Args:
+        arr (np.ndarray): Input array.
+        n_samp (int): Number of samples.
+
+    Returns:
+        np.ndarray: {1D} Samples from original array.
+    """
+    mask = np.array([True]*n_samp + [False]*(arr.size - n_samp))
+    np.random.shuffle(mask)
+    mask = np.reshape(mask, arr.shape)
+    return arr[mask]
+
+
+def norm_lst_gen(peak, side, level=2):
+    """ Generate a list obeying normal distribution.
+
+    Args:
+        peak (float): Peak (centre) value of output.
+        side (int): Number of samples around the peak.
+        level (int): {1 OR 2 OR 3}: Level of three-sigma rule within the [size]. (default: 2)
+                     1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
+                     2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
+                     3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
+
+    Returns:
+        list[float]: Output list of generated value.
+    """
+    lvl_dic = {1: 1, 2: 2, 3: 3}
+    nd = norm(loc=0, scale=side / lvl_dic[level])  # Normal distribution sigma range
+    fac = peak / nd.pdf(0)  # Peak stretch factor
+    val = []  # INIT VAR
+    for i in range(-side, side + 1, 1):
+        val.append(nd.pdf(i).item() * fac)
+    return val

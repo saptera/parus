@@ -93,7 +93,7 @@ def nsd_plot(nsd_file):
     """
     sig_data = nsd_read(nsd_file)
     t = np.asarray(list(range(len(sig_data['sig']))))
-    mrk_idx = np.where(sig_data['lbl'] == 1)
+    mrk_idx = sig_data['lbl'].nonzero()
     mrk_sig = sig_data['sig'][mrk_idx]
     plt.figure("Signal of [%s]" % os.path.split(nsd_file)[1].rstrip('.nsd'))
     plt.xlabel('Data Point')
