@@ -10,11 +10,15 @@ from parus.utils.base_func import arr_rand_samp
 
 """Function list:
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
+neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
 nsd_read(nsd_file): Read neuronal signal labelled data file.
 nsd_write(nsd_file, sig_data): Write neuronal signal labelled data file.
 nsd_lbltn(sig_data, th=None, norm=True): Thresholding and/or normalizing label values in neuronal signal labelled data.
 nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'): Assign a value list around the signal.
 nsd_plot(nsd_file): Plot neuronal signal labelled data.
+arc_read(arc_file): Read archival neuronal signal data file.
+arc_write(arc_file, arc_data): Write archival neuronal signal data file.
+arc_plot(arc_file): Plot archival neuronal signal data.
 """
 
 
@@ -51,6 +55,60 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
         samp['lbl'] = tmk[idx]
         sig_samp.append(copy.deepcopy(samp))
     return sig_samp
+
+
+def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10):
+    """ Extract neuronal signal for archiving.
+
+    Args:
+        sig (np.ndarray): {1D} Single channel neuronal signal data.
+        time (np.ndarray): {1D} Recording time data, must be sorted and the same size as [sig].
+        lbl (np.ndarray): {1D} Labelled timestamp of neuron spikes.
+        size (int): Data point length of sample. (default: 50)
+        pos (int or None): Location of spike. (default: None = center of sample)
+        method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'none')
+                                                  'min':  detect minimum of signal within [-rng_srch, rng_srch]
+                                                  'max':  detect maximum of signal within [-rng_srch, rng_srch]
+                                                  'none': keep original label from [sig_data], ignoring [rng_srch]
+        rng_srch (int): Range to search local extremum. (default: 10)
+
+    Returns:
+        tuple[np.ndarray, int]: np.mean(sig_samp): {1D-FLOAT64} Neuronal signal samples.
+                                pos: {INT} Index of spike.
+    """
+    pos = int(size / 2) if pos is None else pos
+    # Verify inputs
+    if pos <= 0 or pos >= size:
+        raise ValueError("Invalid value for [pos]. [pos] must be a positive integer less than [size].")
+    if method not in ['min', 'max', 'none']:
+        raise ValueError("Invalid type for [method]. Expected 'min', 'max' or 'none'.")
+    # Get label marker from time array
+    tmk = np.zeros(time.shape, dtype=np.int8)
+    mrk_idx = np.searchsorted(time, lbl, side='left')
+    tmk[mrk_idx] = 1
+    # Sampling with defined parameters
+    sig_samp = np.zeros((len(mrk_idx), size))  # INIT VAR
+    for s in range(len(mrk_idx)):
+        # Relocating signal peak
+        if method == 'none':
+            loc = mrk_idx[s].item()
+        else:
+            # Get search range
+            lst_min = 0 if mrk_idx[s] - rng_srch < 0 else mrk_idx[s].item() - rng_srch
+            lst_max = len(sig) if mrk_idx[s] + rng_srch >= len(sig) else mrk_idx[s].item() + rng_srch + 1
+            lst_srch = list(range(lst_min, lst_max))
+            # Search for local extremum
+            if method == 'min':
+                loc = lst_srch[np.argmin(sig[lst_srch]).item()]
+            else:
+                loc = lst_srch[np.argmax(sig[lst_srch]).item()]
+        # Get index range
+        min_idx = loc - pos
+        max_idx = min_idx + size
+        idx = list(range(min_idx, max_idx))
+        # Assign value
+        sig_samp[s, :] = sig[idx]
+    return np.mean(sig_samp, axis=0), pos
 
 
 def nsd_read(nsd_file):
@@ -209,3 +267,81 @@ def nsd_plot(nsd_file, th=None):
         plt.scatter(mark_t, mark_sig, marker='o', c=mark_c, cmap=cm.Reds, alpha=0.75, zorder=2)
     if len(peak_t) != 0:
         plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=3)
+
+
+def arc_read(arc_file):
+    """ Read archival neuronal signal data file.
+
+    Args:
+        arc_file (str): File contained archival neuronal signal data (*.arc).
+
+    Returns:
+        dict: Archival neuronal signal sample, structure as follows:
+              {'sig': [np.ndarray(1D-float64)] neuronal signal data,
+               'pos': [int] index of spike location in 'sig',
+               'freq': [int or float] recording frequency of 'sig',
+               'cid': [dict] cell info {'typ': [str] cell type, 'spk': [str] spike type, 'note': [str]},
+               'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
+               'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+               'date': [datetime.datetime] recording date and time information}
+    """
+    # Read-in file data
+    with open(arc_file, 'rb') as infile:
+        comp = pkl.load(infile)
+    arc_data = pkl.loads(zlib.decompress(comp))
+    # Check imported data structure
+    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'freq', 'cid', 'sys', 'prb', 'date']):
+        return arc_data
+    else:
+        warnings.warn("Illegal data in [%s], file not imported!" % arc_file, Warning, stacklevel=2)
+        return None
+
+
+def arc_write(arc_file, arc_data):
+    """ Write archival neuronal signal data file.
+
+    Args:
+        arc_file (str): File to write archival neuronal signal data (*.arc).
+        arc_data (dict): Archival neuronal signal sample, structure as follows:
+                         {'sig': [np.ndarray(1D-float64)] neuronal signal data,
+                          'pos': [int] index of spike location in 'sig',
+                          'freq': [int or float] recording frequency of 'sig',
+                          'cid': [dict] cell info {'typ': [str] cell type, 'spk': [str] spike type, 'note': [str]},
+                          'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
+                          'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+                          'date': [datetime.datetime] recording date and time information}
+
+    Returns:
+        bool: File creation status.
+    """
+    # Check data structure
+    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'freq', 'cid', 'sys', 'prb', 'date']):
+        comp = zlib.compress(pkl.dumps(arc_data, protocol=None))
+        with open(arc_file, 'wb') as outfile:
+            pkl.dump(comp, outfile, protocol=None)
+        return True
+    # Handel illegal data
+    else:
+        warnings.warn("Illegal data in [%s], file not created!" % arc_file, Warning, stacklevel=2)
+        return False
+
+
+def arc_plot(arc_file):
+    """ Plot archival neuronal signal data.
+
+    Args:
+        arc_file (str): File contained archival neuronal signal data (*.arc).
+    """
+    # Import data
+    arc_data = arc_read(arc_file)
+    t = np.asarray(list(range(len(arc_data['sig']))))
+    # Get spike peak labels
+    peak_t = t[arc_data['pos']]
+    peak_sig = arc_data['sig'][arc_data['pos']]
+    # Setup plot
+    plt.figure("Archival Signal of [%s]" % os.path.split(arc_file)[1].rstrip('.arc'))
+    plt.xlabel('Data Point')
+    plt.ylabel('Amplitude')
+    # Plotting
+    plt.plot(t, arc_data['sig'], zorder=1)
+    plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=2)
