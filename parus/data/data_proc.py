@@ -1,4 +1,5 @@
 import os
+import warnings
 import copy
 import zlib
 import pickle as pkl
@@ -10,6 +11,7 @@ from parus.utils.base_func import arr_rand_samp
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
 nsd_read(nsd_file): Read neuronal signal labelled data file.
 nsd_write(nsd_file, sig_data): Write neuronal signal labelled data file.
+nsd_lbltn(sig_data, th=None, norm=True): Thresholding and/or normalizing label values in neuronal signal labelled data.
 nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'): Assign a value list around the signal.
 nsd_plot(nsd_file): Plot neuronal signal labelled data.
 """
@@ -17,6 +19,7 @@ nsd_plot(nsd_file): Plot neuronal signal labelled data.
 
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
+            This function only return NumPy-Int8 0-1 type labels.
 
     Args:
         sig (np.ndarray): {1D} Single channel neuronal signal data.
@@ -57,12 +60,18 @@ def nsd_read(nsd_file):
 
     Returns:
         dict[str, np.ndarray]: Labelled neuronal signal sample, structure as follows:
-                               {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
+                               {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D)}
     """
+    # Read-in file data
     with open(nsd_file, 'rb') as infile:
         comp = pkl.load(infile)
     sig_data = pkl.loads(zlib.decompress(comp))
-    return sig_data
+    # Check imported data structure
+    if (len(sig_data) == 2) and ('sig' in sig_data) and ('lbl' in sig_data):
+        return sig_data
+    else:
+        warnings.warn("Illegal data in [%s], file not imported!" % nsd_file, Warning, stacklevel=2)
+        return None
 
 
 def nsd_write(nsd_file, sig_data):
@@ -71,23 +80,53 @@ def nsd_write(nsd_file, sig_data):
     Args:
         nsd_file (str): Labelling file to write neuronal signal labelled data (*.nsd).
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
-                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
+                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D)}
 
     Returns:
         bool: File creation status.
     """
+    # Check data structure
     if (len(sig_data) == 2) and ('sig' in sig_data) and ('lbl' in sig_data):
         comp = zlib.compress(pkl.dumps(sig_data, protocol=None))
         with open(nsd_file, 'wb') as outfile:
             pkl.dump(comp, outfile, protocol=None)
         return True
+    # Handel illegal data
     else:
-        print('Illegal data, file not created!')
+        warnings.warn("Illegal data in [%s], file not created!" % nsd_file, Warning, stacklevel=2)
         return False
+
+
+def nsd_lbltn(sig_data, th=None, norm=True):
+    """ Thresholding and/or normalizing label values in neuronal signal labelled data.
+
+    Args:
+        sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
+                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D)}
+        th (int or float or None): Threshold value for the labels. (default: None)
+        norm (bool): Flag to define if the label will be normalized. (default: True)
+
+    Returns:
+        dict[str, np.ndarray]: Data after thresholding and/or normalization, structure as follows:
+                               {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D)}
+    """
+    sig_data_out = copy.deepcopy(sig_data)  # Make copy, avoid unexpected changes
+    lbl_temp = sig_data_out['lbl']
+    # Threshold label
+    if (th is not None) and (th > 0):
+        lbl_temp = np.where(lbl_temp < th, 0, lbl_temp)
+    # Normalize label
+    if norm:
+        lbl_temp = np.divide(lbl_temp, np.amax(lbl_temp))
+    # Assign and return
+    sig_data_out['lbl'] = lbl_temp
+    return sig_data_out
 
 
 def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
     """ Assign a value list around the signal.
+            This function only accept NumPy-Int8 0-1 type labels.
+            This function will return NumPy-Float64 type labels.
 
     Args:
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
@@ -104,7 +143,7 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
         dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
                                {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-float64)}
     """
-    sig_data_out = copy.deepcopy(sig_data)  # Make copy avoid unexpected changes
+    sig_data_out = copy.deepcopy(sig_data)  # Make copy, avoid unexpected changes
     # Verify inputs
     if len(val_lst) != rng_asgn * 2 + 1:
         raise ValueError("Length of [val_lst] must be equal to [rng_asgn] * 2 + 1.")
@@ -146,16 +185,17 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
     return sig_data_out
 
 
-def nsd_plot(nsd_file):
+def nsd_plot(nsd_file, th=None):
     """ Plot neuronal signal labelled data.
 
     Args:
         nsd_file (str): File contained neuronal signal labelled data (*.nsd).
+        th (int or float or None): Threshold value for labels.
     """
     # Import data
     sig_data = nsd_read(nsd_file)
     t = np.asarray(list(range(len(sig_data['sig']))))
-    lbl = np.divide(sig_data['lbl'], sig_data['lbl'].max())
+    lbl = nsd_lbltn(sig_data, th, True)['lbl']
     # Get annotation labels
     mark_idx = (lbl != 0) & (lbl != 1)
     mark_t = t[mark_idx]
