@@ -5,6 +5,7 @@ import zlib
 import pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from parus.utils.base_func import arr_rand_samp
 
 """Function list:
@@ -200,6 +201,7 @@ def nsd_plot(nsd_file, th=None):
     mark_idx = (lbl != 0) & (lbl != 1)
     mark_t = t[mark_idx]
     mark_sig = sig_data['sig'][mark_idx]
+    mark_c = sig_data['lbl'][mark_idx]
     peak_idx = lbl == 1
     peak_t = t[peak_idx]
     peak_sig = sig_data['sig'][peak_idx]
@@ -210,6 +212,6 @@ def nsd_plot(nsd_file, th=None):
     # Plotting
     plt.plot(t, sig_data['sig'], zorder=1)
     if len(mark_t) != 0:
-        plt.scatter(mark_t, mark_sig, marker='o', c='r', alpha=0.50, zorder=2)
+        plt.scatter(mark_t, mark_sig, marker='o', c=mark_c, cmap=cm.Reds, alpha=0.75, zorder=2)
     if len(peak_t) != 0:
         plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=3)
