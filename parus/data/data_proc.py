@@ -35,15 +35,15 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """
     # Get label marker from time array
     tmk = np.zeros(time.shape, dtype=np.int8)
-    for a in lbl:
-        tmk[np.searchsorted(time, a, side='left')] = 1
+    mrk_idx = np.searchsorted(time, lbl, side='left')
+    tmk[mrk_idx] = 1
     # Sampling with defined parameters
-    lsp = arr_rand_samp(lbl, num)
+    lsp = arr_rand_samp(mrk_idx, num)
     sig_samp = []  # INIT VAR
     for s in lsp:
-        samp = {'sig': None, 'lbl': None}  # INIT VAR
+        samp = {'sig': None, 'lbl': None}  # INIT/RESET VAR
         # Get random index range
-        min_idx = np.searchsorted(time, s, side='left').item() - np.random.randint(size * 0.8)
+        min_idx = s.item() - np.random.randint(size * 0.8)
         max_idx = min_idx + size
         idx = list(range(min_idx, max_idx))
         # Extract data
@@ -124,7 +124,7 @@ def nsd_lbltn(sig_data, th=None, norm=True):
     return sig_data_out
 
 
-def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
+def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
     """ Assign a value list around the signal.
             This function only accept NumPy-Int8 0-1 type labels.
             This function will return NumPy-Float64 type labels.
@@ -132,13 +132,13 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
     Args:
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
                                           {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
-        rng_srch (int): Range to search local extremum.
         rng_asgn (int): Range to assign values.
         val_lst (tuple or list or np.ndarray): List of value to be assigned.
         method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'min')
                                                   'min':  detect minimum of signal within [-rng_srch, rng_srch]
                                                   'max':  detect maximum of signal within [-rng_srch, rng_srch]
                                                   'none': keep original label from [sig_data], ignoring [rng_srch]
+        rng_srch (int): Range to search local extremum. (default: 10)
 
     Returns:
         dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
@@ -155,17 +155,11 @@ def nsd_asgnv(sig_data, rng_srch, rng_asgn, val_lst, method='min'):
     lbl = np.zeros(sig_data['lbl'].shape, dtype=np.float64)  # INIT VAR
     for i in idx:
         if method == 'none':
-            loc = i
+            loc = i.item()
         else:
             # Get search range
-            if i - rng_srch < 0:
-                lst_min = 0
-            else:
-                lst_min = i.item() - rng_srch
-            if i + rng_srch >= len(sig_data['sig']):
-                lst_max = len(sig_data['sig'])
-            else:
-                lst_max = i.item() + rng_srch + 1
+            lst_min = 0 if i - rng_srch < 0 else i.item() - rng_srch
+            lst_max = len(sig_data['sig']) if i + rng_srch >= len(sig_data['sig']) else i.item() + rng_srch + 1
             lst_srch = list(range(lst_min, lst_max))
             # Search for local extremum
             if method == 'min':
