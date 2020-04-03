@@ -41,6 +41,7 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     tmk = np.zeros(time.shape, dtype=np.int8)
     mrk_idx = np.searchsorted(time, lbl, side='left')
     tmk[mrk_idx] = 1
+    max_len = len(sig)
     # Sampling with defined parameters
     lsp = arr_rand_samp(mrk_idx, num)
     sig_samp = []  # INIT VAR
@@ -48,11 +49,12 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
         samp = {'sig': None, 'lbl': None}  # INIT/RESET VAR
         # Get random index range
         min_idx = s.item() - np.random.randint(size * 0.8)
+        min_idx = 0 if min_idx < 0 else min_idx  # Verify
         max_idx = min_idx + size
-        idx = list(range(min_idx, max_idx))
+        min_idx = max_len - size if max_idx > max_len else min_idx  # Verify
         # Extract data
-        samp['sig'] = sig[idx]
-        samp['lbl'] = tmk[idx]
+        samp['sig'] = sig[min_idx:max_idx]
+        samp['lbl'] = tmk[min_idx:max_idx]
         sig_samp.append(copy.deepcopy(samp))
     return sig_samp
 
