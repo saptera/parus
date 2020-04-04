@@ -266,7 +266,8 @@ def nsd_plot(nsd_file, th=None):
     # Plotting
     plt.plot(t, sig_data['sig'], zorder=1)
     if len(mark_t) != 0:
-        plt.scatter(mark_t, mark_sig, marker='o', c=mark_c, cmap=cm.Reds, alpha=0.75, zorder=2)
+        flk = plt.scatter(mark_t, mark_sig, marker='o', c=mark_c, cmap=cm.Reds, alpha=0.75, zorder=2)
+        plt.colorbar(flk)
     if len(peak_t) != 0:
         plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=3)
 
