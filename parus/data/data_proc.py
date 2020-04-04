@@ -9,6 +9,7 @@ from matplotlib import cm
 from parus.utils.base_func import arr_rand_samp
 
 """Function list:
+neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal data for training models.
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
 neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
 nsd_read(nsd_file): Read neuronal signal labelled data file.
@@ -22,9 +23,45 @@ arc_plot(arc_file): Plot archival neuronal signal data.
 """
 
 
+def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
+    """ Random slice and extract neuronal signal data for training models.
+            This function only return NumPy-Int8 0-1 type labels.
+            Samples form this function are simple random slices of raw signal.
+
+    Args:
+        sig (np.ndarray): {1D} Single channel neuronal signal data.
+        time (np.ndarray): {1D} Recording time data, must be sorted and the same size as [sig].
+        lbl (np.ndarray): {1D} Labelled timestamp of neuron spikes.
+        num (int): Number of samples to extract. (default: 1000)
+        size (int): Data point length of each sample. (default: 150)
+
+    Returns:
+        list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:
+                                     list[{'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}]
+    """
+    # Get label marker from time array
+    tmk = np.zeros(time.shape, dtype=np.int8)
+    mrk_idx = np.searchsorted(time, lbl, side='left')
+    tmk[mrk_idx] = 1
+    high_idx = len(sig) - size
+    # Sampling with defined parameters
+    sig_samp = []  # INIT VAR
+    for s in range(num):
+        samp = {'sig': None, 'lbl': None}  # INIT/RESET VAR
+        # Get random index range
+        min_idx = np.random.randint(low=0, high=high_idx)
+        max_idx = min_idx + size
+        # Extract data
+        samp['sig'] = sig[min_idx:max_idx]
+        samp['lbl'] = tmk[min_idx:max_idx]
+        sig_samp.append(copy.deepcopy(samp))
+    return sig_samp
+
+
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
             This function only return NumPy-Int8 0-1 type labels.
+            Samples form this function will always containing spikes.
 
     Args:
         sig (np.ndarray): {1D} Single channel neuronal signal data.
