@@ -287,7 +287,7 @@ def nsd_plot(nsd_file, th=None):
     # Import data
     sig_data = nsd_read(nsd_file)
     t = np.asarray(list(range(len(sig_data['sig']))))
-    lbl = nsd_lbltn(sig_data, th, True)['lbl']
+    lbl = nsd_lbltn(sig_data, th, True)['lbl'] if np.amax(sig_data['lbl']) > 0 else 0
     # Get annotation labels
     mark_idx = (lbl != 0) & (lbl != 1)
     mark_t = t[mark_idx]
