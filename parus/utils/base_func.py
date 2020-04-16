@@ -1,7 +1,7 @@
 import sys
 import os
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, laplace
 
 """Function list:
 x64_sys(): Check if current system architecture is 64-bit based.
@@ -11,6 +11,7 @@ search_files(base_dir, fpre, fsuf):  Find all files meets the search conditions.
 prog_print(iteration, total, prefix, suffix): Create a terminal progress bar for a loop.
 arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
 norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
+laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
 """
 
 
@@ -160,4 +161,23 @@ def norm_lst_gen(peak, side, level=2):
     val = []  # INIT VAR
     for i in range(-side, side + 1, 1):
         val.append(nd.pdf(i).item() * fac)
+    return val
+
+
+def laplace_lst_gen(peak, side, scale=1):
+    """ Generate a list obeying laplace distribution.
+
+    Args:
+        peak (float): Peak (centre) value of output.
+        side (int): Number of samples around the peak.
+        scale (int or float): : Diversity of generated samples. (default: 1)
+
+    Returns:
+        list[float]: Output list of generated value.
+    """
+    ld = laplace(loc=0, scale=scale)  # Laplace distribution with scale
+    fac = peak / ld.pdf(0)  # Peak stretch factor
+    val = []  # INIT VAR
+    for i in range(-side, side + 1, 1):
+        val.append(ld.pdf(i).item() * fac)
     return val
