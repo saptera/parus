@@ -9,6 +9,7 @@ from matplotlib import cm
 from parus.utils.base_func import arr_rand_samp
 
 """Function list:
+spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
 neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal data for training models.
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
 neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
@@ -21,6 +22,24 @@ arc_read(arc_file): Read archival neuronal signal data file.
 arc_write(arc_file, arc_data): Write archival neuronal signal data file.
 arc_plot(arc_file): Plot archival neuronal signal data.
 """
+
+
+def spk_merge(spk_data):
+    """ Merge and sort channel arranged spike data for data sampling.
+
+    Args:
+        spk_data (dict[int, dict[int, np.ndarray]]): Channel type spike timing data, data structure as follows:
+                                                     {prob_ch: {cell_id: spk_time}}
+
+    Returns:
+        dict[int, np.ndarray]: Merged and sorted spike timing data, data structure as: {prob_ch: merged_spk_time}
+    """
+    out_data = {}  # INIT VAR
+    for i in spk_data:
+        spk_keys = spk_data[i].keys()
+        spk_out = np.sort(np.concatenate([spk_data[i][k] for k in spk_keys]), kind='mergesort') if spk_keys else None
+        out_data[i] = spk_out
+    return out_data
 
 
 def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
