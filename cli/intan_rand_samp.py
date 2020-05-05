@@ -11,11 +11,18 @@ Command line interface for random sampling signal data form Intan "One File Per 
 Simply run this script from Python console and following the prompt instructions.
 """
 
-print()
-print("                                     ====================================")
-print("                                     ‖  INTAN DATA SAMPLING CLI SYSTEM  ‖")
-print("                                     ====================================")
-print()
+print("""\n
+                                  ____       _       ____     _   _    _____
+                       _____     |  _ \\     / \\     |  _ \\   | | | |  / ____|     _____
+                      |_____|    | |_) |   / _ \\    | |_) |  | | | |  \\___ \\     |_____|
+                      |_____|    |  __/   / ___ \\   |  _ <   | |_| |   ___) |    |_____|
+                                 |_|     /_/   \\_\\  |_| \\_\\   \\___/   |____/
+\n""")
+print("""
+                                     ====================================
+                                     |  INTAN DATA SAMPLING CLI SYSTEM  |
+                                     ====================================
+\n""")
 
 
 # Define Intan recording raw data --------------------------------------------------------------------------------------
@@ -58,7 +65,7 @@ print()
 print("------------------------------ Define following information for annotation data -------------------------------")
 # Define probe geometry file
 prb_file = cli_file_in(msg_ppt="Please define the absolute path of probe geometry file related to recording: ",
-                       msg_err="    Invalid time file, please try again: ")
+                       msg_err="    Invalid probe geometry file, please try again: ")
 prb_info = read_probe_data(prb_file)
 # Re-make [sig_list] and morph to [sig_dict]
 sig_list = [os.path.join(dat_path, "amp-%s-%03d.dat" % (port_id, f)) for f in range(len(prb_info))]
@@ -72,7 +79,7 @@ del i, sig_list
 
 # Define spike annotation file
 spk_file = cli_file_in(msg_ppt="Please define the absolute path of spike annotation file related to recording: ",
-                       msg_err="    Invalid time file, please try again: ")
+                       msg_err="    Invalid spike annotation file, please try again: ")
 
 
 # Define site ID input
@@ -139,6 +146,8 @@ sig_samp = neuron_rnd_samp(sig_data, sig_time, spk_data[site_id], num=num_samp, 
 n = len(sig_samp)
 for i in range(n):
     sig_data = nsd_asgnv(sig_samp[i], rng_asgn, val_lst, method='min', rng_srch=10)
-    sig_path = os.path.join(out_path, "sig_%05d.nsd" % (i + 49999))
+    sig_path = os.path.join(out_path, "sig_%05d.nsd" % i)
     nsd_write(sig_path, sig_data)
-    prog_print(i + 1, n, "    Saving: ", " done.")
+    prog_print(i + 1, n, "Saving:", "done.")
+
+print("\nData sampling successfully done!")
