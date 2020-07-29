@@ -338,10 +338,11 @@ def arc_read(arc_file):
         dict: Archival neuronal signal sample, structure as follows:
               {'sig': [np.ndarray(1D-float64)] neuronal signal data,
                'pos': [int] index of spike location in 'sig',
+               'rng': [tuple or None] 2 indices to define refined signal range,
                'freq': [int or float] recording frequency of 'sig',
                'cid': [dict] cell info {'typ': [str] cell type, 'spk': [str] spike type, 'note': [str]},
-               'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
                'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+               'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
                'date': [datetime.datetime] recording date and time information}
     """
     # Read-in file data
@@ -349,7 +350,7 @@ def arc_read(arc_file):
         comp = pkl.load(infile)
     arc_data = pkl.loads(zlib.decompress(comp))
     # Check imported data structure
-    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'freq', 'cid', 'sys', 'prb', 'date']):
+    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'rng', 'freq', 'cid', 'prb', 'sys', 'date']):
         return arc_data
     else:
         warnings.warn("Illegal data in [%s], file not imported!" % arc_file, Warning, stacklevel=2)
@@ -364,17 +365,18 @@ def arc_write(arc_file, arc_data):
         arc_data (dict): Archival neuronal signal sample, structure as follows:
                          {'sig': [np.ndarray(1D-float64)] neuronal signal data,
                           'pos': [int] index of spike location in 'sig',
+                          'rng': [tuple or None] 2 indices to define refined signal range,
                           'freq': [int or float] recording frequency of 'sig',
                           'cid': [dict] cell info {'typ': [str] cell type, 'spk': [str] spike type, 'note': [str]},
-                          'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
                           'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+                          'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
                           'date': [datetime.datetime] recording date and time information}
 
     Returns:
         bool: File creation status.
     """
     # Check data structure
-    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'freq', 'cid', 'sys', 'prb', 'date']):
+    if sorted(list(arc_data.keys())) == sorted(['sig', 'pos', 'rng', 'freq', 'cid', 'prb', 'sys', 'date']):
         comp = zlib.compress(pkl.dumps(arc_data, protocol=None))
         with open(arc_file, 'wb') as outfile:
             pkl.dump(comp, outfile, protocol=None)
@@ -397,10 +399,15 @@ def arc_plot(arc_file):
     # Get spike peak labels
     peak_t = t[arc_data['pos']]
     peak_sig = arc_data['sig'][arc_data['pos']]
+    # Get signal range
+    sig_rng = np.asarray(arc_data['rng']) if arc_data['rng'] is not None else None
     # Setup plot
     plt.figure("Archival Signal of [%s]" % os.path.split(arc_file)[1].rstrip('.arc'))
     plt.xlabel('Data Point')
     plt.ylabel('Amplitude')
     # Plotting
     plt.plot(t, arc_data['sig'], zorder=1)
-    plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=2)
+    plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=3)
+    if sig_rng is not None:
+        plt.axvline(sig_rng[0], c='gray', ls='-.', alpha=0.75, zorder=2)
+        plt.axvline(sig_rng[1], c='gray', ls='-.', alpha=0.75, zorder=2)
