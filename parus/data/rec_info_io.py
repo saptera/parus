@@ -1,3 +1,4 @@
+import warnings
 import csv
 import json
 import copy
@@ -20,8 +21,23 @@ def read_probe_data(prb_file):
         list[dict]: Probe definition information, structure as follows:
                     list[{'id': int, 'shk': int, 'col': int, 'geo': (float, float), 'pad': (float, float)}]
     """
+    # Read in file
     with open(prb_file) as infile:
-        prb_dat = json.load(infile)
+        try:
+            prb_dat = json.load(infile)
+        except json.decoder.JSONDecodeError:
+            warnings.warn("Invalid probe definition file format.", Warning, 2)
+            return None
+    # Checking for keys
+    miss_key = str()
+    for k in ['channel', 'n_chs', 'n_shk', 'n_col', 'gap_chs', 'gap_shk', 'sft_shk', 'gap_col', 'sft_col', 'pad']:
+        if k not in prb_dat:
+            miss_key += "'" + k + "', "
+    if miss_key:
+        miss_key = miss_key.rstrip(", ")
+        warnings.warn("Key [%s] missing in probe definition file, please verify file integrity." % miss_key, Warning, 2)
+        return None
+
     # Read basic information of the probe sites
     channel = prb_dat['channel']
     n_chs = prb_dat['n_chs']

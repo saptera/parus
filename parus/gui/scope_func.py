@@ -75,13 +75,13 @@ def read_intan_data(data_dir, prb_path, spk_path, ctp_path, port_name, channel_c
         channel_count = len(prb_def)
     raw_signal = intan_port_amp_read(data_dir, port_name, channel_count)
     # Read annotation files
-    if spk_file is None:
+    if spk_path is None:
         spike_info = None
         cell_types = None
     else:
         spike_info = read_spk_info(spk_path, cell_mode=False, trim_negat=True, trim_noise=True)
         # Only read cell type definition CSV when cell spiking timestamp CSV exist
-        if ctp_file is None:
+        if ctp_path is None:
             cell_types = None
         else:
             cell_types = read_cell_type(ctp_path)
@@ -684,7 +684,7 @@ class SignalScope(QtWidgets.QMainWindow, Ui_SigScopeWindow):
         if self.channelBox.isEnabled():
             ch = self.channelBox.currentIndex()
             # Update signal
-            self.canvas.upd_sig(sig_time, sig_data[ch])
+            self.canvas.upd_sig(sig_time, sig_data[prb_info[ch]['id']])
             # Remove previous annotation
             for i in self.__ano_lst:
                 self.canvas.del_ano(i)
