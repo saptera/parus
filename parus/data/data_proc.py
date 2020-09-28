@@ -169,6 +169,27 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
     return np.mean(sig_samp, axis=0), pos
 
 
+def sim_sig_read(sim_sig_file):
+    # Read-in file data
+    with open(sim_sig_file, 'rb') as infile:
+        comp = pkl.load(infile)
+        sig = pkl.loads(zlib.decompress(comp))
+    return sig
+
+
+def sim_lbl_read(sim_lbl_file):
+    # Read-in file data
+    with open(sim_lbl_file, 'rb') as infile:
+        comp = pkl.load(infile)
+    lbl_dict = pkl.loads(zlib.decompress(comp))
+
+    lbl_len = len(lbl_dict["noise"])
+    lbl = np.zeros(lbl_len, dtype=np.float64)
+    for sig in lbl_dict['signal']:
+        lbl = np.add(lbl, sig)
+    return lbl
+
+
 def nsd_read(nsd_file):
     """ Read neuronal signal labelled data file.
 
