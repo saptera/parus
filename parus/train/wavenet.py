@@ -196,13 +196,13 @@ class WaveNet(torch.nn.Module):
         """
         super(WaveNet, self).__init__()
 
-        self.receptive_fields = self.calc_receptive_fields(layer_size, stack_size)
-
         self.causal = CausalConv1d(in_channels, res_channels)
 
         self.res_stack = ResidualStack(layer_size, stack_size, res_channels, in_channels)
 
         self.densnet = DensNet(in_channels)
+
+        self.output_size = in_channels
 
     def forward(self, x):
         """
@@ -212,11 +212,9 @@ class WaveNet(torch.nn.Module):
         """
         output = x.transpose(1, 2)
 
-        output_size = self.calc_output_size(output)
-
         output = self.causal(output)
 
-        skip_connections = self.res_stack(output, output_size)
+        skip_connections = self.res_stack(output, self.output_size)
 
         output = torch.sum(skip_connections, dim=0)
 
