@@ -97,9 +97,8 @@ for n in range(n_sim_data):
             asgn_p = pos[i] + arc_pos_p[sel[i]]
             lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]]
     # Get simulated noise
-    # TODO: remove hard coded length of 300
-    noise_pos = np.random.randint(300, len(noise))
-    lbl['noise'] = noise[(noise_pos - 300):noise_pos]
+    noise_pos = np.random.randint(total_length, len(noise))
+    lbl['noise'] = noise[(noise_pos - total_length):noise_pos]
 
     # Create simulated signal
     sig = np.copy(lbl['noise'])
@@ -110,3 +109,4 @@ for n in range(n_sim_data):
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), lbl)  # Write label file
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), sig)  # Write signal file
     prog_print(n + 1, n_sim_data, "Progress:", "simulated data created.")
+
