@@ -69,28 +69,23 @@ def train(model, criterion, optimizer, scheduler, train_id_list, val_id_list, tr
     print_every = 500
     model.train()
     for i in range(EPOCH):
-        h = model.init_hidden(train_params["batch_size"])
-
         for inputs, labels in train_gen:
             counter += 1
-            h = tuple([e.data.float() for e in h])
             inputs, labels = inputs.to(device), labels.to(device)
             model.zero_grad()
 
-            output, h = model(inputs, h)
+            output = model(inputs)
             loss = criterion(output, labels.float())
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), CLIP)
             optimizer.step()
 
             if counter % print_every == 0:
-                val_h = model.init_hidden(train_params["batch_size"])
                 val_losses = []
                 model.eval()
                 for inp, lab in val_gen:
-                    val_h = tuple([each.data.float() for each in val_h])
                     inp, lab = inp.to(device), lab.to(device)
-                    out, val_h = model(inp, val_h)
+                    out = model(inp)
                     val_loss = criterion(out, lab.float())
                     val_losses.append(val_loss.item())
 
@@ -118,10 +113,8 @@ def inference(model, test_id_list, test_params):
     with torch.no_grad():
         counter = 0
         for inputs, labels in test_gen:
-            h = model.init_hidden(test_params["batch_size"])
-            h = tuple([e.data.float() for e in h])
             inputs = inputs.to(device)
-            outputs, hidden = model(inputs, h)
+            outputs = model(inputs)
 
             pred = outputs.squeeze().cpu().numpy()
             labels = labels.squeeze().cpu().numpy()
