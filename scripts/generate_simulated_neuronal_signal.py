@@ -97,7 +97,6 @@ for n in range(n_sim_data):
             asgn_p = pos[i] + arc_pos_p[sel[i]]
             lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]]
     # Get simulated noise
-    # TODO: remove hard coded length of 300
     noise_pos = np.random.randint(total_length, len(noise))
     lbl['noise'] = noise[(noise_pos - total_length):noise_pos]
 
