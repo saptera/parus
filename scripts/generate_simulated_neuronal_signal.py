@@ -28,8 +28,8 @@ min_gap = 20
 max_gap = 80
 total_length = 300
 # Outputs parameters
-n_sim_data = 10000
-output_dir = "/home/proj_wavemoto/dataset/noise_separation/sim10000_min20_max80_len300"
+n_sim_data = 100000
+output_dir = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300"
 # -------------------------------------------------------------------------------------------------------------------- #
 
 

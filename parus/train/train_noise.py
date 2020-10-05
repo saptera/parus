@@ -4,23 +4,23 @@ from torch.utils import data
 import numpy as np
 from parus.data.data_proc import sim_sig_read, sim_lbl_read, nsd_write
 
-TRAIN_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim10000_min20_max80_len300/"
-TEST_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim10000_min20_max80_len300/"
+TRAIN_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300/"
+TEST_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300/"
 
 TEST_PRED_PATH = "/home/proj_wavemoto/log/pred/noise1/"
-MODEL_FILE_PATH = "/home/proj_wavemoto/log/model/noise1.pt"
+MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/noise1.pt"
 
 SEQ_LEN = 300
 LSTM_OUTPUT_DIM = 1
-LSTM_HIDDEN = 128
-LSTM_LAYERS = 3
-DROPOUT = 0.5
+LSTM_HIDDEN = 512
+LSTM_LAYERS = 5
+DROPOUT = 0.4
 
 EPOCH = 20
-LR = 0.0001
+LR = 0.0003
 LR_DECAY = 0.95
 CLIP = 0.5
-TRAIN_PARAMS = {'batch_size': 30,
+TRAIN_PARAMS = {'batch_size': 15,
                 'shuffle': True,
                 'num_workers': 20}
 TEST_PARAMS = {'batch_size': 1,
@@ -156,9 +156,9 @@ def inference(model, test_id_list, test_params):
 
 
 def main():
-    train_id_list = [str(num).zfill(5) for num in range(5000)]
-    val_id_list = [str(num).zfill(5) for num in range(5000, 7500)]
-    test_id_list = [str(num).zfill(5) for num in range(7500, 10000)]
+    train_id_list = [str(num).zfill(5) for num in range(80000)]
+    val_id_list = [str(num).zfill(5) for num in range(80000, 90000)]
+    test_id_list = [str(num).zfill(5) for num in range(90000, 100000)]
 
     model = LSTM(LSTM_OUTPUT_DIM, LSTM_HIDDEN, LSTM_LAYERS, DROPOUT)
     criterion = nn.L1Loss(reduction='mean')
