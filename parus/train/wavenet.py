@@ -167,7 +167,7 @@ class DensNet(torch.nn.Module):
         """
         super(DensNet, self).__init__()
 
-        self.conv1 = torch.nn.Conv1d(channels, channels, 1)
+        self.conv1 = torch.nn.Conv1d(1, channels, 1)
         self.conv2 = torch.nn.Conv1d(channels, channels, 1)
 
         self.relu = torch.nn.ReLU()
@@ -178,8 +178,6 @@ class DensNet(torch.nn.Module):
         output = self.conv1(output)
         output = self.relu(output)
         output = self.conv2(output)
-
-        output = self.softmax(output)
 
         return output
 
@@ -200,9 +198,9 @@ class WaveNet(torch.nn.Module):
 
         self.res_stack = ResidualStack(layer_size, stack_size, res_channels, in_channels)
 
-        self.densnet = DensNet(in_channels)
+        self.densnet = DensNet(300)
 
-        self.output_size = in_channels
+        self.output_size = 1
 
     def forward(self, x):
         """
