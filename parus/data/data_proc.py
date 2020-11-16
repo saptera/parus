@@ -21,6 +21,8 @@ nsd_plot(nsd_file): Plot neuronal signal labelled data.
 arc_read(arc_file): Read archival neuronal signal data file.
 arc_write(arc_file, arc_data): Write archival neuronal signal data file.
 arc_plot(arc_file): Plot archival neuronal signal data.
+noi_read(noi_file): Read recording noise sample file.
+noi_write(noi_file, noi_data): Write recording noise sample file.
 """
 
 
@@ -432,3 +434,58 @@ def arc_plot(arc_file):
     if sig_rng is not None:
         plt.axvline(sig_rng[0], c='gray', ls='-.', alpha=0.75, zorder=2)
         plt.axvline(sig_rng[1], c='gray', ls='-.', alpha=0.75, zorder=2)
+
+
+def noi_read(noi_file):
+    """ Read recording noise sample file.
+
+    Args:
+        noi_file (str): File contained archival neuronal signal data (*.noi).
+
+    Returns:
+        dict: Neuronal recording noise samples, structure as follows:
+              {'noise': [np.ndarray(1D-float64)] neuronal recording noise samples,
+               'freq': [int or float] recording frequency of 'noise',
+               'area': [dict] area of recording {'maj': [str], 'div': [str], 'sub': [str], 'note': [str]},
+               'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+               'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
+               'date': [datetime.datetime] recording date and time information}
+    """
+    # Read-in file data
+    with open(noi_file, 'rb') as infile:
+        comp = pkl.load(infile)
+    noi_data = pkl.loads(zlib.decompress(comp))
+    # Check imported data structure
+    if sorted(list(noi_data.keys())) == sorted(['noise', 'freq', 'area', 'prb', 'sys', 'date']):
+        return noi_data
+    else:
+        warnings.warn("Illegal data in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
+        return None
+
+
+def noi_write(noi_file, noi_data):
+    """ Write recording noise sample file.
+
+    Args:
+        noi_file (str): File to write recording noise sample data (*.noi).
+        noi_data (dict): Neuronal recording noise sample, structure as follows:
+                         {'noise': [np.ndarray(1D-float64)] neuronal recording noise samples,
+                          'freq': [int or float] recording frequency of 'noise',
+                          'area': [dict] area of recording {'maj': [str], 'div': [str], 'sub': [str], 'note': [str]},
+                          'prb': [dict] recording probe {'mfr': [str], 'typ': [str], 'note': [str]},
+                          'sys': [dict] recording system {'mfr': [str], 'typ': [str], 'note': [str]},
+                          'date': [datetime.datetime] recording date and time information}
+
+    Returns:
+        bool: File creation status.
+    """
+    # Check data structure
+    if sorted(list(noi_data.keys())) == sorted(['noise', 'freq', 'area', 'prb', 'sys', 'date']):
+        comp = zlib.compress(pkl.dumps(noi_data, protocol=None))
+        with open(noi_file, 'wb') as outfile:
+            pkl.dump(comp, outfile, protocol=None)
+        return True
+    # Handel illegal data
+    else:
+        warnings.warn("Illegal data in [%s], file not created!" % noi_file, Warning, stacklevel=2)
+        return False

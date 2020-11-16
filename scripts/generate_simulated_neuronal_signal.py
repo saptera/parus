@@ -1,8 +1,7 @@
 import os
 import numpy as np
 from parus.utils.base_func import make_outdir, pklz_write, prog_print
-from parus.data.intan_func import intan_amp_read
-from parus.data.data_proc import arc_read
+from parus.data.data_proc import arc_read, noi_read
 
 """This SCRIPT creates simulated neuronal signal data.
 """
@@ -21,15 +20,15 @@ from parus.data.data_proc import arc_read
 
 # Parameters input  -------------------------------------------------------------------------------------------------- #
 # Sample source definition
-arc_dir = "/home/proj_wavemoto/dataset/noise_separation/neural_sorting_src"
-noise_file = "/home/proj_wavemoto/dataset/noise_separation/neural_sorting_src/noise.dat"
+arc_dir = "./src/"
+noise_file = "./noise.noi"
 # Simulated data generation properties
 min_gap = 20
 max_gap = 80
 total_length = 300
 # Outputs parameters
-n_sim_data = 100000
-output_dir = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300"
+n_sim_data = 5000
+output_dir = "./dst/"
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
@@ -69,7 +68,7 @@ for f in arc_file:
     arc_pos_a.append(arc_data['pos'] - arc_data['rng'][0])
     arc_pos_p.append(arc_data['rng'][1] - arc_data['pos'])
 # Read noise data
-noise = intan_amp_read(noise_file)
+noise = noi_read(noise_file)['noise']
 
 # Make output directories
 lbl_out_dir = make_outdir(os.path.join(output_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
@@ -109,4 +108,3 @@ for n in range(n_sim_data):
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), lbl)  # Write label file
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), sig)  # Write signal file
     prog_print(n + 1, n_sim_data, "Progress:", "simulated data created.")
-
