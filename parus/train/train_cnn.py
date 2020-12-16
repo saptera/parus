@@ -5,20 +5,20 @@ import numpy as np
 from parus.data.data_proc import sim_sig_read, sim_lbl_read, nsd_write
 from parus.train.wavenet import WaveNet
 
-TRAIN_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300/"
-TEST_DATA_PATH = "/home/proj_wavemoto/dataset/noise_separation/sim100000_min20_max80_len300/"
+TRAIN_DATA_PATH = "/home/proj_wavemoto/dataset/complex_spike/complex100000_min20_max80_len300/"
+TEST_DATA_PATH = "/home/proj_wavemoto/dataset/complex_spike/complex100000_min20_max80_len300/"
 
-TEST_PRED_PATH = "/home/proj_wavemoto/log/pred/noise_cnn/"
-MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/noise_cnn.pt"
+TEST_PRED_PATH = "/home/proj_wavemoto/log/pred/complex1/"
+MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/complex.pt"
 
 SEQ_LEN = 300
-DROPOUT = 0.1
+DROPOUT = 0.4
 
-EPOCH = 20
+EPOCH = 10
 LR = 0.001
 LR_DECAY = 0.95
 CLIP = 0.5
-TRAIN_PARAMS = {'batch_size': 30,
+TRAIN_PARAMS = {'batch_size': 25,
                 'shuffle': True,
                 'num_workers': 20}
 TEST_PARAMS = {'batch_size': 1,
@@ -41,8 +41,8 @@ class SimulatedNoiseDataset(data.Dataset):
         sig = sim_sig_read(sig_filename)
         lbl = sim_lbl_read(lbl_filename)
 
-        X = torch.from_numpy(sig).view(SEQ_LEN, 1)
-        y = torch.from_numpy(lbl).view(SEQ_LEN, 1)
+        X = torch.from_numpy(sig).view(1, SEQ_LEN)
+        y = torch.from_numpy(lbl).view(1, SEQ_LEN)
 
         X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
 
@@ -73,9 +73,7 @@ def train(model, criterion, optimizer, scheduler, train_id_list, val_id_list, tr
             counter += 1
             inputs, labels = inputs.to(device), labels.to(device)
             model.zero_grad()
-
             output = model(inputs)
-            output = torch.transpose(output, 1, 2)
             loss = criterion(output, labels.float())
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), CLIP)
@@ -87,7 +85,6 @@ def train(model, criterion, optimizer, scheduler, train_id_list, val_id_list, tr
                 for inp, lab in val_gen:
                     inp, lab = inp.to(device), lab.to(device)
                     out = model(inp)
-                    out = torch.transpose(out, 1, 2)
                     val_loss = criterion(out, lab.float())
                     val_losses.append(val_loss.item())
 
@@ -131,7 +128,7 @@ def main():
     val_id_list = [str(num).zfill(5) for num in range(50000, 75000)]
     test_id_list = [str(num).zfill(5) for num in range(75000, 100000)]
 
-    model = WaveNet(layer_size=7, stack_size=1, in_channels=1, res_channels=5)
+    model = WaveNet(layer_size=7, stack_size=3, in_channels=1, res_channels=32)
     criterion = nn.L1Loss(reduction='mean')
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=LR_DECAY)

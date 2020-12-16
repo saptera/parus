@@ -9,17 +9,18 @@ class DilatedCausalConv1d(torch.nn.Module):
         self.conv = torch.nn.Conv1d(channels, channels,
                                     kernel_size=2, stride=1,  # Fixed for WaveNet
                                     dilation=dilation,
-                                    padding=0,  # Fixed for WaveNet dilation
-                                    bias=False)  # Fixed for WaveNet but not sure
+                                    padding=dilation,  # Fixed for WaveNet dilation
+                                    bias=True)  # Fixed for WaveNet but not sure
+        
+        self.dilation = dilation
 
     def init_weights_for_test(self):
         for m in self.modules():
             if isinstance(m, torch.nn.Conv1d):
-                m.weight.data.fill_(1)
+                m.weight.data.fill_(0.5)
 
     def forward(self, x):
-        output = self.conv(x)
-
+        output = self.conv(x)[:,:,:-self.dilation]
         return output
 
 
@@ -31,12 +32,12 @@ class CausalConv1d(torch.nn.Module):
         # padding=1 for same size(length) between input and output for causal convolution
         self.conv = torch.nn.Conv1d(in_channels, out_channels,
                                     kernel_size=2, stride=1, padding=1,
-                                    bias=False)  # Fixed for WaveNet but not sure
+                                    bias=True)  # Fixed for WaveNet but not sure
 
     def init_weights_for_test(self):
         for m in self.modules():
             if isinstance(m, torch.nn.Conv1d):
-                m.weight.data.fill_(1)
+                m.weight.data.fill_(0.5)
 
     def forward(self, x):
         output = self.conv(x)
@@ -169,10 +170,7 @@ class DensNet(torch.nn.Module):
 
         self.conv1 = torch.nn.Conv1d(1, channels, 1)
         self.conv2 = torch.nn.Conv1d(channels, channels, 1)
-
         self.relu = torch.nn.ReLU()
-        self.softmax = torch.nn.Softmax(dim=1)
-
     def forward(self, x):
         output = self.relu(x)
         output = self.conv1(output)
@@ -200,22 +198,18 @@ class WaveNet(torch.nn.Module):
 
         self.densnet = DensNet(300)
 
-        self.output_size = 1
-
     def forward(self, x):
         """
         The size of timestep(3rd dimention) has to be bigger than receptive fields
         :param x: Tensor[batch, timestep, channels]
         :return: Tensor[batch, timestep, channels]
         """
-        output = x.transpose(1, 2)
+        output = self.causal(x)
 
-        output = self.causal(output)
-
-        skip_connections = self.res_stack(output, self.output_size)
+        skip_connections = self.res_stack(output, 1)
 
         output = torch.sum(skip_connections, dim=0)
 
         output = self.densnet(output)
 
-        return output.transpose(1, 2).contiguous()
+        return output.transpose(1,2).contiguous()
