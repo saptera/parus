@@ -36,7 +36,7 @@ noi_fac = (0.5, 2.0)
 baseline_rng = (-5.0, 5.0)
 # Outputs parameters
 n_sim_data = 100000
-output_dir = "../../dataset/complex_spike/complex100000_min20_max80_len300"
+output_dir = "../../dataset/complex_spike/aug_complex100000_min20_max80_len300"
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
