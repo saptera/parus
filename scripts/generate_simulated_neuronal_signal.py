@@ -20,15 +20,15 @@ from parus.data.data_proc import arc_read, noi_read
 
 # Parameters input  -------------------------------------------------------------------------------------------------- #
 # Sample source definition
-arc_dir = "./src/"
-noise_file = "./noise.noi"
+arc_dir = "../data"
+noise_file = "../data/cb_vms_2.noi"
 # Simulated data generation properties
 min_gap = 20
 max_gap = 80
 total_length = 300
 # Outputs parameters
-n_sim_data = 5000
-output_dir = "./dst/"
+n_sim_data = 100000
+output_dir = "../../dataset/complex_spike/complex100000_min20_max80_len300"
 # -------------------------------------------------------------------------------------------------------------------- #
 
 

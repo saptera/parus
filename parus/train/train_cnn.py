@@ -14,7 +14,7 @@ MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/complex.pt"
 SEQ_LEN = 300
 DROPOUT = 0.4
 
-EPOCH = 10
+EPOCH = 30
 LR = 0.001
 LR_DECAY = 0.95
 CLIP = 0.5
@@ -128,7 +128,7 @@ def main():
     val_id_list = [str(num).zfill(5) for num in range(50000, 75000)]
     test_id_list = [str(num).zfill(5) for num in range(75000, 100000)]
 
-    model = WaveNet(layer_size=7, stack_size=3, in_channels=1, res_channels=32)
+    model = WaveNet(layer_size=7, stack_size=3, in_channels=1, res_channels=64)
     criterion = nn.L1Loss(reduction='mean')
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=LR_DECAY)

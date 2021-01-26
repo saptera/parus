@@ -171,12 +171,15 @@ class DensNet(torch.nn.Module):
         self.conv1 = torch.nn.Conv1d(1, channels, 1)
         self.conv2 = torch.nn.Conv1d(channels, channels, 1)
         self.relu = torch.nn.ReLU()
-    def forward(self, x):
-        output = self.relu(x)
-        output = self.conv1(output)
-        output = self.relu(output)
-        output = self.conv2(output)
+        self.linear = torch.nn.Linear(300,300)
 
+    def forward(self, x):
+        #print("DensNet Input:", x.shape)
+        output = self.linear(x)
+        output = self.conv1(output)
+        output = self.linear(output)
+        output = self.conv2(output)
+        #output = self.linear(output)
         return output
 
 
@@ -196,7 +199,7 @@ class WaveNet(torch.nn.Module):
 
         self.res_stack = ResidualStack(layer_size, stack_size, res_channels, in_channels)
 
-        self.densnet = DensNet(300)
+        self.densnet = DensNet(1)
 
     def forward(self, x):
         """
@@ -205,11 +208,11 @@ class WaveNet(torch.nn.Module):
         :return: Tensor[batch, timestep, channels]
         """
         output = self.causal(x)
-
-        skip_connections = self.res_stack(output, 1)
-
+        #print("causal output: ", output.shape)
+        skip_connections = self.res_stack(output, 300)
+        #print("skip shape: ", skip_connections.shape)
         output = torch.sum(skip_connections, dim=0)
-
+        #print("sum shape: ", output.shape)
         output = self.densnet(output)
 
-        return output.transpose(1,2).contiguous()
+        return output.contiguous()
