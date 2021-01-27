@@ -6,7 +6,7 @@ import pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from parus.utils.base_func import arr_rand_samp
+from parus.utils.base_func import arr_rand_samp, pklz_read
 
 """Function list:
 spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
@@ -23,6 +23,7 @@ arc_write(arc_file, arc_data): Write archival neuronal signal data file.
 arc_plot(arc_file): Plot archival neuronal signal data.
 noi_read(noi_file): Read recording noise sample file.
 noi_write(noi_file, noi_data): Write recording noise sample file.
+trn_plot(file, overlay=True): Plot model training related files.
 """
 
 
@@ -489,3 +490,68 @@ def noi_write(noi_file, noi_data):
     else:
         warnings.warn("Illegal data in [%s], file not created!" % noi_file, Warning, stacklevel=2)
         return False
+
+
+def trn_plot(file, overlay=True):
+    """ Plot model training related files.
+
+    Args:
+        file (str): File containing data generated for training or predicted by model (*.sim, *.tst).
+        overlay (bool): Set [True] to plot data in one plot, [False] to plot in subplots. (default: True)
+
+    Returns:
+    """
+    # Read file
+    file_ext = os.path.splitext(file)[1].lstrip('.')
+    data = pklz_read(file)
+    # Plot type of simulated data
+    if file_ext == 'sim':
+        plt.figure("Plot of simulated data [%s]" % os.path.split(file)[1].lstrip('.sim'))
+        if overlay:
+            plt.xlabel('Data Point')
+            plt.ylabel('Amplitude')
+            plt.plot(data['sig'], c='r', alpha=0.5, label="Signal")
+            plt.plot(data['lbl'], c='b', alpha=0.5, label="Label")
+            plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left', ncol=2, mode="expand", borderaxespad=0.)
+        else:
+            # Plot signal
+            plt.subplot(2, 1, 1)
+            plt.title("Signal")
+            plt.ylabel('Amplitude')
+            plt.plot(data['sig'], c='r')
+            # Plot label
+            plt.subplot(2, 1, 2)
+            plt.title("Label")
+            plt.xlabel('Data Point')
+            plt.ylabel('Amplitude')
+            plt.plot(data['lbl'], c='b')
+    # Plot type of testing data
+    elif file_ext == 'tst':
+        plt.figure("Plot of testing data [%s]" % os.path.split(file)[1].lstrip('.tst'))
+        if overlay:
+            plt.xlabel('Data Point')
+            plt.ylabel('Amplitude')
+            plt.plot(data['sig'], c='r', alpha=0.5, label="Signal")
+            plt.plot(data['lbl'], c='b', alpha=0.5, label="Label")
+            plt.plot(data['prd'], c='g', alpha=0.5, label="Prediction")
+            plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left', ncol=3, mode="expand", borderaxespad=0.)
+        else:
+            # Plot signal
+            plt.subplot(3, 1, 1)
+            plt.title("Signal")
+            plt.ylabel('Amplitude')
+            plt.plot(data['sig'], c='b')
+            # Plot label
+            plt.subplot(3, 1, 2)
+            plt.title("Label")
+            plt.ylabel('Amplitude')
+            plt.plot(data['lbl'], c='r')
+            # plot prediction
+            plt.subplot(3, 1, 2)
+            plt.title("Prediction")
+            plt.xlabel('Data Point')
+            plt.ylabel('Amplitude')
+            plt.plot(data['prd'], c='g')
+    else:
+        warnings.warn("Invalid extension [%s] for this function, plot aborted!" % file_ext, Warning, stacklevel=2)
+        return
