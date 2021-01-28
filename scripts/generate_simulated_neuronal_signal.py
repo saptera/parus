@@ -2,6 +2,7 @@ import os
 import numpy as np
 from parus.utils.base_func import make_outdir, pklz_write, prog_print
 from parus.data.data_proc import arc_read, noi_read
+from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 
 """This SCRIPT creates simulated neuronal signal data.
 """
@@ -13,10 +14,14 @@ from parus.data.data_proc import arc_read, noi_read
         min_gap (int): Minimum index difference between 2 signal events.
         max_gap (int): Maximum index difference between 2 signal events.
         total_length (int): Total length of final signal sample (in index).
-      # Simulated data randomization properties
+        freq (int or float): The sampling frequency of the digital system (Hz).
+      # Simulated data randomized weighing properties
         sig_fac (tuple[float, float] or None): Signal amplitude multiplication factor (low, high), [None] to disable.
         noi_fac (tuple[float, float] or None): Noise level multiplication factor (low, high), [None] to disable.
-        baseline_rng (tuple[float, float] or None): Baseline random shifting value (low, high), [None] to disable.
+      # Simulated baseline shifting
+        bsl_meth (list[str] or None): Baseline random shifting method cst = constant, lin = linear, sin = sinusoid.
+        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
+        freq_rng (tuple[int or float, int or float]): Randomize range of baseline shift frequency (Hz), only for 'sin'.
       # Outputs parameters
         n_sim_data (int): Number of simulated data to be generated.
         output_dir (str): Output directory.
@@ -30,10 +35,14 @@ noise_file = "../data/cb_vms_2.noi"
 min_gap = 20
 max_gap = 80
 total_length = 300
-# Simulated data randomization properties
+freq = 20000
+# Simulated data randomized weighing properties
 sig_fac = (0.8, 1.5)
 noi_fac = (0.5, 2.0)
-baseline_rng = (-5.0, 5.0)
+# Simulated baseline shifting
+bsl_meth = ['cst', 'lin', 'sin']
+amp_rng = (-10, 10)
+freq_rng = (2, 50)
 # Outputs parameters
 n_sim_data = 100000
 output_dir = "../../dataset/complex_spike/aug_complex100000_min20_max80_len300"
@@ -120,8 +129,17 @@ for n in range(n_sim_data):
         lbl['noise'] = noise[(noise_pos - total_length):noise_pos]
     else:
         lbl['noise'] = noise[(noise_pos - total_length):noise_pos] * np.random.uniform(noi_fac[0], noi_fac[1])
-    if baseline_rng is not None:
-        lbl['noise'] = np.add(lbl['noise'], np.random.uniform(baseline_rng[0], baseline_rng[1]))
+    # Apply baseline shifting
+    if (bsl_meth is not None) or (bsl_meth != []):
+        meth = np.random.choice(bsl_meth)
+        if meth == 'cst':
+            lbl['noise'] = np.add(lbl['noise'], np.random.uniform(amp_rng[0], amp_rng[1]))
+        elif meth == 'lin':
+            lbl['noise'] = np.add(lbl['noise'], bsl_sft_lin(total_length, amp_rng))
+        elif meth == 'sin':
+            lbl['noise'] = np.add(lbl['noise'], bsl_sft_sin(total_length, freq, amp_rng, freq_rng))
+        else:
+            pass
 
     # Create simulated signal
     sig = np.copy(lbl['noise'])

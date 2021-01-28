@@ -11,13 +11,15 @@ from scipy import signal as sig
     noise_white(size, mode=0, amp=1.0, seed=None): White noise generator.
     noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown(red) noise generator.
     noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue(Azure) and violet(purple) noise generator.
+    bsl_sft_lin(size, amp_rng): Linear baseline shifting generator.
+    bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.
 """
 
 
 # Neuronal signal filters -------------------------------------------------------------------------------------------- #
 
 def spk_lowpass(x, fpass, fs):
-    """Digital lowpass Butterworth filter for neurological signals.
+    """ Digital lowpass Butterworth filter for neurological signals.
 
     Automatic design a digital lowpass Butterworth filter for neurological signals with input frequency
     and perform forward-backward digital filtering using cascaded second-order sections.
@@ -43,7 +45,7 @@ def spk_lowpass(x, fpass, fs):
 
 
 def spk_highpass(x, fpass, fs):
-    """Digital highpass Butterworth filter for neurological signals.
+    """ Digital highpass Butterworth filter for neurological signals.
 
     Automatic design a digital highpass Butterworth filter for neurological signals with input frequency
     and perform forward-backward digital filtering using cascaded second-order sections.
@@ -69,7 +71,7 @@ def spk_highpass(x, fpass, fs):
 
 
 def spk_bandpass(x, fpass, fstop, fs):
-    """Digital bandpass Butterworth filter for neurological signals.
+    """ Digital bandpass Butterworth filter for neurological signals.
 
     Automatic design a digital bandpass Butterworth filter for neurological signals with input frequency
     and perform forward-backward digital filtering using cascaded second-order sections.
@@ -97,7 +99,7 @@ def spk_bandpass(x, fpass, fstop, fs):
 
 
 def spk_notch(x, fnotch, fs):
-    """Digital notch filter for neurological signals.
+    """ Digital notch filter for neurological signals.
 
     Automatic design a digital notch filter for neurological signals with input frequency
     and perform forward-backward digital filtering.
@@ -242,3 +244,42 @@ def noise_freq_incr(size, mode=0, amp=1.0, seed=None):
     # Normalize output
     noise = noise * rate - const
     return noise
+
+
+def bsl_sft_lin(size, amp_rng):
+    """ Linear baseline shifting generator.
+
+    Args:
+        size (int): Number of samples to be generated.
+        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
+
+    Returns:
+        np.ndarray: {1D} Generated shifted noise.
+    """
+    # Compute random values for periodic signal
+    amp_a, amp_p = np.random.uniform(amp_rng[0], amp_rng[1], 2)
+    # Compute randomized signal
+    sft = np.linspace(amp_a, amp_p, size)
+    return sft
+
+
+def bsl_sft_sin(size, fs, amp_rng, freq_rng):
+    """ Sinusoid baseline shifting generator.
+
+    Args:
+        size (int): Number of samples to be generated.
+        fs (int or float): The sampling frequency of the digital system (Hz).
+        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
+        freq_rng (tuple[int or float, int or float]): Randomize range of baseline shift frequency (Hz).
+
+    Returns:
+        np.ndarray: {1D} Generated shifted noise.
+    """
+    # Compute random values for periodic signal
+    amp = np.random.uniform(amp_rng[0], amp_rng[1])
+    freq = np.random.uniform(freq_rng[0], freq_rng[1]) / fs * 2 * np.pi
+    phase = np.random.uniform(0., 2 * np.pi)
+    # Compute randomized signal
+    x = np.arange(0, size, 1) * freq + phase
+    sft = amp * np.sin(x)
+    return sft
