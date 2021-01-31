@@ -13,6 +13,8 @@ from scipy import signal as sig
     noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue(Azure) and violet(purple) noise generator.
     bsl_sft_lin(size, amp_rng): Linear baseline shifting generator.
     bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.
+# Neuronal signal operations:
+    neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.
 """
 
 
@@ -283,3 +285,90 @@ def bsl_sft_sin(size, fs, amp_rng, freq_rng):
     x = np.arange(0, size, 1) * freq + phase
     sft = amp * np.sin(x)
     return sft
+
+
+# Neuronal signal operations ----------------------------------------------------------------------------------------- #
+
+def neuron_sig_slc(rec, loc, rng):
+    """ Slice and pad neuronal signal to individual spikes with defined length.
+
+    Args:
+        rec (np.ndarray): {1D} Recorded neuronal signal.
+        loc (list[int]): Detected spike peak locations, stored as index of iterable [rec].
+        rng (list[tuple[int, int]]): Length of data points for each [loc], in order (anterior, posterior).
+
+    Returns:
+        list[np.ndarray]: Sliced signals.
+    """
+    # Extract and convert data from inputs
+    tot_spk = len(loc)
+    if tot_spk == 0:
+        return None
+    else:
+        srt_idx = np.argsort(loc)
+        sig_abs = np.abs(rec)
+    # INIT VAR; spike list, list of NumPy 1D-array must be adopted as spikes may not have the same length
+    spk_lst = []
+
+    # Get slicing parameters for the first spike
+    curr_loc_a = loc[srt_idx[0]] - rng[srt_idx[0]][0]  # _a = anterior, same for all variables ends with [_a] below
+    curr_loc_p = loc[srt_idx[0]] + rng[srt_idx[0]][1]  # _p = posterior, same for all variables ends with [_p] below
+    next_loc_a = loc[srt_idx[1]] - rng[srt_idx[1]][0]
+    # Check anterior padding
+    if curr_loc_a < 0:
+        curr_pad_a = np.full(abs(curr_loc_a), rec[0])
+        curr_loc_a = 0
+    else:
+        curr_pad_a = []
+    # Check posterior padding
+    if curr_loc_p > next_loc_a:
+        slc_a = max(loc[srt_idx[0]], next_loc_a)
+        slc_p = min(curr_loc_p, loc[srt_idx[1]])
+        slc_idx = slc_a + np.argmin(sig_abs[slc_a:slc_p])
+        curr_pad_p = np.full(curr_loc_p - slc_idx, rec[slc_idx])
+        curr_loc_p = slc_idx
+        # Get anterior padding values for next spike
+        next_pad_a = np.full(slc_idx - next_loc_a, rec[slc_idx])
+        next_loc_a = slc_idx
+    else:
+        curr_pad_p = []
+        next_pad_a = []
+    # Store spike
+    spk_lst.append(np.concatenate((curr_pad_a, rec[curr_loc_a:curr_loc_p], curr_pad_p)))
+
+    # Get slicing parameters for intermediate spikes
+    if tot_spk == 1:
+        return spk_lst
+    elif tot_spk > 2:
+        for i in range(1, len(srt_idx) - 1):
+            # Transfer anterior padding info from last iteration
+            curr_loc_a = next_loc_a
+            curr_pad_a = next_pad_a
+            # Check posterior padding for current iteration
+            curr_loc_p = loc[srt_idx[i]] + rng[srt_idx[i]][1]
+            next_loc_a = loc[srt_idx[i + 1]] - rng[srt_idx[i + 1]][0]
+            if curr_loc_p > next_loc_a:
+                slc_a = max(loc[srt_idx[i]], next_loc_a)
+                slc_p = min(curr_loc_p, loc[srt_idx[i + 1]])
+                slc_idx = slc_a + np.argmin(sig_abs[slc_a:slc_p])
+                curr_pad_p = np.full(curr_loc_p - slc_idx, rec[slc_idx])
+                curr_loc_p = slc_idx
+                # Get anterior padding values for next spike
+                next_pad_a = np.full(slc_idx - next_loc_a, rec[slc_idx])
+                next_loc_a = slc_idx
+            else:
+                curr_pad_p = []
+                next_pad_a = []
+            # Store spike
+            spk_lst.append(np.concatenate((curr_pad_a, rec[curr_loc_a:curr_loc_p], curr_pad_p)))
+
+    # Get slicing parameters for the last spike
+    curr_loc_p = loc[srt_idx[-1]] + rng[srt_idx[-1]][1]
+    if curr_loc_p >= len(rec):
+        curr_pad_p = np.full(curr_loc_p - len(rec) + 1, rec[-1])
+        curr_loc_p = len(rec) - 1
+    else:
+        curr_pad_p = []
+    # Store spike, direct use anterior padding info from last iteration as no next check required
+    spk_lst.append(np.concatenate((next_pad_a, rec[next_loc_a:curr_loc_p], curr_pad_p)))
+    return spk_lst
