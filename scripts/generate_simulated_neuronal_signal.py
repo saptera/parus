@@ -15,6 +15,7 @@ from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
         max_gap (int): Maximum index difference between 2 signal events.
         total_length (int): Total length of final signal sample (in index).
         freq (int or float): The sampling frequency of the digital system (Hz).
+        sig_grp (str or None): Signal grouping method; 'typ' = cell type, 'spk' = spike type, None = individual signal.
       # Simulated data randomized weighing properties
         sig_fac (tuple[float, float] or None): Signal amplitude multiplication factor (low, high), [None] to disable.
         noi_fac (tuple[float, float] or None): Noise level multiplication factor (low, high), [None] to disable.
@@ -29,23 +30,24 @@ from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 
 # Parameters input  -------------------------------------------------------------------------------------------------- #
 # Sample source definition
-arc_dir = "../data"
-noise_file = "../data/cb_vms_2.noi"
+arc_dir = "./arc_data"
+noise_file = "./noise.noi"
 # Simulated data generation properties
 min_gap = 20
 max_gap = 80
 total_length = 300
 freq = 20000
+sig_grp = 'spk'
 # Simulated data randomized weighing properties
 sig_fac = (0.8, 1.5)
-noi_fac = (0.5, 2.0)
+noi_fac = (1.0, 2.5)
 # Simulated baseline shifting
 bsl_meth = ['cst', 'lin', 'sin']
-amp_rng = (-10, 10)
+amp_rng = (-20, 20)
 freq_rng = (2, 50)
 # Outputs parameters
 n_sim_data = 100000
-output_dir = "../../dataset/complex_spike/aug_complex100000_min20_max80_len300"
+output_dir = "./out_dir"
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
@@ -75,17 +77,26 @@ def sig_asgn_lst(low, high, max_pos, sig_count):
 # Acquire archived neuronal signal data
 arc_file = [os.path.join(arc_dir, f) for f in os.listdir(arc_dir) if f.endswith('.arc')]
 arc_sig = []  # INIT VAR
-arc_pos_a = []  # INIT VAR
-arc_pos_p = []  # INIT VAR
+arc_typ = []  # INIT VAR
+arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
+arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p] below
 for f in arc_file:
     arc_data = arc_read(f)
     # Get samples
     arc_sig.append(arc_data['sig'][arc_data['rng'][0]:arc_data['rng'][1]])
+    arc_typ.append(None if sig_grp is None else arc_data['cid'][sig_grp])
     # Get signal position
     arc_pos_a.append(arc_data['pos'] - arc_data['rng'][0])
     arc_pos_p.append(arc_data['rng'][1] - arc_data['pos'])
 # Read noise data
 noise = noi_read(noise_file)['noise']
+# Get grouping information
+grp_dic = {}  # INIT VAR
+if sig_grp is not None:
+    i = 0
+    for sg in np.unique(arc_typ):
+        grp_dic[sg] = i
+        i += 1
 
 # Make output directories
 lbl_out_dir = make_outdir(os.path.join(output_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
@@ -95,33 +106,34 @@ sig_out_dir = make_outdir(os.path.join(output_dir, "sig/"), err_msg="Invalid sim
 for n in range(n_sim_data):
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
-    for i in range(len(arc_sig)):
+    for i in range(len(arc_sig if sig_grp is None else grp_dic)):
         lbl['signal'].append(np.zeros(total_length, dtype=np.float64))
 
     # Get simulated signals
     sel, pos = sig_asgn_lst(min_gap, max_gap, total_length, len(arc_sig))
     for i in range(len(pos)):
+        curr_fac = 1.0 if sig_fac is None else np.random.uniform(sig_fac[0], sig_fac[1])
         if arc_pos_a[sel[i]] > pos[i]:
             asgn_p = pos[i] + arc_pos_p[sel[i]]
             rang_a = arc_pos_a[sel[i]] - pos[i]
-            if sig_fac is None:
-                lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:]
+            if sig_grp is None:
+                lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
             else:
-                lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * np.random.uniform(sig_fac[0], sig_fac[1])
+                lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
         elif arc_pos_p[sel[i]] + pos[i] > total_length:
             asgn_a = pos[i] - arc_pos_a[sel[i]]
             rang_p = total_length - pos[i] + arc_pos_a[sel[i]]
-            if sig_fac is None:
-                lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p]
+            if sig_grp is None:
+                lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
             else:
-                lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * np.random.uniform(sig_fac[0], sig_fac[1])
+                lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
         else:
             asgn_a = pos[i] - arc_pos_a[sel[i]]
             asgn_p = pos[i] + arc_pos_p[sel[i]]
-            if sig_fac is None:
-                lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]]
+            if sig_grp is None:
+                lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
             else:
-                lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * np.random.uniform(sig_fac[0], sig_fac[1])
+                lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
 
     # Get simulated noise
     noise_pos = np.random.randint(total_length, len(noise))
