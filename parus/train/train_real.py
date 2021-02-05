@@ -9,7 +9,7 @@ from parus.train.wavenet import WaveNet
 TRAIN_DATA_PATH = "/home/proj_wavemoto/dataset/complex_spike/complex100000_min20_max80_len300/"
 TEST_DATA_PATH = "/home/proj_wavemoto/dataset/complex_spike/real_data/"
 
-TEST_PRED_PATH = "/home/proj_wavemoto/log/pred/complex_real/"
+TEST_PRED_PATH = "/home/proj_wavemoto/log/pred/complex_real_inf/"
 MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/complex_inf.pt"
 
 SEQ_LEN = 300
@@ -150,7 +150,7 @@ def train(model, criterion, optimizer, scheduler, train_id_list, val_id_list, tr
 
 def inference(model, file_name, test_params):
     file_path = TEST_DATA_PATH + file_name + ".dat"
-    test_gen = get_data_generator(file_path, test_params)
+    test_gen = get_test_data_generator(file_path, test_params)
 
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
@@ -181,7 +181,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=LR_DECAY)
 
     train(model, criterion, optimizer, scheduler, train_id_list, val_id_list, TRAIN_PARAMS)
-    inference(model, "amp-A-001 ", TEST_PARAMS)
+    inference(model, "amp-A-001", TEST_PARAMS)
 
 
 if __name__ == '__main__':

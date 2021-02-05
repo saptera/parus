@@ -7,10 +7,10 @@ from parus.data.intan_func import intan_amp_read
 
 from parus.train.wavenet import WaveNet
 
-REAL_DATA_PATH = "/home/proj_wavemoto/dataset/complex100000_min20_max80_len300/real_data/"
+REAL_DATA_PATH = "/home/proj_wavemoto/dataset/complex_spike/real_data/"
 
-PRED_PATH = "/home/proj_wavemoto/log/pred/sim_test_pred/"
-MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/complex.pt"
+PRED_PATH = "/home/proj_wavemoto/log/pred/complex_real_inf_alt/"
+MODEL_FILE_PATH = "/home/proj_wavemoto/log/models/complex_inf.pt"
 
 SEQ_LEN = 300
 NUM_CHANNEL = 64
@@ -94,18 +94,20 @@ def inference(model, file_name, test_params):
 
 
 def main():
-    filenames = ["amp-A-" + str(num).zfill(3) for num in range(1,3)]
+    filenames = ["amp-A-" + str(num).zfill(3) for num in range(0,1)]
     
+
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
     model = WaveNet(layer_size=7, stack_size=3, in_channels=1, res_channels=64)
     model.load_state_dict(torch.load(MODEL_FILE_PATH))
     model.to(device)
+    model.eval()
 
     for name in filenames:
         inference(model, name, TEST_PARAMS)
 
 
 if __name__ == '__main__':
-    ain()
+    main()
