@@ -1,7 +1,5 @@
 import sys
 import os
-import zlib
-import pickle as pkl
 import numpy as np
 from scipy.stats import norm, laplace
 
@@ -11,8 +9,6 @@ make_outdir(out_dir, err_msg): Recursive create an output leaf directory for dat
 altmk_outdirs(out_dir, alt_dir, err_msg): Recursive create an output leaf directory with alternative directory.
 search_files(base_dir, fpre, fsuf):  Find all files meets the search conditions.
 prog_print(iteration, total, prefix, suffix): Create a terminal progress bar for a loop.
-pklz_read(file): Read compressed pickled data from a file.
-pklz_write(file, data): Write compressed pickled data to a file.
 arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
 norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
 laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
@@ -127,37 +123,6 @@ def prog_print(iteration, total, prefix=str(), suffix=str()):
     sys.stdout.flush()
     if iteration == total:  # Print a new line at 100%
         print('')
-
-
-def pklz_read(file):
-    """ Read compressed pickled data from a file.
-
-    Args:
-        file (str): File contained compressed pickled data (*.*).
-
-    Returns:
-        data: Imported data.
-    """
-    with open(file, 'rb') as infile:
-        comp = pkl.load(infile)
-    data = pkl.loads(zlib.decompress(comp))
-    return data
-
-
-def pklz_write(file, data):
-    """ Write compressed pickled data to a file.
-
-    Args:
-        file (str): File to write data (*.*).
-        data: Any type of picklable data.
-
-    Returns:
-        bool: File creation status.
-    """
-    comp = zlib.compress(pkl.dumps(data, protocol=None))
-    with open(file, 'wb') as outfile:
-        pkl.dump(comp, outfile, protocol=None)
-    return True
 
 
 def arr_rand_samp(arr, n_samp):

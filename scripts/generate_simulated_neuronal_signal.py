@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from parus.utils.base_func import make_outdir, pklz_write, prog_print
-from parus.data.data_proc import arc_read, noi_read
+from parus.utils.base_func import make_outdir, prog_print
+from parus.data.file_io import pklz_write, arc_read, noi_read
 from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 
 """This SCRIPT creates simulated neuronal signal data.
@@ -81,7 +81,7 @@ arc_typ = []  # INIT VAR
 arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
 arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p] below
 for f in arc_file:
-    arc_data = arc_read(f)
+    arc_data = arc_read(f)['data']
     # Get samples
     arc_sig.append(arc_data['sig'][arc_data['rng'][0]:arc_data['rng'][1]])
     arc_typ.append(None if sig_grp is None else arc_data['cid'][sig_grp])
