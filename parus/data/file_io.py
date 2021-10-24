@@ -144,7 +144,7 @@ def cjsh_write(file, data):
                 'chn': [int or float] recording site channel number
                 'note': [str or None] extra notes
             }
-            'date': [str (datetime.ISO-format)] recording date and time information
+            'datetime': [str (datetime.ISO-format)] recording date and time information
         }
 """
 
@@ -170,7 +170,7 @@ def arc_read(arc_file):
         return None
     # Verify metadata
     if 'meta' in arc_data:
-        if {'organism', 'region', 'neuron', 'system', 'probe', 'date'} != set(arc_data['meta']):
+        if {'organism', 'region', 'neuron', 'system', 'probe', 'datetime'} != set(arc_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not imported!" % arc_file, Warning, stacklevel=2)
             return None
     else:
@@ -200,7 +200,7 @@ def arc_write(arc_file, arc_data):
         return False
     # Verify metadata
     if 'meta' in arc_data:
-        if {'organism', 'region', 'neuron', 'system', 'probe', 'date'} != set(arc_data['meta']):
+        if {'organism', 'region', 'neuron', 'system', 'probe', 'datetime'} != set(arc_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not created!" % arc_file, Warning, stacklevel=2)
             return False
     else:
@@ -265,7 +265,7 @@ def arc_plot(arc_file):
                 'chn': [int or float] recording site channel number
                 'note': [str or None] extra notes
             }
-            'date': [str (datetime.ISO-format)] recording date and time information
+            'datetime': [str (datetime.ISO-format)] recording date and time information
         }
 """
 
@@ -287,7 +287,7 @@ def noi_read(noi_file):
         return False
     # Verify metadata
     if 'meta' in noi_data:
-        if {'organism', 'region', 'system', 'probe', 'date'} != set(noi_data['meta']):
+        if {'organism', 'region', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
             return False
     else:
@@ -313,18 +313,12 @@ def noi_write(noi_file, noi_data):
         return False
     # Verify metadata
     if 'meta' in noi_data:
-        if {'organism', 'region', 'system', 'probe', 'date'} != set(noi_data['meta']):
+        if {'organism', 'region', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not created!" % noi_file, Warning, stacklevel=2)
             return False
     else:
         warnings.warn("Missing metadata in [%s], file not created!" % noi_file, Warning, stacklevel=2)
         return False
-    # Check data structure
-    if sorted(list(noi_data.keys())) == sorted(['noise', 'freq', 'area', 'prb', 'sys', 'date']):
-        comp = zlib.compress(pkl.dumps(noi_data, protocol=None))
-        with open(noi_file, 'wb') as outfile:
-            pkl.dump(comp, outfile, protocol=None)
-        return True
     # Saving data
     cjsh_write(noi_file, noi_data)
     return True
