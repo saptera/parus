@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
   -> ARC data structure definition
     arc_read(arc_file): Read archival neural signal data file.
     arc_write(arc_file, arc_data): Write archival neural signal data file.
-    arc_plot(arc_file): Plot archival neural signal data.
+    arc_plot(arc_file, save=False): Plot archival neural signal data.
   -> NOI data structure definition
     noi_read(noi_file): Read recording noise sample file.
     noi_write(noi_file, noi_data): Write recording noise sample file.
@@ -211,11 +211,15 @@ def arc_write(arc_file, arc_data):
     return True
 
 
-def arc_plot(arc_file):
+def arc_plot(arc_file, save=False):
     """ Plot archival neural signal data.
 
     Args:
         arc_file (str): File contained archival neuronal signal data (*.arc).
+        save (bool): Defines if the figure should be saved. (default: False)
+
+    Returns:
+        str: Name of created figure.
     """
     # Import data
     data = arc_read(arc_file)['data']
@@ -226,7 +230,9 @@ def arc_plot(arc_file):
     # Get signal range
     sig_rng = data['rng'] if data['rng'] is not None else None
     # Setup plot
-    plt.figure("Archival Signal of [%s]" % os.path.split(arc_file)[1].rstrip('.arc'))
+    name = "Archival Signal of [%s]" % os.path.split(arc_file)[1].rstrip('.arc')
+    plt.figure(name)
+    plt.title(name)
     plt.xlabel('Data Point')
     plt.ylabel('Amplitude')
     # Plotting
@@ -235,6 +241,11 @@ def arc_plot(arc_file):
     if sig_rng is not None:
         plt.axvline(sig_rng[0], c='gray', ls='-.', alpha=0.75, zorder=2)
         plt.axvline(sig_rng[1], c='gray', ls='-.', alpha=0.75, zorder=2)
+    # Saving function
+    if save:
+        plt.savefig(os.path.splitext(arc_file)[0] + '.png')
+    # Return figure name
+    return name
 
 
 """ NOI data structure definition:
