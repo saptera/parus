@@ -108,43 +108,43 @@ def cjsh_write(file, data):
 
 """ ARC data structure definition:
     arc_data (dict): archival neural signal: {
-        'data': [dict] signal data structure {
-            'sig': [list(float)] neural signal data
-            'pos': [int] index of spike location in 'sig'
-            'rng': [list(int, int) or None] 2 indices to define refined signal range
-            'freq': [int or float] recording frequency of 'sig'
+        data (dict): signal data structure {
+            sig (list[float]): neural signal data
+            pos (int): index of spike location in [sig]
+            rng (list[int, int] or None): 2 indices to define refined signal range
+            freq (int or float): recording frequency of [sig]
         }
-        'meta': [dict] metadata structure of the signal {
-            'organism': [dict] organism for the signal recording {
-                'gn': [str] generic name
-                'se': [str] specific epithet
-                'st': [str] strain,
-                'mod': [str or None] genetic modification, None for wildtype
-                'note': [str or None] extra notes
+        meta (dict): metadata structure of the signal {
+            organism (dict): organism for the signal recording {
+                gn (str): generic name
+                se (str): specific epithet
+                st (str): strain,
+                mod (str or None): genetic modification, None for wildtype
+                note (Any): extra notes
             }
-            'region' [list] recoding region(s) of the signal
-            'neuron': [dict] neural cell information {
-                'typ': [str] cell type
-                'spk': [str] spike type - 'ss' for simple spike, 'cs' for complex spike or 'fp' for field potential
-                'note': [str or None] extra notes
+            region (list): recoding region(s) of the signal
+            neuron (dict): neural cell information {
+                typ (str): cell type
+                spk (str): spike type - 'ss' for simple spike, 'cs' for complex spike or 'fp' for field potential
+                note (Any): extra notes
             }
-            'system': [dict] recording system information {
-                'typ': [str] system type - 'd' for digital or 'a' for analog
-                'mfr': [str] system manufacture
-                'pn': [str] manufacture part number or model
-                'sn': [str] manufacture serial number or batch number
-                'soc': [int or float or str] Socket in system for recording
-                'note': [str or None] extra notes
+            system (dict): recording system information {
+                typ (str): system type - 'd' for digital or 'a' for analog
+                mfr (str): system manufacture
+                pn (str): manufacture part number or model
+                sn (str): manufacture serial number or batch number
+                soc (int or float or str): Socket in system for recording
+                note (Any): extra notes
             }
-            'probe': [dict] recording probe information {
-                'typ': [str] probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
-                'mfr': [str] probe manufacture
-                'pn': [str] manufacture part number or model
-                'sn': [str] manufacture serial number or batch number
-                'chn': [int or float] recording site channel number
-                'note': [str or None] extra notes
+            probe (dict): recording probe information {
+                typ (str): probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
+                mfr (str): probe manufacture
+                pn (str): manufacture part number or model
+                sn (str): manufacture serial number or batch number
+                chn (int or float): recording site channel number
+                note (Any): extra notes
             }
-            'datetime': [str (datetime.ISO-format)] recording date and time information
+            datetime (str[datetime.ISO-format]): recording date and time information
         }
 """
 
@@ -250,33 +250,40 @@ def arc_plot(arc_file, save=False):
 
 """ NOI data structure definition:
     noi_data (dict): recording noise signal: {
-        'noise': [list(float)] neural recording noise signal
-        'meta': [dict] metadata structure of the noise {
-            'organism': [dict] organism for the signal recording {
-                'gn': [str] generic name
-                'se': [str] specific epithet
-                'st': [str] strain,
-                'mod': [str or None] genetic modification, None for wildtype
-                'note': [str or None] extra notes
+        data (dict): neural recording noise data structure {
+            noi (list[float]): neural recording noise data
+            freq (int or float): recording frequency of [noi]
+        }
+        meta (dict): metadata structure of the noise {
+            organism (dict): organism for the signal recording {
+                gn (str): generic name
+                se (str): specific epithet
+                st (str): strain,
+                mod (str or None): genetic modification, None for wildtype
+                note (Any): extra notes
             }
-            'region' [list] recoding region(s) of the signal
-            'system': [dict] recording system information {
-                'typ': [str] system type - 'd' for digital or 'a' for analog
-                'mfr': [str] system manufacture
-                'pn': [str] manufacture part number or model
-                'sn': [str] manufacture serial number or batch number
-                'soc': [int or float or str] Socket in system for recording
-                'note': [str or None] extra notes
+            region (list): recoding region(s) of the signal
+            feature (dict): recorded features in the noise signal {
+                typ (list[str]): existing noise - 'fp' for field potential, 'ele' for elec-sti, 'opto' for opto-sti etc.
+                note (Any): extra notes
             }
-            'probe': [dict] recording probe information {
-                'typ': [str] probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
-                'mfr': [str] probe manufacture
-                'pn': [str] manufacture part number or model
-                'sn': [str] manufacture serial number or batch number
-                'chn': [int or float] recording site channel number
-                'note': [str or None] extra notes
+            system (dict): recording system information {
+                typ (str): system type - 'd' for digital or 'a' for analog
+                mfr (str): system manufacture
+                pn (str): manufacture part number or model
+                sn (str): manufacture serial number or batch number
+                soc (int or float or str): Socket in system for recording
+                note (Any): extra notes
             }
-            'datetime': [str (datetime.ISO-format)] recording date and time information
+            probe (dict): recording probe information {
+                typ (str): probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
+                mfr (str): probe manufacture
+                pn (str): manufacture part number or model
+                sn (str): manufacture serial number or batch number
+                chn (int or float): recording site channel number
+                note (Any): extra notes
+            }
+            datetime (str[datetime.ISO-format]): recording date and time information
         }
 """
 
@@ -293,17 +300,21 @@ def noi_read(noi_file):
     # Read file
     noi_data = cjsh_read(noi_file)
     # Verify noise data
-    if 'noise' not in noi_data:
+    if 'data' in noi_data:
+        if {'noi', 'freq'} != set(noi_data['data']):
+            warnings.warn("Illegal noise data in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
+            return None
+    else:
         warnings.warn("Missing noise data in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
-        return False
+        return None
     # Verify metadata
     if 'meta' in noi_data:
-        if {'organism', 'region', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
+        if {'organism', 'region', 'feature', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
-            return False
+            return None
     else:
         warnings.warn("Missing metadata in [%s], file not imported!" % noi_file, Warning, stacklevel=2)
-        return False
+        return None
     # Return data after validation
     return noi_data
 
@@ -319,12 +330,16 @@ def noi_write(noi_file, noi_data):
         bool: File creation status.
     """
     # Verify noise data
-    if 'noise' not in noi_data:
+    if 'data' in noi_data:
+        if {'noi', 'freq'} != set(noi_data['data']):
+            warnings.warn("Illegal noise data in [%s], file not created!" % noi_file, Warning, stacklevel=2)
+            return False
+    else:
         warnings.warn("Missing noise data in [%s], file not created!" % noi_file, Warning, stacklevel=2)
         return False
     # Verify metadata
     if 'meta' in noi_data:
-        if {'organism', 'region', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
+        if {'organism', 'region', 'feature', 'system', 'probe', 'datetime'} != set(noi_data['meta']):
             warnings.warn("Illegal metadata in [%s], file not created!" % noi_file, Warning, stacklevel=2)
             return False
     else:
