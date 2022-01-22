@@ -9,7 +9,7 @@ from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 """ Parameters:
       # Sample source definition
         arc_dir (str): Directory containing archived neuronal signal data (*.arc).
-        noise_file (str): A file containing noise of recording.
+        noi_dir (str): Directory containing noise of recording (*.noi).
       # Simulated data generation properties
         min_gap (int): Minimum index difference between 2 signal events.
         max_gap (int): Maximum index difference between 2 signal events.
@@ -31,7 +31,7 @@ from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 # Parameters input  -------------------------------------------------------------------------------------------------- #
 # Sample source definition
 arc_dir = "./arc_data"
-noise_file = "./noise.noi"
+noi_dir = "./noi_data"
 # Simulated data generation properties
 min_gap = 20
 max_gap = 80
@@ -80,16 +80,21 @@ arc_sig = []  # INIT VAR
 arc_typ = []  # INIT VAR
 arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
 arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p] below
+print("Reading archived neural signal data.")
 for f in arc_file:
-    arc_data = arc_read(f)['data']
+    arc_data = arc_read(f)
     # Get samples
-    arc_sig.append(arc_data['sig'][arc_data['rng'][0]:arc_data['rng'][1]])
-    arc_typ.append(None if sig_grp is None else arc_data['cid'][sig_grp])
+    arc_sig.append(np.array(arc_data['data']['sig'][arc_data['data']['rng'][0]:arc_data['data']['rng'][1]]))
+    arc_typ.append(None if sig_grp is None else arc_data['meta']['neuron'][sig_grp])
     # Get signal position
-    arc_pos_a.append(arc_data['pos'] - arc_data['rng'][0])
-    arc_pos_p.append(arc_data['rng'][1] - arc_data['pos'])
+    arc_pos_a.append(arc_data['data']['pos'] - arc_data['data']['rng'][0])
+    arc_pos_p.append(arc_data['data']['rng'][1] - arc_data['data']['pos'])
 # Read noise data
-noise = noi_read(noise_file)['noise']
+noi_file = [os.path.join(noi_dir, f) for f in os.listdir(noi_dir) if f.endswith('.noi')]
+noise = []  # INIT VAR
+print("Reading archived recoding noise data.")
+for f in noi_file[0:5]:
+    noise.append(np.array(noi_read(f)['data']['noi']))
 # Get grouping information
 grp_dic = {}  # INIT VAR
 if sig_grp is not None:
@@ -136,11 +141,12 @@ for n in range(n_sim_data):
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
 
     # Get simulated noise
-    noise_pos = np.random.randint(total_length, len(noise))
+    noi_idx = np.random.randint(0, len(noise))
+    noi_pos = np.random.randint(total_length, len(noise[noi_idx]))
     if noi_fac is None:
-        lbl['noise'] = noise[(noise_pos - total_length):noise_pos]
+        lbl['noise'] = noise[noi_idx][(noi_pos - total_length):noi_pos]
     else:
-        lbl['noise'] = noise[(noise_pos - total_length):noise_pos] * np.random.uniform(noi_fac[0], noi_fac[1])
+        lbl['noise'] = noise[noi_idx][(noi_pos - total_length):noi_pos] * np.random.uniform(noi_fac[0], noi_fac[1])
     # Apply baseline shifting
     if (bsl_meth is not None) or (bsl_meth != []):
         meth = np.random.choice(bsl_meth)
