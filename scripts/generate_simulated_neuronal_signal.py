@@ -1,53 +1,54 @@
 import os
+import argparse
 import numpy as np
 from parus.utils.base_func import make_outdir, prog_print
 from parus.data.file_io import pklz_write, arc_read, noi_read
 from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 
-"""This SCRIPT creates simulated neuronal signal data.
-"""
-""" Parameters:
-      # Sample source definition
-        arc_dir (str): Directory containing archived neuronal signal data (*.arc).
-        noi_dir (str): Directory containing noise of recording (*.noi).
-      # Simulated data generation properties
-        min_gap (int): Minimum index difference between 2 signal events.
-        max_gap (int): Maximum index difference between 2 signal events.
-        total_length (int): Total length of final signal sample (in index).
-        freq (int or float): The sampling frequency of the digital system (Hz).
-        sig_grp (str or None): Signal grouping method; 'typ' = cell type, 'spk' = spike type, None = individual signal.
-      # Simulated data randomized weighing properties
-        sig_fac (tuple[float, float] or None): Signal amplitude multiplication factor (low, high), [None] to disable.
-        noi_fac (tuple[float, float] or None): Noise level multiplication factor (low, high), [None] to disable.
-      # Simulated baseline shifting
-        bsl_meth (list[str] or None): Baseline random shifting method cst = constant, lin = linear, sin = sinusoid.
-        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
-        freq_rng (tuple[int or float, int or float]): Randomize range of baseline shift frequency (Hz), only for 'sin'.
-      # Outputs parameters
-        n_sim_data (int): Number of simulated data to be generated.
-        output_dir (str): Output directory.
-"""
 
-# Parameters input  -------------------------------------------------------------------------------------------------- #
-# Sample source definition
-arc_dir = "./arc_data"
-noi_dir = "./noi_data"
-# Simulated data generation properties
-min_gap = 20
-max_gap = 80
-total_length = 300
-freq = 20000
-sig_grp = 'spk'
-# Simulated data randomized weighing properties
-sig_fac = (0.8, 1.5)
-noi_fac = (1.0, 2.5)
-# Simulated baseline shifting
-bsl_meth = ['cst', 'lin', 'sin']
-amp_rng = (-20, 20)
-freq_rng = (2, 50)
-# Outputs parameters
-n_sim_data = 100000
-output_dir = "./out_dir"
+# CLI inputs parser  ------------------------------------------------------------------------------------------------- #
+parser = argparse.ArgumentParser(prog="GSNS", description="Generate simulated neural signals",
+                                 epilog="Simulated neuronal signal data uses for model training ONLY")
+parser.add_argument('-v', '--version', action='version', version="Generate simulated neural signals: v3.0")
+# Sample source definition (positional)
+parser.add_argument('arc_dir', type=str, metavar="signalFolder",
+                    help="[%(type)s] Directory containing archived signal data (*.arc)")
+parser.add_argument('noi_dir', type=str, metavar="noiseFolder",
+                    help="[%(type)s] Directory containing sample noise data (*.noi)")
+# Outputs parameters (positional)
+parser.add_argument('out_dir', type=str, metavar="outputFolder",
+                    help="[%(type)s] Output directory of simulated data (*.sim)")
+parser.add_argument('num_sim', type=int, metavar="sampleNumber",
+                    help="[%(type)s] Number of simulated data to be generated")
+# Simulated data generation properties (optional)
+parser.add_argument('-l', '--length', dest='tot_len', type=int, default=300, metavar="[int]",
+                    help="Total length of final signal sample (default: %(default)s)")
+parser.add_argument('-f', '--freq', dest='freq', type=int or float, default=20000, metavar="[int or float]",
+                    help="Sampling frequency (Hz) of the system (default: %(default)s)")
+parser.add_argument('-ig', '--mingap', dest='min_gap', type=int, default=20, metavar="[int]",
+                    help="Minimum index gap of signal events (default: %(default)s)")
+parser.add_argument('-xg', '--maxgap', dest='max_gap', type=int, default=80, metavar="[int]",
+                    help="Maximum index gap of signal events (default: %(default)s)")
+parser.add_argument('-gp', '--group', dest='sig_grp', type=str, choices=['typ', 'spk'], default=None,
+                    metavar="{typ, spk}",
+                    help="Grouping method: 'typ' = cell type, 'spk' = spike type (default: %(default)s = disabled)")
+# Simulated data randomized weighing properties (optional)
+parser.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, default=None, metavar="[float]",
+                    help="Signal amplitude multiplication factor [low] [high] (default: %(default)s = disabled)")
+parser.add_argument('-nf', '--noifac', dest='noi_fac', nargs=2, type=float, default=None, metavar="[float]",
+                    help="Noise level multiplication factor [low] [high] (default: %(default)s = disabled)")
+# Simulated baseline shifting (optional)
+parser.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin'],
+                    default=None, metavar=("{cst, lin, sin}", ""),
+                    help="Baseline random shifting method: "
+                         "'cst' = constant, 'lin' = linear, 'sin' = sinusoid (default: %(default)s = disabled)")
+parser.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, default=None, metavar="[float]",
+                    help="Randomize baseline shift amplitude [low] [high] (default: %(default)s = disabled)")
+parser.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
+                    help="Randomize baseline frequency (Hz) [low] [high], 'sin' only (default: %(default)s = disabled)")
+# Parse and verify inputs
+args = parser.parse_args()
+args.bsl_meth = None if args.bsl_meth is None else list(set(args.bsl_meth))
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
@@ -75,7 +76,7 @@ def sig_asgn_lst(low, high, max_pos, sig_count):
 
 
 # Acquire archived neuronal signal data
-arc_file = [os.path.join(arc_dir, f) for f in os.listdir(arc_dir) if f.endswith('.arc')]
+arc_file = [os.path.join(args.arc_dir, f) for f in os.listdir(args.arc_dir) if f.endswith('.arc')]
 arc_sig = []  # INIT VAR
 arc_typ = []  # INIT VAR
 arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
@@ -85,77 +86,78 @@ for f in arc_file:
     arc_data = arc_read(f)
     # Get samples
     arc_sig.append(np.array(arc_data['data']['sig'][arc_data['data']['rng'][0]:arc_data['data']['rng'][1]]))
-    arc_typ.append(None if sig_grp is None else arc_data['meta']['neuron'][sig_grp])
+    arc_typ.append(None if args.sig_grp is None else arc_data['meta']['neuron'][args.sig_grp])
     # Get signal position
     arc_pos_a.append(arc_data['data']['pos'] - arc_data['data']['rng'][0])
     arc_pos_p.append(arc_data['data']['rng'][1] - arc_data['data']['pos'])
 # Read noise data
-noi_file = [os.path.join(noi_dir, f) for f in os.listdir(noi_dir) if f.endswith('.noi')]
+noi_file = [os.path.join(args.noi_dir, f) for f in os.listdir(args.noi_dir) if f.endswith('.noi')]
 noise = []  # INIT VAR
 print("Reading archived recoding noise data.")
-for f in noi_file[0:5]:
+for f in noi_file:
     noise.append(np.array(noi_read(f)['data']['noi']))
 # Get grouping information
 grp_dic = {}  # INIT VAR
-if sig_grp is not None:
+if args.sig_grp is not None:
     i = 0
     for sg in np.unique(arc_typ):
         grp_dic[sg] = i
         i += 1
 
 # Make output directories
-lbl_out_dir = make_outdir(os.path.join(output_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
-sig_out_dir = make_outdir(os.path.join(output_dir, "sig/"), err_msg="Invalid simulated signal output directory!")
+lbl_out_dir = make_outdir(os.path.join(args.out_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
+sig_out_dir = make_outdir(os.path.join(args.out_dir, "sig/"), err_msg="Invalid simulated signal output directory!")
 
 # Main process loop
-for n in range(n_sim_data):
+for n in range(args.num_sim):
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
-    for i in range(len(arc_sig if sig_grp is None else grp_dic)):
-        lbl['signal'].append(np.zeros(total_length, dtype=np.float64))
+    for i in range(len(arc_sig if args.sig_grp is None else grp_dic)):
+        lbl['signal'].append(np.zeros(args.tot_len, dtype=np.float64))
 
     # Get simulated signals
-    sel, pos = sig_asgn_lst(min_gap, max_gap, total_length, len(arc_sig))
+    sel, pos = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, len(arc_sig))
     for i in range(len(pos)):
-        curr_fac = 1.0 if sig_fac is None else np.random.uniform(sig_fac[0], sig_fac[1])
+        curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
         if arc_pos_a[sel[i]] > pos[i]:
             asgn_p = pos[i] + arc_pos_p[sel[i]]
             rang_a = arc_pos_a[sel[i]] - pos[i]
-            if sig_grp is None:
+            if args.sig_grp is None:
                 lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
-        elif arc_pos_p[sel[i]] + pos[i] > total_length:
+        elif arc_pos_p[sel[i]] + pos[i] > args.tot_len:
             asgn_a = pos[i] - arc_pos_a[sel[i]]
-            rang_p = total_length - pos[i] + arc_pos_a[sel[i]]
-            if sig_grp is None:
+            rang_p = args.tot_len - pos[i] + arc_pos_a[sel[i]]
+            if args.sig_grp is None:
                 lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
         else:
             asgn_a = pos[i] - arc_pos_a[sel[i]]
             asgn_p = pos[i] + arc_pos_p[sel[i]]
-            if sig_grp is None:
+            if args.sig_grp is None:
                 lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
 
     # Get simulated noise
     noi_idx = np.random.randint(0, len(noise))
-    noi_pos = np.random.randint(total_length, len(noise[noi_idx]))
-    if noi_fac is None:
-        lbl['noise'] = noise[noi_idx][(noi_pos - total_length):noi_pos]
+    noi_pos = np.random.randint(args.tot_len, len(noise[noi_idx]))
+    if args.noi_fac is None:
+        lbl['noise'] = noise[noi_idx][(noi_pos - args.tot_len):noi_pos]
     else:
-        lbl['noise'] = noise[noi_idx][(noi_pos - total_length):noi_pos] * np.random.uniform(noi_fac[0], noi_fac[1])
+        lbl['noise'] = np.multiply(noise[noi_idx][(noi_pos - args.tot_len):noi_pos],
+                                   np.random.uniform(args.noi_fac[0], args.noi_fac[1]))
     # Apply baseline shifting
-    if (bsl_meth is not None) or (bsl_meth != []):
-        meth = np.random.choice(bsl_meth)
+    if args.bsl_meth is not None:
+        meth = np.random.choice(args.bsl_meth)
         if meth == 'cst':
-            lbl['noise'] = np.add(lbl['noise'], np.random.uniform(amp_rng[0], amp_rng[1]))
+            lbl['noise'] = np.add(lbl['noise'], np.random.uniform(args.bsl_amps[0], args.bsl_amps[1]))
         elif meth == 'lin':
-            lbl['noise'] = np.add(lbl['noise'], bsl_sft_lin(total_length, amp_rng))
+            lbl['noise'] = np.add(lbl['noise'], bsl_sft_lin(args.tot_len, args.bsl_amps))
         elif meth == 'sin':
-            lbl['noise'] = np.add(lbl['noise'], bsl_sft_sin(total_length, freq, amp_rng, freq_rng))
+            lbl['noise'] = np.add(lbl['noise'], bsl_sft_sin(args.tot_len, args.freq, args.bsl_amps, args.bsl_freq))
         else:
             pass
 
@@ -167,4 +169,4 @@ for n in range(n_sim_data):
     # Save and report
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), lbl)  # Write label file
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), sig)  # Write signal file
-    prog_print(n + 1, n_sim_data, "Progress:", "simulated data created.")
+    prog_print(n + 1, args.num_sim, "Progress:", "simulated data created.")

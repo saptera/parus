@@ -1,15 +1,14 @@
 import os
+import argparse
 import matplotlib.pyplot as plt
 from parus.data.file_io import pklz_read
 
-"""This SCRIPT displays model prediction data versus its inputs.
-"""
-""" Parameters:
-    path (str): Prediction results files location.
-"""
 
-# Parameters input  -------------------------------------------------------------------------------------------------- #
-path = "./pred/"
+# CLI inputs parser  ------------------------------------------------------------------------------------------------- #
+parser = argparse.ArgumentParser(prog="DMIR", description="Display model prediction results versus its inputs")
+parser.add_argument('-v', '--version', action='version', version="Display inference results: v1.0")
+parser.add_argument('path', type=str, metavar="resultsFolder", help="[%(type)s] Prediction results files location")
+args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
@@ -51,7 +50,7 @@ def on_press(event):
 
 
 # Read file list in defined path
-pred_flst = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.sim')]
+pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
 n = len(pred_flst) - 1
 i = 0  # Global variable
 
