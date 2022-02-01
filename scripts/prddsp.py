@@ -5,8 +5,8 @@ from parus.data.file_io import pklz_read
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="DMIR", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Display inference results: v1.0")
+parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.1")
 parser.add_argument('path', type=str, metavar="resultsFolder", help="[%(type)s] Prediction results files location")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #

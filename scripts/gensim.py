@@ -7,9 +7,9 @@ from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="GSNS", description="Generate simulated neural signals",
-                                 epilog="Simulated neuronal signal data uses for model training ONLY")
-parser.add_argument('-v', '--version', action='version', version="Generate simulated neural signals: v3.0")
+parser = argparse.ArgumentParser(prog="ParusGenSim", description="Generate simulated neural signals",
+                                 epilog="Generated simulated neural signal data use for model training ONLY")
+parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v3.1")
 # Sample source definition (positional)
 parser.add_argument('arc_dir', type=str, metavar="signalFolder",
                     help="[%(type)s] Directory containing archived signal data (*.arc)")
@@ -62,7 +62,7 @@ def sig_asgn_lst(low, high, max_pos, sig_count):
         sig_count (int): Number of different signals to be assigned.
 
     Returns:
-        tuple[list[int], list[int]]: sel_list (list[int]): Signal selection list.
+        tuple[list[int], list[int]]: sel_lst (list[int]): Signal selection list.
                                      pos_lst (list[int]): Signal position list.
     """
     sel_lst = []  # INIT VAR
