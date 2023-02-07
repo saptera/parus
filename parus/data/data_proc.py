@@ -14,6 +14,7 @@ neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract ne
 neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
 neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
 trn_plot(file, overlay=True): Plot model training related files.
+pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
 """
 
 
@@ -246,3 +247,22 @@ def trn_plot(file, overlay=True):
     else:
         warnings.warn("Invalid extension [%s] for this function, plot aborted!" % file_ext, Warning, stacklevel=2)
         return
+
+
+def pred_mae(data, th=35):
+    """ Get evaluation score of predicted signal, by computing MAE.
+
+    Args:
+        data (dict): Denoised signal output from model, structure as below:
+            'inp': (np.ndarray): Input signal
+            'prd': (np.ndarray): Predicted signal
+            'lbl': (np.ndarray): Signal label
+        th (int or float): Quality threshold (default: 10)
+
+    Returns:
+        tuple[float, bool]: score: {FLOAT} Evaluation score
+                            q: {BOOL} Quality check result
+    """
+    score = np.mean(np.abs(np.subtract(data['lbl'], data['prd']))).item()
+    q = score < th
+    return score, q
