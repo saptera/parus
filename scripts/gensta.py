@@ -119,33 +119,43 @@ for i, p in enumerate(arc_wedges):
 
 # Plotting average signal occurrence number of each simulated file with Bar Chart
 ax = axs[1][2]
-ax.set_title("Signal Occurrence Per File")
+ax.set_title("Signal Feature")
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.set_xlabel("# Occurrence")
-ax.set_ylabel("Probability Density")
+ax.set_xlabel("Signal Composition")
+ax.set_ylabel("Occurrence Probability (%)")
+plt.xticks(rotation=45)
 # Arrange data
 if gen_feat['args']['sig_grp'] is None:
+    # Acquire and count unique occurrence
     occ_dat = np.asarray(gen_feat['prop']['grp_cnt']['none'])
-    occ_bin = np.max(occ_dat)
+    occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True)
+    # Convert counting to plot ratio information
+    occ_plt = [occ_cnt / gen_feat['args']['num_sim']]
+    occ_cmp = [str(item) for item in occ_uni]
+    # Statistics for legend
     occ_avg = [np.mean(occ_dat).item()]
     occ_std = [np.std(occ_dat).item()]
     occ_lbl = ["Signal (%.2f±%.2f)" % (occ_avg[0], occ_std[0])]
     occ_color = [plt.cm.Set2(1)]
 else:
-    occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']]).T
-    occ_bin = np.max(occ_dat, axis=None)
-    occ_avg = np.mean(occ_dat, axis=0)
-    occ_std = np.std(occ_dat, axis=0)
+    # Acquire and count unique compositions
+    occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']])
+    occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True, axis=1)
+    # Convert counting to plot ratio information
+    occ_plt = occ_cnt / np.sum(occ_uni, axis=0) * occ_uni / gen_feat['args']['num_sim']
+    occ_cmp = ['-'.join([str(item) for item in pair]) for pair in occ_uni.T]
+    # Statistics for legend
+    occ_avg = np.mean(occ_dat, axis=1)
+    occ_std = np.std(occ_dat, axis=1)
     occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
     occ_color = [plt.cm.Set2(i / (len(occ_lbl) - 1)) for i in range(len(occ_lbl))]
 # Plot data
-_, occ_b, _ = ax.hist(occ_dat, bins=occ_bin, label=occ_lbl, color=occ_color, density=True, histtype='bar', stacked=True)
-# Plot estimation curve
 for i in range(len(occ_lbl)):
-    y = ((1 / (np.sqrt(2 * np.pi) * occ_std[i])) * np.exp(-0.5 * (1 / occ_std[i] * (occ_b - occ_avg[i])) ** 2))
-    color = (occ_color[i][0] * 0.75, occ_color[i][1] * 0.75, occ_color[i][2] * 0.75, 1.0)
-    ax.plot(occ_b, y, '--', color=color)
+    if i == 0:
+        ax.bar(occ_cmp, occ_plt[i], label=occ_lbl[i], color=occ_color[i])
+    else:
+        ax.bar(occ_cmp, occ_plt[i], label=occ_lbl[i], color=occ_color[i], bottom=occ_plt[i-1])
 ax.legend()
 
 
