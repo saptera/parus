@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 """Function list:
 # Basic file IO functions:
     pklz_read(file): Read compressed pickled data from a file.
-    pklz_write(file, data): Write compressed pickled data to a file.
+    pklz_write(file, data, level=-1): Write compressed pickled data to a file.
     cjsh_read(file): Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
-    cjsh_write(file, data): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
+    cjsh_write(file, data, level=9): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
 # Neural data file IO functions:
   -> ARC data structure definition
     arc_read(arc_file): Read archival neural signal data file.
@@ -30,10 +30,10 @@ def pklz_read(file):
     """ Read compressed pickled data from a file.
 
     Args:
-        file (str): File contained compressed pickled data (*.*).
+        file (str): File contained compressed pickled data (*.*)
 
     Returns:
-        data: Imported data.
+        data: Imported data
     """
     with open(file, 'rb') as infile:
         comp = pkl.load(infile)
@@ -41,30 +41,35 @@ def pklz_read(file):
     return data
 
 
-def pklz_write(file, data):
+def pklz_write(file, data, level=-1):
     """ Write compressed pickled data to a file.
 
     Args:
-        file (str): File to write data (*.*).
-        data: Any type of picklable data.
+        file (str): File to write data (*.*)
+        data: Any type of picklable data
+        level (int): Compress level of input data, valid value [-1, 9] (default: -1)
 
     Returns:
-        bool: File creation status.
+        bool: File creation status
     """
-    comp = zlib.compress(pkl.dumps(data, protocol=None))
-    with open(file, 'wb') as outfile:
-        pkl.dump(comp, outfile, protocol=None)
-    return True
+    comp = zlib.compress(pkl.dumps(data, protocol=None), level=level)
+    try:
+        with open(file, 'wb') as outfile:
+            pkl.dump(comp, outfile, protocol=None)
+        return True
+    except OSError as x:
+        warnings.warn("[Errno %d] when writing file '%s': %s" % (x.errno, file, x.strerror), Warning, stacklevel=2)
+        return False
 
 
 def cjsh_read(file):
     """ Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
 
     Args:
-        file (str): File contained compressed JSON data (*.*).
+        file (str): File contained compressed JSON data (*.*)
 
     Returns:
-        Imported data.
+        Imported data
     """
     # Read data from the file
     with open(file, 'rb') as infile:
@@ -81,27 +86,32 @@ def cjsh_read(file):
     return data
 
 
-def cjsh_write(file, data):
+def cjsh_write(file, data, level=9):
     """ Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
 
     Args:
-        file (str): Output file name.
-        data: Any type of data that is JSON serializable.
+        file (str): Output file name
+        data: Any type of data that is JSON serializable
+        level (int): Compress level of input data, valid value [-1, 9] (default: 9)
 
     Returns:
-        bool: File creation status.
+        bool: File creation status
     """
     # Serialize input data to JSON format
     serialized = json.dumps(data, skipkeys=False, ensure_ascii=False, allow_nan=True).encode('utf-8')
     # Compress and hash the serialized data
-    compressed = base64.b64encode(zlib.compress(serialized, level=9)).decode('ascii')
+    compressed = base64.b64encode(zlib.compress(serialized, level=level)).decode('ascii')
     checksum = hashlib.sha256(serialized).hexdigest()
     # Compress the processed data with its hash value
-    outdata = zlib.compress(json.dumps({'arc': compressed, 'cks': checksum}).encode('ascii'), level=9)
+    outdata = zlib.compress(json.dumps({'arc': compressed, 'cks': checksum}).encode('ascii'), level=0)
     # Write to the file
-    with open(file, 'wb') as outfile:
-        outfile.write(outdata)
-    return True
+    try:
+        with open(file, 'wb') as outfile:
+            outfile.write(outdata)
+        return True
+    except OSError as x:
+        warnings.warn("[Errno %d] when writing file '%s': %s" % (x.errno, file, x.strerror), Warning, stacklevel=2)
+        return False
 
 
 # Neural data file IO functions -------------------------------------------------------------------------------------- #
@@ -153,10 +163,10 @@ def arc_read(arc_file):
     """ Read archival neural signal data file.
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (*.arc).
+        arc_file (str): File contained archival neuronal signal data (*.arc)
 
     Returns:
-        dict: Archival neuronal signal sample, defined above.
+        dict: Archival neuronal signal sample, defined above
     """
     # Read file
     arc_data = cjsh_read(arc_file)
@@ -184,11 +194,11 @@ def arc_write(arc_file, arc_data):
     """ Write archival neural signal data file.
 
     Args:
-        arc_file (str): File to write archival neuronal signal data (*.arc).
-        arc_data (dict): Archival neuronal signal, defined above.
+        arc_file (str): File to write archival neuronal signal data (*.arc)
+        arc_data (dict): Archival neuronal signal, defined above
 
     Returns:
-        bool: File creation status.
+        bool: File creation status
     """
     # Verify signal data
     if 'data' in arc_data:
@@ -207,7 +217,7 @@ def arc_write(arc_file, arc_data):
         warnings.warn("Missing metadata in [%s], file not created!" % arc_file, Warning, stacklevel=2)
         return False
     # Saving data
-    cjsh_write(arc_file, arc_data)
+    cjsh_write(arc_file, arc_data, level=9)
     return True
 
 
@@ -215,11 +225,11 @@ def arc_plot(arc_file, save=False):
     """ Plot archival neural signal data.
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (*.arc).
-        save (bool): Defines if the figure should be saved. (default: False)
+        arc_file (str): File contained archival neuronal signal data (*.arc)
+        save (bool): Defines if the figure should be saved (default: False)
 
     Returns:
-        str: Name of created figure.
+        str: Name of created figure
     """
     # Import data
     data = arc_read(arc_file)['data']
@@ -292,10 +302,10 @@ def noi_read(noi_file):
     """ Read recording noise sample file.
 
     Args:
-        noi_file (str): File contained archival neuronal signal data (*.noi).
+        noi_file (str): File contained archival neuronal signal data (*.noi)
 
     Returns:
-        dict: Neuronal recording noise sample, defined above.
+        dict: Neuronal recording noise sample, defined above
     """
     # Read file
     noi_data = cjsh_read(noi_file)
@@ -323,11 +333,11 @@ def noi_write(noi_file, noi_data):
     """ Write recording noise sample file.
 
     Args:
-        noi_file (str): File to write recording noise sample data (*.noi).
-        noi_data (dict): Neuronal recording noise sample, defined above.
+        noi_file (str): File to write recording noise sample data (*.noi)
+        noi_data (dict): Neuronal recording noise sample, defined above
 
     Returns:
-        bool: File creation status.
+        bool: File creation status
     """
     # Verify noise data
     if 'data' in noi_data:
@@ -346,5 +356,5 @@ def noi_write(noi_file, noi_data):
         warnings.warn("Missing metadata in [%s], file not created!" % noi_file, Warning, stacklevel=2)
         return False
     # Saving data
-    cjsh_write(noi_file, noi_data)
+    cjsh_write(noi_file, noi_data, level=9)
     return True

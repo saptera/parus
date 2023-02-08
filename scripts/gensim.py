@@ -195,8 +195,8 @@ for n in range(args.num_sim):
         sig = np.add(sig, i)
 
     # Save and report
-    pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), lbl)  # Write label file
-    pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), sig)  # Write signal file
+    pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), lbl, level=-1)  # Write label file
+    pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), sig, level=-1)  # Write signal file
     prog_print(n + 1, args.num_sim, "Progress:", "simulated data created.")
 
 # Arrange and save generation statistics
@@ -205,5 +205,5 @@ rep_file = os.path.join(args.out_dir, "gen_rep.cjh")
 gen_rep['prop'] = {
     'arc_cnt': arc_stat, 'grp_cnt': grp_stat, 'sig_fac': sig_fac_stat, 'noi_fac': noi_fac_stat, 'bsl_cnt': noi_bls_stat
 }
-cjsh_write(rep_file, gen_rep)
+cjsh_write(rep_file, gen_rep, level=9)
 print("Process done, call [python gensta.py %s] to visualize generation statistics." % rep_file)
