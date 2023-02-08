@@ -28,7 +28,10 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_xlabel("Multiplier Value")
 ax.set_ylabel("Multiplier Occurrence")
-ax.set_xlim(gen_feat['args']['sig_fac'][0], gen_feat['args']['sig_fac'][1])
+if gen_feat['args']['sig_fac'] is None:
+    ax.set_xlim(0.5, 1.5)
+else:
+    ax.set_xlim(gen_feat['args']['sig_fac'][0], gen_feat['args']['sig_fac'][1])
 # Plot data
 smp_n, _, smp_pch = ax.hist(gen_feat['prop']['sig_fac'], bins=100)
 smp_norm = (smp_n - smp_n.min()) / (smp_n.max() - smp_n.min())
@@ -44,7 +47,10 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_xlabel("Multiplier Value")
 ax.set_ylabel("Multiplier Occurrence")
-ax.set_xlim(gen_feat['args']['noi_fac'][0], gen_feat['args']['noi_fac'][1])
+if gen_feat['args']['noi_fac'] is None:
+    ax.set_xlim(0.5, 1.5)
+else:
+    ax.set_xlim(gen_feat['args']['noi_fac'][0], gen_feat['args']['noi_fac'][1])
 # Plot data
 nmp_n, _, nmp_pch = ax.hist(gen_feat['prop']['noi_fac'], bins=100)
 nmp_norm = (nmp_n - nmp_n.min()) / (nmp_n.max() - nmp_n.min())
