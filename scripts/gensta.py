@@ -1,0 +1,169 @@
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+from parus.data.file_io import cjsh_read
+
+# CLI inputs parser  ------------------------------------------------------------------------------------------------- #
+parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.0")
+parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
+args = parser.parse_args()
+# -------------------------------------------------------------------------------------------------------------------- #
+
+
+# Read file
+gen_feat = cjsh_read(args.file)
+# Initialize figure
+fig, axs = plt.subplots(2, 3, num="Simulated Neural Signal Generation Overview")
+fig.suptitle("Simulated Neural Signal Generation Overview [%d @ %1.1fkHz * %d]" %
+             (gen_feat['args']['tot_len'], gen_feat['args']['freq'] / 1000, gen_feat['args']['num_sim']))
+fig.tight_layout()
+
+
+# Plotting signal randomized multiplier with Histogram
+ax = axs[0][0]
+ax.set_title("Signal Multiplier Distribution")
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_xlabel("Multiplier Value")
+ax.set_ylabel("Multiplier Occurrence")
+ax.set_xlim(gen_feat['args']['sig_fac'][0], gen_feat['args']['sig_fac'][1])
+# Plot data
+smp_n, _, smp_pch = ax.hist(gen_feat['prop']['sig_fac'], bins=100)
+smp_norm = (smp_n - smp_n.min()) / (smp_n.max() - smp_n.min())
+for f, p in zip(smp_norm, smp_pch):
+    color = plt.cm.viridis(f)
+    p.set_facecolor(color)
+
+
+# Plotting noise randomized multiplier with Histogram
+ax = axs[0][1]
+ax.set_title("Noise Multiplier Distribution")
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_xlabel("Multiplier Value")
+ax.set_ylabel("Multiplier Occurrence")
+ax.set_xlim(gen_feat['args']['noi_fac'][0], gen_feat['args']['noi_fac'][1])
+# Plot data
+nmp_n, _, nmp_pch = ax.hist(gen_feat['prop']['noi_fac'], bins=100)
+nmp_norm = (nmp_n - nmp_n.min()) / (nmp_n.max() - nmp_n.min())
+for f, p in zip(nmp_norm, nmp_pch):
+    color = plt.cm.plasma(f)
+    p.set_facecolor(color)
+
+
+# Plotting baseline shift mode ratio of with Pie Chart
+ax = axs[0][2]
+ax.set_title("Simulated Baseline Shift Mode")
+ax.axis('equal')  # Ensures pie is drawn as a circle
+# Arrange baseline shift data
+if gen_feat['args']['bsl_meth'] is None:
+    sft_lbl = ["No Shift"]
+    sft_dat = [1]
+    sft_explode = [0]
+else:
+    sft_dic = {'cst': "Constant", 'lin': "Linear", 'sin': "Sinusoid", 'esc': "No Shift"}
+    sft_lbl = [sft_dic[k] for k in gen_feat['prop']['bsl_cnt']]
+    sft_dat = [gen_feat['prop']['bsl_cnt'][k] for k in gen_feat['prop']['bsl_cnt']]
+    sft_explode = [0.1] * len(sft_lbl)
+# Plot data
+ax.pie(sft_dat, labels=sft_lbl, explode=sft_explode, autopct='%1.1f%%', shadow=True, startangle=90, counterclock=False)
+
+
+# Plotting occurrence ratio of signal groups with Pie Chart
+ax = axs[1][0]
+ax.set_title("Signal Group Occurrence Ratio")
+ax.axis('equal')  # Ensures pie is drawn as a circle
+# Arrange group data
+if gen_feat['args']['sig_grp'] is None:
+    grp_lbl = ["No Grouping"]
+    grp_dat = [1]
+    grp_explode = [0]
+else:
+    grp_lbl = [k.upper() for k in gen_feat['prop']['grp_cnt']]
+    grp_dat = [sum(gen_feat['prop']['grp_cnt'][k]) for k in gen_feat['prop']['grp_cnt']]
+    grp_explode = [0.1] * len(grp_lbl)
+# Plot data
+ax.pie(grp_dat, labels=grp_lbl, explode=grp_explode,
+       autopct='%1.1f%%', wedgeprops=dict(width=0.75), startangle=90, counterclock=False)
+
+
+# Plotting occurrence ratio of sample signals with Pie Chart
+ax = axs[1][1]
+ax.set_title("Sample Signal Occurrence Ratio")
+ax.axis('equal')  # Ensures pie is drawn as a circle
+# Get spectrum for each signal
+arc_n = len(gen_feat['prop']['arc_cnt'])
+arc_crng = np.concatenate((np.linspace(0.85, 0, arc_n - arc_n // 2), np.linspace(0, 0.85, arc_n // 2)), axis=None)
+arc_crng[1::2] += 0.15
+arc_color = plt.cm.rainbow(arc_crng)
+# Plot data
+arc_wedges, _ = ax.pie(gen_feat['prop']['arc_cnt'],
+                       wedgeprops=dict(width=0.75), startangle=90, counterclock=False, colors=arc_color)
+ax.set_xlabel("Total Number of Signals: %d" % arc_n)
+# Annotate plotted chart
+arc_annot = {}  # INIT VAR
+kw = dict(arrowprops=dict(arrowstyle="->", connectionstyle=""), zorder=0, va="center",
+          bbox=dict(boxstyle="round,pad=0.3", fc="w", ec="k", lw=0.72))
+arc_ratio = np.divide(gen_feat['prop']['arc_cnt'], sum(gen_feat['prop']['arc_cnt'])) * 100
+for i, p in enumerate(arc_wedges):
+    txt = "%s\n $\\bf{%.2f\\%%}$ (%d)" % (gen_feat['file']['sig'][i], arc_ratio[i], gen_feat['prop']['arc_cnt'][i])
+    ang = (p.theta2 - p.theta1) / 2 + p.theta1
+    x = np.cos(np.deg2rad(ang))
+    y = np.sin(np.deg2rad(ang))
+    ha = "right" if x < 0 else "left"
+    kw["arrowprops"]["connectionstyle"] = "angle,angleA=0,angleB=%d" % ang
+    arc_annot[i] = ax.annotate(txt, xy=(x, y), xytext=(1.35 * np.sign(x), 1.4 * y), horizontalalignment=ha, **kw)
+    arc_annot[i].set_visible(False)
+
+
+# Plotting average signal occurrence number of each simulated file with Bar Chart
+ax = axs[1][2]
+ax.set_title("Signal Occurrence Per File")
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.set_xlabel("# Occurrence")
+ax.set_ylabel("Probability Density")
+# Arrange data
+if gen_feat['args']['sig_grp'] is None:
+    occ_dat = np.asarray(gen_feat['prop']['grp_cnt']['none'])
+    occ_bin = np.max(occ_dat)
+    occ_avg = [np.mean(occ_dat).item()]
+    occ_std = [np.std(occ_dat).item()]
+    occ_lbl = ["Signal (%.2f±%.2f)" % (occ_avg[0], occ_std[0])]
+    occ_color = [plt.cm.Set2(1)]
+else:
+    occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']]).T
+    occ_bin = np.max(occ_dat, axis=None)
+    occ_avg = np.mean(occ_dat, axis=0)
+    occ_std = np.std(occ_dat, axis=0)
+    occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
+    occ_color = [plt.cm.Set2(i / (len(occ_lbl) - 1)) for i in range(len(occ_lbl))]
+# Plot data
+_, occ_b, _ = ax.hist(occ_dat, bins=occ_bin, label=occ_lbl, color=occ_color, density=True, histtype='bar', stacked=True)
+# Plot estimation curve
+for i in range(len(occ_lbl)):
+    y = ((1 / (np.sqrt(2 * np.pi) * occ_std[i])) * np.exp(-0.5 * (1 / occ_std[i] * (occ_b - occ_avg[i])) ** 2))
+    color = (occ_color[i][0] * 0.75, occ_color[i][1] * 0.75, occ_color[i][2] * 0.75, 1.0)
+    ax.plot(occ_b, y, '--', color=color)
+ax.legend()
+
+
+# Mouse hover event handler
+def hover(event):
+    for a in axs.flatten():
+        if event.inaxes == a:
+            a.set_zorder(255)
+        else:
+            a.set_zorder(0)
+    # Set dynamic annotation for sample signal occurrence plot
+    if event.inaxes == axs[1][1]:
+        for idx, prt in enumerate(arc_wedges):
+            cont, _ = prt.contains(event)
+            arc_annot[idx].set_visible(cont)
+            fig.canvas.draw_idle()
+
+
+# Show plot
+fig.canvas.mpl_connect("motion_notify_event", hover)
+plt.show()
