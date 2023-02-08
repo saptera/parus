@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from parus.data.file_io import cjsh_read
 
+
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
 parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.0")
@@ -137,7 +138,7 @@ if gen_feat['args']['sig_grp'] is None:
     occ_avg = [np.mean(occ_dat).item()]
     occ_std = [np.std(occ_dat).item()]
     occ_lbl = ["Signal (%.2f±%.2f)" % (occ_avg[0], occ_std[0])]
-    occ_color = [plt.cm.Set2(1)]
+    occ_color = [plt.cm.cividis(0.5)]
 else:
     # Acquire and count unique compositions
     occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']])
@@ -149,7 +150,7 @@ else:
     occ_avg = np.mean(occ_dat, axis=1)
     occ_std = np.std(occ_dat, axis=1)
     occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
-    occ_color = [plt.cm.Set2(i / (len(occ_lbl) - 1)) for i in range(len(occ_lbl))]
+    occ_color = [plt.cm.cividis(i * 0.6 / (len(occ_lbl) - 1) + 0.2) for i in range(len(occ_lbl))]
 # Plot data
 for i in range(len(occ_lbl)):
     if i == 0:
