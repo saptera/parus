@@ -1,7 +1,10 @@
 import argparse
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from parus.data.file_io import cjsh_read
+
+mpl.use('TkAgg')  # Use TkAgg backend
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -28,12 +31,23 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_xlabel("Multiplier Value")
 ax.set_ylabel("Multiplier Occurrence")
-if gen_feat['args']['sig_fac'] is None:
-    ax.set_xlim(0.5, 1.5)
-else:
-    ax.set_xlim(gen_feat['args']['sig_fac'][0], gen_feat['args']['sig_fac'][1])
 # Plot data
-smp_n, _, smp_pch = ax.hist(gen_feat['prop']['sig_fac'], bins=100)
+smp_n, _, smp_pch = ax.hist(gen_feat['prop']['sig_fac'], bins=100, alpha=0.75)
+# Plot distribution info
+if gen_feat['args']['sig_fac'] is not None:
+    # Plot set min/max
+    smp_min = gen_feat['args']['sig_fac'][0]
+    ax.axvline(smp_min, label="Min: %.2f" % smp_min, ls='--', color='peru')
+    smp_max = gen_feat['args']['sig_fac'][1]
+    ax.axvline(smp_max, label="Max: %.2f" % smp_max, ls='--', color='sienna')
+    # Plot stats
+    smp_avg = np.mean(gen_feat['prop']['sig_fac']).item()
+    smp_std = np.std(gen_feat['prop']['sig_fac']).item()
+    ax.axvline(smp_avg, label="Avg: %.2f±%.2f" % (smp_avg, smp_std), ls='--', color='crimson')
+    # Set legend
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.2)
+    ax.legend(loc='upper right')
+# Set histogram color
 smp_norm = (smp_n - smp_n.min()) / (smp_n.max() - smp_n.min())
 for f, p in zip(smp_norm, smp_pch):
     color = plt.cm.viridis(f)
@@ -47,12 +61,23 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_xlabel("Multiplier Value")
 ax.set_ylabel("Multiplier Occurrence")
-if gen_feat['args']['noi_fac'] is None:
-    ax.set_xlim(0.5, 1.5)
-else:
-    ax.set_xlim(gen_feat['args']['noi_fac'][0], gen_feat['args']['noi_fac'][1])
 # Plot data
-nmp_n, _, nmp_pch = ax.hist(gen_feat['prop']['noi_fac'], bins=100)
+nmp_n, _, nmp_pch = ax.hist(gen_feat['prop']['noi_fac'], bins=100, alpha=0.75)
+# Plot distribution info
+if gen_feat['args']['noi_fac'] is not None:
+    # Plot set min/max
+    nmp_min = gen_feat['args']['noi_fac'][0]
+    ax.axvline(nmp_min, label="Min: %.2f" % nmp_min, ls='--', color='steelblue')
+    nmp_max = gen_feat['args']['noi_fac'][1]
+    ax.axvline(nmp_max, label="Max: %.2f" % nmp_max, ls='--', color='royalblue')
+    # Plot stats
+    nmp_avg = np.mean(gen_feat['prop']['noi_fac']).item()
+    nmp_std = np.std(gen_feat['prop']['noi_fac']).item()
+    ax.axvline(nmp_avg, label="Avg: %.2f±%.2f" % (nmp_avg, nmp_std), ls='--', color='forestgreen')
+    # Set legend
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.2)
+    ax.legend(loc='upper right')
+# Set histogram color
 nmp_norm = (nmp_n - nmp_n.min()) / (nmp_n.max() - nmp_n.min())
 for f, p in zip(nmp_norm, nmp_pch):
     color = plt.cm.plasma(f)
@@ -138,7 +163,7 @@ if gen_feat['args']['sig_grp'] is None:
     occ_dat = np.asarray(gen_feat['prop']['grp_cnt']['none'])
     occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True)
     # Convert counting to plot ratio information
-    occ_plt = [occ_cnt / gen_feat['args']['num_sim']]
+    occ_plt = [occ_cnt / gen_feat['args']['num_sim']] * 100
     occ_cmp = [str(item) for item in occ_uni]
     # Statistics for legend
     occ_avg = [np.mean(occ_dat).item()]
@@ -150,7 +175,7 @@ else:
     occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']])
     occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True, axis=1)
     # Convert counting to plot ratio information
-    occ_plt = occ_cnt / np.sum(occ_uni, axis=0) * occ_uni / gen_feat['args']['num_sim']
+    occ_plt = occ_cnt / np.sum(occ_uni, axis=0) * occ_uni / gen_feat['args']['num_sim'] * 100
     occ_cmp = ['-'.join([str(item) for item in pair]) for pair in occ_uni.T]
     # Statistics for legend
     occ_avg = np.mean(occ_dat, axis=1)
@@ -182,5 +207,7 @@ def hover(event):
 
 
 # Show plot
-fig.canvas.mpl_connect("motion_notify_event", hover)
+fig.canvas.mpl_connect('motion_notify_event', hover)
+mng = plt.get_current_fig_manager()
+mng.window.state('zoomed')
 plt.show()
