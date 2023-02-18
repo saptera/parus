@@ -10,7 +10,7 @@ import warnings
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenSim", description="Generate simulated neural signals",
                                  epilog="Generated simulated neural signal data use for model training ONLY")
-parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v4.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.0")
 # Sample source definition (positional)
 parser.add_argument('arc_dir', type=str, metavar="signalFolder",
                     help="[%(type)s] Directory containing archived signal data (*.arc)")
@@ -37,6 +37,8 @@ parser.add_argument('-gr', '--grpratio', dest='grp_rat', nargs='+', type=int or 
                     metavar="[int or float]",
                     help="Occurrence ratio of groups, the order is associated with the group names alphabetical order, "
                          "and suggested to be the same length of group number (default: %(default)s = equally occurs)")
+parser.add_argument('-no', '--noionly', dest='no_rat', type=float, default=0.0, metavar="[float]",
+                    help="Occurrence ratio of noise only data, 0.0<= value <1.0) (default: %(default)s)")
 # Simulated data randomized weighing properties (optional)
 parser.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, default=None, metavar="[float]",
                     help="Signal amplitude multiplication factor [low] [high] (default: %(default)s = disabled)")
@@ -60,9 +62,15 @@ parser.add_argument('-eg', '--example', dest='num_eg', type=int, default=None, m
                     help="Number of extra examples to be generated (default: %(default)s = disabled)")
 # Parse inputs
 args = parser.parse_args()
+
 # Ignore group ratio info at no grouping
 if args.sig_grp is None:
     args.grp_rat = None
+# Validate noise only data ratio
+if args.no_rat < 0.0 or args.no_rat >= 1.0:
+    warnings.warn_explicit("Ratio of noise only data must be >=0.0 and <1.0, use 0.0 instead.",
+                           category=RuntimeWarning, filename="ParusGenSim ['-no', '--noionly']", lineno=7)
+    args.no_rat = 0.0
 # Validate baseline method inputs
 if args.bsl_meth is None:
     args.bsl_comp = None  # Ignore baseline composition info at no baseline shift
@@ -80,13 +88,14 @@ sig_fac_stat = []  # INIT VAR, signal amplitude multiplier recorder
 noi_fac_stat = []  # INIT VAR, noise amplitude multiplier recorder
 noi_bls_stat = {'cst': 0, 'lin': 0, 'sin': 0, 'esc': 0}  # INIT VAR, noise baseline shift mode occurrence recorder
 
+print("Loading selected data:")
 # Acquire archived neuronal signal data
 arc_file = [os.path.join(args.arc_dir, f) for f in os.listdir(args.arc_dir) if f.endswith('.arc')]
 arc_sig = []  # INIT VAR
 arc_typ = []  # INIT VAR
 arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
 arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p] below
-print("Reading archived neural signal data.")
+print("    Reading archived neural signal data.")
 for f in arc_file:
     arc_data = arc_read(f)
     arc_stat.append(0)
@@ -99,7 +108,7 @@ for f in arc_file:
 # Read noise data
 noi_file = [os.path.join(args.noi_dir, f) for f in os.listdir(args.noi_dir) if f.endswith('.noi')]
 noise = []  # INIT VAR
-print("Reading archived recoding noise data.")
+print("    Reading archived recoding noise data.")
 for f in noi_file:
     noise.append(np.array(noi_read(f)['data']['noi']))
 # Get grouping information
@@ -150,14 +159,14 @@ else:
     if len(args.bsl_comp) < len(args.bsl_meth):
         warnings.warn_explicit("Baseline ratio entries (%d) < baseline methods (%d), pad with average."
                                % (len(args.bsl_comp), len(args.bsl_meth)),
-                               category=RuntimeWarning, filename="ParusGenSim ['-bp', '--basecomp'", lineno=10)
+                               category=RuntimeWarning, filename="ParusGenSim ['-bp', '--basecomp'", lineno=11)
         bsl_comp_pad = sum(args.bsl_comp) / len(args.bsl_comp)
         bsl_comp_fit = args.bsl_comp + [bsl_comp_pad for _ in range(len(args.bsl_meth) - len(args.bsl_comp))]  # Pad
         args.bsl_comp = [i / sum(bsl_comp_fit) for i in bsl_comp_fit]  # Normalize to probabilities associations
     elif len(args.bsl_comp) > len(args.bsl_meth):
         warnings.warn_explicit("Baseline ratio entries (%d) > baseline methods (%d), discard extra."
                                % (len(args.bsl_comp), len(args.bsl_meth)),
-                               category=RuntimeWarning, filename="ParusGenSim ['-bp', '--basecomp']", lineno=10)
+                               category=RuntimeWarning, filename="ParusGenSim ['-bp', '--basecomp']", lineno=11)
         bsl_comp_fit = args.bsl_comp[0:len(args.bsl_meth)]  # Slice
         args.bsl_comp = [i / sum(bsl_comp_fit) for i in bsl_comp_fit]  # Normalize to probabilities associations
     else:
@@ -167,7 +176,7 @@ else:
 lbl_out_dir = make_outdir(os.path.join(args.out_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
 sig_out_dir = make_outdir(os.path.join(args.out_dir, "sig/"), err_msg="Invalid simulated signal output directory!")
 if args.num_eg is not None:
-    eg_out_dir = make_outdir(os.path.join(args.out_dir, "egp/"), err_msg="Invalid extra example output directory!")
+    eg_out_dir = make_outdir(os.path.join(args.out_dir, "tst/"), err_msg="Invalid extra example output directory!")
 
 
 # Define local functions --------------------------------------------------------------------------------------------- #
@@ -203,8 +212,12 @@ def sig_asgn_lst(low, high, max_pos, sig_lst, grp_pas=None):
     return sel_lst, pos_lst
 
 
-def gen_sim_sig():
+def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
     """ Generate single simulated signal with its label.
+
+    Args:
+        has_spk (bool): Defines if the simulated data has neuronal spikes (default: True)
+        grp_pas (list[float] or None): Probabilities associations of each group (default: args.grp_rat)
 
     Returns:
         tuple[np.ndarray, dict[str, np.ndarray, str, list[np.ndarray]]]: Generated signal and label
@@ -220,38 +233,39 @@ def gen_sim_sig():
     grp_temp = {k: 0 for k in grp_stat.keys()}  # STAT VAR, grouped signal occurrence per file
 
     # Get simulated signals
-    sel, pos = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, sig_idx, args.grp_rat)
-    for i in range(len(pos)):
-        curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
-        arc_stat[sel[i]] += 1  # STAT
-        sig_fac_stat.append(curr_fac)  # STAT
-        if arc_pos_a[sel[i]] > pos[i]:
-            asgn_p = pos[i] + arc_pos_p[sel[i]]
-            rang_a = arc_pos_a[sel[i]] - pos[i]
-            if args.sig_grp is None:
-                lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
-                grp_temp['none'] += 1  # STAT
+    if has_spk:
+        sel, pos = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, sig_idx, grp_pas)
+        for i in range(len(pos)):
+            curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
+            arc_stat[sel[i]] += 1  # STAT
+            sig_fac_stat.append(curr_fac)  # STAT
+            if arc_pos_a[sel[i]] > pos[i]:
+                asgn_p = pos[i] + arc_pos_p[sel[i]]
+                rang_a = arc_pos_a[sel[i]] - pos[i]
+                if args.sig_grp is None:
+                    lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
+                    grp_temp['none'] += 1  # STAT
+                else:
+                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
+                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
+            elif arc_pos_p[sel[i]] + pos[i] > args.tot_len:
+                asgn_a = pos[i] - arc_pos_a[sel[i]]
+                rang_p = args.tot_len - pos[i] + arc_pos_a[sel[i]]
+                if args.sig_grp is None:
+                    lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
+                    grp_temp['none'] += 1  # STAT
+                else:
+                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
+                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
             else:
-                lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
-                grp_temp[arc_typ[sel[i]]] += 1  # STAT
-        elif arc_pos_p[sel[i]] + pos[i] > args.tot_len:
-            asgn_a = pos[i] - arc_pos_a[sel[i]]
-            rang_p = args.tot_len - pos[i] + arc_pos_a[sel[i]]
-            if args.sig_grp is None:
-                lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
-                grp_temp['none'] += 1  # STAT
-            else:
-                lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
-                grp_temp[arc_typ[sel[i]]] += 1  # STAT
-        else:
-            asgn_a = pos[i] - arc_pos_a[sel[i]]
-            asgn_p = pos[i] + arc_pos_p[sel[i]]
-            if args.sig_grp is None:
-                lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
-                grp_temp['none'] += 1  # STAT
-            else:
-                lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
-                grp_temp[arc_typ[sel[i]]] += 1  # STAT
+                asgn_a = pos[i] - arc_pos_a[sel[i]]
+                asgn_p = pos[i] + arc_pos_p[sel[i]]
+                if args.sig_grp is None:
+                    lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
+                    grp_temp['none'] += 1  # STAT
+                else:
+                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
+                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
     [grp_stat[k].append(grp_temp[k]) for k in grp_stat.keys()]  # STAT SUM
 
     # Get simulated noise
@@ -288,15 +302,17 @@ def gen_sim_sig():
 
 
 # Main process loop
+print("Process generation:")
 for n in range(args.num_sim):
-    gen_sig, gen_lbl = gen_sim_sig()
+    curr_gen = np.random.choice([True, False], size=None, replace=True, p=[1 - args.no_rat, args.no_rat])
+    gen_sig, gen_lbl = gen_sim_dat(has_spk=curr_gen)
     # Save and report
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
-    prog_print(n + 1, args.num_sim, "Progress:", "simulated data created.")
+    prog_print(n + 1, args.num_sim, "    Simulated data generation:", "created.")
 
 # Arrange and save generation statistics
-print("Saving generation report file.")
+print("    Saving generation report file.")
 rep_file = os.path.join(args.out_dir, "gen_rep.cjh")
 gen_rep['prop'] = {
     'arc_cnt': arc_stat, 'grp_cnt': grp_stat, 'sig_fac': sig_fac_stat, 'noi_fac': noi_fac_stat, 'bsl_cnt': noi_bls_stat
@@ -304,11 +320,37 @@ gen_rep['prop'] = {
 cjsh_write(rep_file, gen_rep, level=9)
 
 # Generate extra examples
+print("Extra example generation:")
 if args.num_eg is not None:
-    for n in range(args.num_eg):
-        gen_sig, gen_lbl = gen_sim_sig()
-        pklz_write(os.path.join(eg_out_dir, "sig_eg_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
-        pklz_write(os.path.join(eg_out_dir, "lbl_eg_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
-        prog_print(n + 1, args.num_eg, "Progress:", "extra example created.")
+    # Standard examples, generated that same way as data generation (without noise only data)
+    nrm_eg = args.num_eg // 4 + 1
+    for n in range(nrm_eg):
+        gen_sig, gen_lbl = gen_sim_dat()
+        pklz_write(os.path.join(eg_out_dir, "sig_nrm_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
+        pklz_write(os.path.join(eg_out_dir, "lbl_nrm_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
+        prog_print(n + 1, nrm_eg, "    Standard extra example generation:", "created.")
+    # Special examples, generate signal for each group (if has group) and noise only
+    spc_eg = args.num_eg - nrm_eg
+    if args.sig_grp is None:
+        spc_eg_spk = [[True, None]] * (spc_eg // 2 + 1)
+        spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))
+        spc_eg_lst = spc_eg_spk + spc_eg_noi
+    else:
+        eg_spk_n = spc_eg // (len(grp_dic) + 1)
+        spc_eg_spk = []  # INIT VAR
+        # Get a list of each group member only signal
+        for i in range(len(grp_dic)):
+            spc_grp_pas = [0.0] * len(grp_dic)
+            spc_grp_pas[i] = 1.0
+            spc_eg_spk.append([True, spc_grp_pas])
+        # Set final lists
+        spc_eg_spk = spc_eg_spk * eg_spk_n
+        spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))
+        spc_eg_lst = spc_eg_spk + spc_eg_noi
+    for n in range(spc_eg):
+        gen_sig, gen_lbl = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
+        pklz_write(os.path.join(eg_out_dir, "sig_spc_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
+        pklz_write(os.path.join(eg_out_dir, "lbl_spc_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
+        prog_print(n + 1, spc_eg, "    Special extra example generation:", "created.")
 
 print("Process done, call [python gensta.py %s] to visualize generation statistics." % rep_file)

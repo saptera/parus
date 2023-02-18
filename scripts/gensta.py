@@ -9,7 +9,7 @@ mpl.use('TkAgg')  # Use TkAgg backend
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
-parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.5")
 parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -158,23 +158,29 @@ ax.set_xlabel("Signal Composition")
 ax.set_ylabel("Occurrence Probability (%)")
 plt.xticks(rotation=45)
 # Arrange data
+noi_only = False  # Has pure noise data check flag
 if gen_feat['args']['sig_grp'] is None:
     # Acquire and count unique occurrence
     occ_dat = np.asarray(gen_feat['prop']['grp_cnt']['none'])
     occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True)
     # Convert counting to plot ratio information
-    occ_plt = [occ_cnt / gen_feat['args']['num_sim']] * 100
+    if occ_uni[0] == 0:
+        noi_only = True  # Set flag
+    occ_plt = [occ_cnt / gen_feat['args']['num_sim'] * 100]
     occ_cmp = [str(item) for item in occ_uni]
     # Statistics for legend
     occ_avg = [np.mean(occ_dat).item()]
     occ_std = [np.std(occ_dat).item()]
     occ_lbl = ["Signal (%.2f±%.2f)" % (occ_avg[0], occ_std[0])]
-    occ_color = [mpl.colormaps['cividis'](0.5)]
+    occ_color = [mpl.colormaps['cividis'](0.25)]
 else:
     # Acquire and count unique compositions
     occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']])
     occ_uni, occ_cnt = np.unique(occ_dat, return_counts=True, axis=1)
     # Convert counting to plot ratio information
+    if np.all(occ_uni[:, 0] == 0):
+        occ_uni[0, 0] = 1  # Temporary padding
+        noi_only = True  # Set flag
     occ_plt = occ_cnt / np.sum(occ_uni, axis=0) * occ_uni / gen_feat['args']['num_sim'] * 100
     occ_cmp = ['-'.join([str(item) for item in pair]) for pair in occ_uni.T]
     # Statistics for legend
@@ -182,6 +188,15 @@ else:
     occ_std = np.std(occ_dat, axis=1)
     occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
     occ_color = [mpl.colormaps['cividis'](i * 0.6 / (len(occ_lbl) - 1) + 0.2) for i in range(len(occ_lbl))]
+# Set data for noise only signals
+if noi_only:
+    occ_plt = np.r_[occ_plt, [np.zeros_like(occ_plt[0])]]
+    occ_plt[-1, 0] = occ_plt[0, 0]
+    occ_plt[0, 0] = 0
+    occ_cmp[0] = "None"
+    occ_lbl.append("Noise Only (%.1f%%)" % occ_plt[-1, 0])
+    occ_color.append((0.25, 0.25, 0.25, 1))
+
 # Plot data
 for i in range(len(occ_lbl)):
     if i == 0:
