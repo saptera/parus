@@ -50,7 +50,7 @@ if gen_feat['args']['sig_fac'] is not None:
 # Set histogram color
 smp_norm = (smp_n - smp_n.min()) / (smp_n.max() - smp_n.min())
 for f, p in zip(smp_norm, smp_pch):
-    color = plt.cm.viridis(f)
+    color = mpl.colormaps['viridis'](f)
     p.set_facecolor(color)
 
 
@@ -80,7 +80,7 @@ if gen_feat['args']['noi_fac'] is not None:
 # Set histogram color
 nmp_norm = (nmp_n - nmp_n.min()) / (nmp_n.max() - nmp_n.min())
 for f, p in zip(nmp_norm, nmp_pch):
-    color = plt.cm.plasma(f)
+    color = mpl.colormaps['plasma'](f)
     p.set_facecolor(color)
 
 
@@ -128,7 +128,7 @@ ax.axis('equal')  # Ensures pie is drawn as a circle
 arc_n = len(gen_feat['prop']['arc_cnt'])
 arc_crng = np.concatenate((np.linspace(0.85, 0, arc_n - arc_n // 2), np.linspace(0, 0.85, arc_n // 2)), axis=None)
 arc_crng[1::2] += 0.15
-arc_color = plt.cm.rainbow(arc_crng)
+arc_color = mpl.colormaps['rainbow'](arc_crng)
 # Plot data
 arc_wedges, _ = ax.pie(gen_feat['prop']['arc_cnt'],
                        wedgeprops=dict(width=0.75), startangle=90, counterclock=False, colors=arc_color)
@@ -169,7 +169,7 @@ if gen_feat['args']['sig_grp'] is None:
     occ_avg = [np.mean(occ_dat).item()]
     occ_std = [np.std(occ_dat).item()]
     occ_lbl = ["Signal (%.2f±%.2f)" % (occ_avg[0], occ_std[0])]
-    occ_color = [plt.cm.cividis(0.5)]
+    occ_color = [mpl.colormaps['cividis'](0.5)]
 else:
     # Acquire and count unique compositions
     occ_dat = np.asarray([gen_feat['prop']['grp_cnt'][k] for k in gen_feat['prop']['grp_cnt']])
@@ -181,7 +181,7 @@ else:
     occ_avg = np.mean(occ_dat, axis=1)
     occ_std = np.std(occ_dat, axis=1)
     occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
-    occ_color = [plt.cm.cividis(i * 0.6 / (len(occ_lbl) - 1) + 0.2) for i in range(len(occ_lbl))]
+    occ_color = [mpl.colormaps['cividis'](i * 0.6 / (len(occ_lbl) - 1) + 0.2) for i in range(len(occ_lbl))]
 # Plot data
 for i in range(len(occ_lbl)):
     if i == 0:
@@ -198,6 +198,7 @@ def hover(event):
             a.set_zorder(255)
         else:
             a.set_zorder(0)
+        fig.canvas.draw_idle()
     # Set dynamic annotation for sample signal occurrence plot
     if event.inaxes == axs[1][1]:
         for idx, prt in enumerate(arc_wedges):
