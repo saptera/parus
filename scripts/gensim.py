@@ -239,27 +239,37 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
             curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
             arc_stat[sel[i]] += 1  # STAT
             sig_fac_stat.append(curr_fac)  # STAT
+            # Set signal when the start position is earlier than assigned position
             if arc_pos_a[sel[i]] > pos[i]:
                 asgn_p = pos[i] + arc_pos_p[sel[i]]
                 rang_a = arc_pos_a[sel[i]] - pos[i]
+                # Check the end points for signals with longer length than defined sampling window
+                rang_p = len(arc_sig[sel[i]])
+                if rang_p - rang_a > args.tot_len:
+                    rang_p = rang_a + args.tot_len
+                # Assign signal
                 if args.sig_grp is None:
-                    lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
+                    lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
                     grp_temp['none'] += 1  # STAT
                 else:
-                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:] * curr_fac
+                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
                     grp_temp[arc_typ[sel[i]]] += 1  # STAT
+            # Set signal when the stop position is later than assigned position
             elif arc_pos_p[sel[i]] + pos[i] > args.tot_len:
                 asgn_a = pos[i] - arc_pos_a[sel[i]]
                 rang_p = args.tot_len - pos[i] + arc_pos_a[sel[i]]
+                # Assign signal
                 if args.sig_grp is None:
                     lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
                     grp_temp['none'] += 1  # STAT
                 else:
                     lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
                     grp_temp[arc_typ[sel[i]]] += 1  # STAT
+            # Set signal normally
             else:
                 asgn_a = pos[i] - arc_pos_a[sel[i]]
                 asgn_p = pos[i] + arc_pos_p[sel[i]]
+                # Assign signal
                 if args.sig_grp is None:
                     lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
                     grp_temp['none'] += 1  # STAT
