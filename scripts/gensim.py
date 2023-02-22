@@ -10,7 +10,7 @@ import warnings
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenSim", description="Generate simulated neural signals",
                                  epilog="Generated simulated neural signal data use for model training ONLY")
-parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.1")
 # Sample source definition (positional)
 parser.add_argument('arc_dir', type=str, metavar="signalFolder",
                     help="[%(type)s] Directory containing archived signal data (*.arc)")
@@ -45,14 +45,14 @@ parser.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, defa
 parser.add_argument('-nf', '--noifac', dest='noi_fac', nargs=2, type=float, default=None, metavar="[float]",
                     help="Noise level multiplication factor [low] [high] (default: %(default)s = disabled)")
 # Simulated baseline shifting (optional)
-parser.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin', 'esc'],
-                    default=None, metavar=("{cst, lin, sin, esc}", ""),
+parser.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin', 'nos'],
+                    default=None, metavar=("{cst, lin, sin, nos}", ""),
                     help="Baseline random shifting method: 'cst' = constant, 'lin' = linear, 'sin' = sinusoid, "
-                         "'esc' = no-shift (default: %(default)s = disabled)")
+                         "'nos' = no-shift (default: %(default)s = disabled)")
 parser.add_argument('-bp', '--basecomp', dest='bsl_comp', nargs='+', type=int or float, default=None,
                     metavar="[int or float]",
-                    help="Baseline shift composition ratio of each method, suggested to be the same length as methods "
-                         "(default: %(default)s = equally occurs)")
+                    help="Baseline shift composition ratio of each method, suggested to be the same order and length "
+                         "as methods inputs (default: %(default)s = equally occurs)")
 parser.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, default=None, metavar="[float]",
                     help="Randomize baseline shift amplitude [low] [high] (default: %(default)s = disabled)")
 parser.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
@@ -86,7 +86,7 @@ arc_stat = []  # INIT VAR, ARC file occurrence recorder
 grp_stat = {}  # INIT VAR, grouped signal occurrence recorder
 sig_fac_stat = []  # INIT VAR, signal amplitude multiplier recorder
 noi_fac_stat = []  # INIT VAR, noise amplitude multiplier recorder
-noi_bls_stat = {'cst': 0, 'lin': 0, 'sin': 0, 'esc': 0}  # INIT VAR, noise baseline shift mode occurrence recorder
+noi_bls_stat = {'cst': 0, 'lin': 0, 'sin': 0, 'nos': 0}  # INIT VAR, noise baseline shift mode occurrence recorder
 
 print("Loading selected data:")
 # Acquire archived neuronal signal data
@@ -176,7 +176,7 @@ else:
 lbl_out_dir = make_outdir(os.path.join(args.out_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
 sig_out_dir = make_outdir(os.path.join(args.out_dir, "sig/"), err_msg="Invalid simulated signal output directory!")
 if args.num_eg is not None:
-    eg_out_dir = make_outdir(os.path.join(args.out_dir, "tst/"), err_msg="Invalid extra example output directory!")
+    eg_out_dir = make_outdir(os.path.join(args.out_dir, "eg/"), err_msg="Invalid extra example output directory!")
 
 
 # Define local functions --------------------------------------------------------------------------------------------- #
@@ -343,8 +343,6 @@ if args.num_eg is not None:
     spc_eg = args.num_eg - nrm_eg
     if args.sig_grp is None:
         spc_eg_spk = [[True, None]] * (spc_eg // 2 + 1)
-        spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))
-        spc_eg_lst = spc_eg_spk + spc_eg_noi
     else:
         eg_spk_n = spc_eg // (len(grp_dic) + 1)
         spc_eg_spk = []  # INIT VAR
@@ -353,10 +351,9 @@ if args.num_eg is not None:
             spc_grp_pas = [0.0] * len(grp_dic)
             spc_grp_pas[i] = 1.0
             spc_eg_spk.append([True, spc_grp_pas])
-        # Set final lists
         spc_eg_spk = spc_eg_spk * eg_spk_n
-        spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))
-        spc_eg_lst = spc_eg_spk + spc_eg_noi
+    spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))  # Set noise only examples
+    spc_eg_lst = spc_eg_spk + spc_eg_noi  # Set final list
     for n in range(spc_eg):
         gen_sig, gen_lbl = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
         pklz_write(os.path.join(eg_out_dir, "sig_spc_%05d.sim" % n), gen_sig, level=-1)  # Write signal file

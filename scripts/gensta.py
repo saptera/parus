@@ -9,7 +9,7 @@ mpl.use('TkAgg')  # Use TkAgg backend
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
-parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.5")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.6")
 parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -94,7 +94,7 @@ if gen_feat['args']['bsl_meth'] is None:
     sft_dat = [1]
     sft_explode = [0]
 else:
-    sft_dic = {'cst': "Constant", 'lin': "Linear", 'sin': "Sinusoid", 'esc': "No Shift"}
+    sft_dic = {'cst': "Constant", 'lin': "Linear", 'sin': "Sinusoid", 'nos': "No Shift"}
     sft_lbl = [sft_dic[k] for k in gen_feat['prop']['bsl_cnt']]
     sft_dat = [gen_feat['prop']['bsl_cnt'][k] for k in gen_feat['prop']['bsl_cnt']]
     sft_explode = [0.1] * len(sft_lbl)
