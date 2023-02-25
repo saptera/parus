@@ -98,19 +98,23 @@ arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p
 print("    Reading archived neural signal data.")
 for f in arc_file:
     arc_data = arc_read(f)
-    arc_stat.append(0)
     # Get samples
     arc_sig.append(np.array(arc_data['data']['sig'][arc_data['data']['rng'][0]:arc_data['data']['rng'][1]]))
     arc_typ.append(None if args.sig_grp is None else arc_data['meta']['neuron'][args.sig_grp])
     # Get signal position
     arc_pos_a.append(arc_data['data']['pos'] - arc_data['data']['rng'][0])
     arc_pos_p.append(arc_data['data']['rng'][1] - arc_data['data']['pos'])
+    # Save input file information to reporting dictionary
+    arc_stat.append(0)
+    gen_rep['file']['sig'].append(os.path.splitext(os.path.split(f)[1])[0])
 # Read noise data
 noi_file = [os.path.join(args.noi_dir, f) for f in os.listdir(args.noi_dir) if f.endswith('.noi')]
 noise = []  # INIT VAR
 print("    Reading archived recoding noise data.")
 for f in noi_file:
     noise.append(np.array(noi_read(f)['data']['noi']))
+    # Save input file information to reporting dictionary
+    gen_rep['file']['noi'].append(os.path.splitext(os.path.split(f)[1])[0])
 # Get grouping information
 grp_dic = {}  # INIT VAR
 if args.sig_grp is not None:
@@ -127,9 +131,6 @@ if args.sig_grp is not None:
 else:
     sig_idx = [list(range(len(arc_sig)))]
     grp_stat['none'] = []
-# Save input file information to generation reporting dictionary
-gen_rep['file']['sig'] = [os.path.splitext(os.path.split(f)[1])[0] for f in arc_file]
-gen_rep['file']['noi'] = [os.path.splitext(os.path.split(f)[1])[0] for f in noi_file]
 
 # Verify and set group occurrence ratio settings
 if args.grp_rat is None:
@@ -239,43 +240,19 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
             curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
             arc_stat[sel[i]] += 1  # STAT
             sig_fac_stat.append(curr_fac)  # STAT
-            # Set signal when the start position is earlier than assigned position
-            if arc_pos_a[sel[i]] > pos[i]:
-                asgn_p = pos[i] + arc_pos_p[sel[i]]
-                rang_a = arc_pos_a[sel[i]] - pos[i]
-                # Check the end points for signals with longer length than defined sampling window
-                rang_p = len(arc_sig[sel[i]])
-                if rang_p - rang_a > args.tot_len:
-                    rang_p = rang_a + args.tot_len
-                # Assign signal
-                if args.sig_grp is None:
-                    lbl['signal'][sel[i]][:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
-                    grp_temp['none'] += 1  # STAT
-                else:
-                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
-                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
-            # Set signal when the stop position is later than assigned position
-            elif arc_pos_p[sel[i]] + pos[i] > args.tot_len:
-                asgn_a = pos[i] - arc_pos_a[sel[i]]
-                rang_p = args.tot_len - pos[i] + arc_pos_a[sel[i]]
-                # Assign signal
-                if args.sig_grp is None:
-                    lbl['signal'][sel[i]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
-                    grp_temp['none'] += 1  # STAT
-                else:
-                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:] = arc_sig[sel[i]][:rang_p] * curr_fac
-                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
-            # Set signal normally
+            # Set signal assign range
+            asgn_a = max(pos[i] - arc_pos_a[sel[i]], 0)
+            asgn_p = min(pos[i] + arc_pos_p[sel[i]], args.tot_len)
+            # Set signal slice range
+            rang_a = arc_pos_a[sel[i]] - pos[i] + asgn_a
+            rang_p = rang_a - asgn_a + asgn_p
+            # Assign signal
+            if args.sig_grp is None:
+                lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
+                grp_temp['none'] += 1  # STAT
             else:
-                asgn_a = pos[i] - arc_pos_a[sel[i]]
-                asgn_p = pos[i] + arc_pos_p[sel[i]]
-                # Assign signal
-                if args.sig_grp is None:
-                    lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
-                    grp_temp['none'] += 1  # STAT
-                else:
-                    lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]] * curr_fac
-                    grp_temp[arc_typ[sel[i]]] += 1  # STAT
+                lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
+                grp_temp[arc_typ[sel[i]]] += 1  # STAT
     [grp_stat[k].append(grp_temp[k]) for k in grp_stat.keys()]  # STAT SUM
 
     # Get simulated noise
