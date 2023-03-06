@@ -6,8 +6,9 @@ from parus.data.file_io import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.1")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
 parser.add_argument('path', type=str, metavar="resultsFolder", help="[%(type)s] Prediction results files location")
+parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -17,8 +18,12 @@ def update_figure():
     # Read and process prediction data
     data = pklz_read(pred_flst[i])
     x = list(range(len(data['lbl'])))
-    inp = data['inp'] / -data['inp'].min()
-    prd = data['prd'] / -data['prd'].min()
+    if args.norm:
+        inp = data['inp'] / max(abs(data['inp'].min()), abs(data['inp'].max()))
+        prd = data['prd'] / max(abs(data['prd'].min()), abs(data['inp'].max()))
+    else:
+        inp = data['inp']
+        prd = data['prd']
     # Plotting
     ax.clear()
     ax.set_title("Viewing: %s" % os.path.split(pred_flst[i])[1])
