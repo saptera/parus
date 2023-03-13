@@ -1,0 +1,223 @@
+import torch
+import numpy as np
+
+class DilatedCausalConv1d(torch.nn.Module):
+    """Dilated Causal Convolution for WaveNet"""
+    def __init__(self, channels, dilation=1):
+        super(DilatedCausalConv1d, self).__init__()
+
+        self.conv = torch.nn.Conv1d(channels, channels,
+                                    kernel_size=2, stride=1,  # Fixed for WaveNet
+                                    dilation=dilation,
+                                    padding=dilation,  # Fixed for WaveNet dilation
+                                    bias=True)  # Fixed for WaveNet but not sure
+        
+        self.dilation = dilation
+
+    def init_weights_for_test(self):
+        for m in self.modules():
+            if isinstance(m, torch.nn.Conv1d):
+                m.weight.data.fill_(0.5)
+
+    def forward(self, x):
+        output = self.conv(x)[:,:,:-self.dilation]
+        return output
+
+
+class CausalConv1d(torch.nn.Module):
+    """Causal Convolution for WaveNet"""
+    def __init__(self, in_channels, out_channels):
+        super(CausalConv1d, self).__init__()
+
+        # padding=1 for same size(length) between input and output for causal convolution
+        self.conv = torch.nn.Conv1d(in_channels, out_channels,
+                                    kernel_size=2, stride=1, padding=1,
+                                    bias=True)  # Fixed for WaveNet but not sure
+
+    def init_weights_for_test(self):
+        for m in self.modules():
+            if isinstance(m, torch.nn.Conv1d):
+                m.weight.data.fill_(0.5)
+
+    def forward(self, x):
+        output = self.conv(x)
+
+        # remove last value for causal convolution
+        return output[:, :, :-1]
+
+
+class ResidualBlock(torch.nn.Module):
+    def __init__(self, res_channels, skip_channels, dilation):
+        """
+        Residual block
+        :param res_channels: number of residual channel for input, output
+        :param skip_channels: number of skip channel for output
+        :param dilation:
+        """
+        super(ResidualBlock, self).__init__()
+
+        self.dilated = DilatedCausalConv1d(res_channels, dilation=dilation)
+        self.conv_res = torch.nn.Conv1d(res_channels, res_channels, 1)
+        self.conv_skip = torch.nn.Conv1d(res_channels, skip_channels, 1)
+
+        self.gate_tanh = torch.nn.Tanh()
+        self.gate_sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, x, skip_size):
+        """
+        :param x:
+        :param skip_size: The last output size for loss and prediction
+        :return:
+        """
+        output = self.dilated(x)
+
+        # PixelCNN gate
+        gated_tanh = self.gate_tanh(output)
+        gated_sigmoid = self.gate_sigmoid(output)
+        gated = gated_tanh * gated_sigmoid
+
+        # Residual network
+        output = self.conv_res(gated)
+        input_cut = x[:, :, -output.size(2):]
+        output += input_cut
+
+        # Skip connection
+        skip = self.conv_skip(gated)
+        skip = skip[:, :, -skip_size:]
+
+        return output, skip
+
+
+class ResidualStack(torch.nn.Module):
+    def __init__(self, layer_size, stack_size, res_channels, skip_channels):
+        """
+        Stack residual blocks by layer and stack size
+        :param layer_size: integer, 10 = layer[dilation=1, dilation=2, 4, 8, 16, 32, 64, 128, 256, 512]
+        :param stack_size: integer, 5 = stack[layer1, layer2, layer3, layer4, layer5]
+        :param res_channels: number of residual channel for input, output
+        :param skip_channels: number of skip channel for output
+        :return:
+        """
+        super(ResidualStack, self).__init__()
+
+        self.layer_size = layer_size
+        self.stack_size = stack_size
+
+        self.res_blocks = self.stack_res_block(res_channels, skip_channels)
+
+    @staticmethod
+    def _residual_block(res_channels, skip_channels, dilation):
+        block = ResidualBlock(res_channels, skip_channels, dilation)
+
+        if torch.cuda.device_count() > 1:
+            block = torch.nn.DataParallel(block)
+
+        if torch.cuda.is_available():
+            block.cuda()
+
+        return block
+
+    def build_dilations(self):
+        dilations = []
+
+        # 5 = stack[layer1, layer2, layer3, layer4, layer5]
+        for s in range(0, self.stack_size):
+            # 10 = layer[dilation=1, dilation=2, 4, 8, 16, 32, 64, 128, 256, 512]
+            for l in range(0, self.layer_size):
+                dilations.append(2 ** l)
+
+        return dilations
+
+    def stack_res_block(self, res_channels, skip_channels):
+        """
+        Prepare dilated convolution blocks by layer and stack size
+        :return:
+        """
+        res_blocks = []
+        dilations = self.build_dilations()
+
+        for dilation in dilations:
+            block = self._residual_block(res_channels, skip_channels, dilation)
+            res_blocks.append(block)
+
+        return res_blocks
+
+    def forward(self, x, skip_size):
+        """
+        :param x:
+        :param skip_size: The last output size for loss and prediction
+        :return:
+        """
+        output = x
+        skip_connections = []
+
+        for res_block in self.res_blocks:
+            # output is the next input
+            output, skip = res_block(output, skip_size)
+            skip_connections.append(skip)
+
+        return torch.stack(skip_connections)
+
+
+class DensNet(torch.nn.Module):
+    def __init__(self, channels):
+        """
+        The last network of WaveNet
+        :param channels: number of channels for input and output
+        :return:
+        """
+        super(DensNet, self).__init__()
+
+        self.conv1 = torch.nn.Conv1d(1, channels, 1)
+        self.conv2 = torch.nn.Conv1d(channels, channels, 1)
+        self.relu = torch.nn.ReLU()
+        self.linear = torch.nn.Linear(300,300)
+
+    def forward(self, x):
+        #print("DensNet Input:", x.shape)
+        output = self.linear(x)
+        output = self.conv1(output)
+        output = self.linear(output)
+        output = self.conv2(output)
+        #output = self.linear(output)
+        return output
+
+
+class WaveNet(torch.nn.Module):
+    def __init__(self, layer_size, stack_size, in_channels, res_channels):
+        """
+        Stack residual blocks by layer and stack size
+        :param layer_size: integer, 10 = layer[dilation=1, dilation=2, 4, 8, 16, 32, 64, 128, 256, 512]
+        :param stack_size: integer, 5 = stack[layer1, layer2, layer3, layer4, layer5]
+        :param in_channels: number of channels for input data. skip channel is same as input channel
+        :param res_channels: number of residual channel for input, output
+        :return:
+        """
+        super(WaveNet, self).__init__()
+
+        self.causal = CausalConv1d(in_channels, res_channels)
+
+        self.res_stack = ResidualStack(layer_size, stack_size, res_channels, in_channels)
+
+        self.densnet = DensNet(1)
+
+    def forward(self, x):
+        """
+        The size of timestep(3rd dimention) has to be bigger than receptive fields
+        :param x: Tensor[batch, timestep, channels]
+        :return: Tensor[batch, timestep, channels]
+        """
+        scale = torch.abs(x).max(2, keepdim=True)[0]
+        x /= scale
+
+        output = self.causal(x)
+        #print("causal output: ", output.shape)
+        skip_connections = self.res_stack(output, 300)
+        #print("skip shape: ", skip_connections.shape)
+        output = torch.sum(skip_connections, dim=0)
+        #print("sum shape: ", output.shape)
+        output = self.densnet(output)
+        
+        output *= scale
+
+        return output.contiguous()
