@@ -63,7 +63,7 @@ venv.bak/
 .idea
 
 # Temporary files
-*temp*
+*temp_*
 *test*
 .DS_Store
 *.swp
