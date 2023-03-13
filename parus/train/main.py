@@ -4,7 +4,7 @@ import time
 import shutil
 import torch
 import torch.nn as nn
-from parus.models.wavenet_future import WaveNet
+from parus.model.wavenet_future import WaveNet
 from parus.train.datagen import get_train_datagen, get_val_datagen, get_test_datagen
 from parus.train.train import train
 from parus.train.inference import inference
