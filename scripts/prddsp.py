@@ -1,7 +1,10 @@
 import os
 import argparse
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from parus.data.file_io import pklz_read
+
+mpl.use('TkAgg')  # Use TkAgg backend
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -19,16 +22,22 @@ def update_figure():
     data = pklz_read(pred_flst[i])
     x = list(range(len(data['lbl'])))
     if args.norm:
-        inp = data['inp'] / max(abs(data['inp'].min()), abs(data['inp'].max()))
-        prd = data['prd'] / max(abs(data['prd'].min()), abs(data['inp'].max()))
+        lbl_nrm = max(abs(data['lbl'].min()), abs(data['lbl'].max()))
+        lbl = data['lbl'] if lbl_nrm == 0 else data['lbl'] / lbl_nrm
+        inp_nrm = max(abs(data['inp'].min()), abs(data['inp'].max()))
+        inp = data['inp'] if inp_nrm == 0 else data['inp'] / inp_nrm
+        prd_nrm = max(abs(data['prd'].min()), abs(data['prd'].max()))
+        prd = data['prd'] if prd_nrm == 0 else data['prd'] / prd_nrm
     else:
+        lbl = data['lbl']
         inp = data['inp']
         prd = data['prd']
     # Plotting
     ax.clear()
     ax.set_title("Viewing: %s" % os.path.split(pred_flst[i])[1])
-    ax.plot(x, inp, color='orange', label="Input")
-    ax.plot(x, prd, color='green', label="Prediction")
+    ax.plot(x, lbl, color=u'#2ca02c', label="Reference")
+    ax.plot(x, inp, color=u'#ff7f0e', label="Input")
+    ax.plot(x, prd, color=u'#1f77b4', label="Prediction")
     ax.legend(loc='upper right')
     # Update figure
     fig.canvas.draw()
@@ -64,8 +73,12 @@ fig, ax = plt.subplots()
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
 ax.set_title("Ready!")
-ax.hlines(1, 0, 100, color='orange', label="Input")
-ax.hlines(-1, 0, 100, color='green', label="Prediction")
+ax.hlines(0, 0, 100, color=u'#2ca02c', label="Reference")
+ax.hlines(1, 0, 100, color=u'#ff7f0e', label="Input")
+ax.hlines(-1, 0, 100, color=u'#1f77b4', label="Prediction")
 ax.set_ylim([-2, 2])
 ax.legend(loc='upper right')
+# Show plot
+mng = plt.get_current_fig_manager()
+mng.window.state('zoomed')
 plt.show()
