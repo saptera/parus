@@ -2,7 +2,7 @@ import os
 import argparse
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from parus.data.file_io import pklz_read
+from parus.fio import pklz_read
 
 mpl.use('TkAgg')  # Use TkAgg backend
 

@@ -1,3 +1,5 @@
+# Signal process functions
+
 import numpy as np
 from scipy import signal as sig
 

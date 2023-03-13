@@ -1,9 +1,9 @@
 import os
 import argparse
 import numpy as np
-from parus.utils.base_func import make_outdir, prog_print
-from parus.data.file_io import pklz_write, cjsh_write, arc_read, noi_read
-from parus.data.sig_proc import bsl_sft_lin, bsl_sft_sin
+from parus.util import make_outdir, prog_print
+from parus.fio import pklz_write, cjsh_write, arc_read, noi_read
+from parus.data import bsl_sft_lin, bsl_sft_sin
 import warnings
 
 

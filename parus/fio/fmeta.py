@@ -1,3 +1,5 @@
+# Parus customized meta file IO functions
+
 import warnings
 import csv
 import json

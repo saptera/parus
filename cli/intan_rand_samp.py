@@ -1,10 +1,9 @@
 import os
 import numpy as np
-from parus.data.intan_func import intan_time_read, intan_amp_read
-from parus.data.rec_info_io import read_probe_data, read_spk_info
-from parus.utils.base_func import norm_lst_gen, laplace_lst_gen, prog_print
-from parus.utils.cli_func import yn_query, cli_path_in, cli_outdir, cli_file_in, cli_int_in, cli_float_in, cli_list_sel
-from parus.data.data_proc import spk_merge, neuron_rnd_samp, nsd_write, nsd_asgnv
+from parus.util import norm_lst_gen, laplace_lst_gen, prog_print
+from parus.util.cli import yn_query, cli_path_in, cli_outdir, cli_file_in, cli_int_in, cli_float_in, cli_list_sel
+from parus.data import spk_merge, neuron_rnd_samp, nsd_asgnv
+from parus.fio import intan_time_read, intan_amp_read, read_probe_data, read_spk_info, pklz_write
 
 """
 Command line interface for random sampling signal data form Intan "One File Per Channel" formatted data.
@@ -147,7 +146,7 @@ n = len(sig_samp)
 for i in range(n):
     sig_data = nsd_asgnv(sig_samp[i], rng_asgn, val_lst, method='min', rng_srch=10)
     sig_path = os.path.join(out_path, "sig_%05d.nsd" % i)
-    nsd_write(sig_path, sig_data)
+    pklz_write(sig_path, sig_data)
     prog_print(i + 1, n, "Saving:", "done.")
 
 print("\nData sampling successfully done!")

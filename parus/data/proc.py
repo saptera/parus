@@ -1,3 +1,5 @@
+# Basic data process functions
+
 import os
 import warnings
 import copy
@@ -5,8 +7,8 @@ import zlib
 import pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
-from parus.utils.base_func import arr_rand_samp
-from parus.data.file_io import pklz_read
+from parus.util import arr_rand_samp
+from parus.fio import pklz_read
 
 """Function list:
 spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
@@ -15,6 +17,7 @@ neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal 
 neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
 trn_plot(file, overlay=True): Plot model training related files.
 pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
+nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
 """
 
 
@@ -266,3 +269,57 @@ def pred_mae(data, th=35):
     score = np.mean(np.abs(np.subtract(data['lbl'], data['prd']))).item()
     q = score < th
     return score, q
+
+
+def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
+    """ Assign a value list around the signal.
+            This function only accept NumPy-Int8 0-1 type labels.
+            This function will return NumPy-Float64 type labels.
+    Args:
+        sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
+                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
+        rng_asgn (int): Range to assign values.
+        val_lst (tuple or list or np.ndarray): List of value to be assigned.
+        method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'min')
+                                                  'min':  detect minimum of signal within [-rng_srch, rng_srch]
+                                                  'max':  detect maximum of signal within [-rng_srch, rng_srch]
+                                                  'none': keep original label from [sig_data], ignoring [rng_srch]
+        rng_srch (int): Range to search local extremum. (default: 10)
+    Returns:
+        dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
+                               {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-float64)}
+    """
+    sig_data_out = copy.deepcopy(sig_data)  # Make copy, avoid unexpected changes
+    # Verify inputs
+    if len(val_lst) != rng_asgn * 2 + 1:
+        raise ValueError("Length of [val_lst] must be equal to [rng_asgn] * 2 + 1.")
+    if method not in ['min', 'max', 'none']:
+        raise ValueError("Invalid type for [method]. Expected 'min', 'max' or 'none'.")
+    # Search around the labels
+    idx = sig_data['lbl'].nonzero()[0]
+    lbl = np.zeros(sig_data['lbl'].shape, dtype=np.float64)  # INIT VAR
+    for i in idx:
+        if method == 'none':
+            loc = i.item()
+        else:
+            # Get search range
+            lst_min = 0 if i - rng_srch < 0 else i.item() - rng_srch
+            lst_max = len(sig_data['sig']) if i + rng_srch >= len(sig_data['sig']) else i.item() + rng_srch + 1
+            lst_srch = list(range(lst_min, lst_max))
+            # Search for local extremum
+            if method == 'min':
+                loc = lst_srch[np.argmin(sig_data['sig'][lst_srch]).item()]
+            else:
+                loc = lst_srch[np.argmax(sig_data['sig'][lst_srch]).item()]
+        # Assign value to original
+        for j in range(rng_asgn * 2 + 1):
+            curr_idx = loc - rng_asgn + j
+            if curr_idx < 0:
+                continue
+            elif curr_idx >= len(sig_data['sig']):
+                break
+            else:
+                lbl[curr_idx] = val_lst[j]
+    # Return values
+    sig_data_out['lbl'] = lbl
+    return sig_data_out
