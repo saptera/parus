@@ -136,7 +136,7 @@ class TransformerBlock(nn.Module):
         self.dropout_2 = nn.Dropout(0.1)
 
     def forward(self, x):
-
+        x.transpose(1, 2)
         x = x + self.dropout_1(self.multi_head(x))
         x = self.norm_1(x)
         x = x + self.dropout_2(self.ff(x))
@@ -169,4 +169,3 @@ class TemporalTransformer(nn.Module):
         output = self.layer_norm(output)
         output *= scale
         return output.contiguous()
-

@@ -4,9 +4,8 @@ import time
 import shutil
 import torch
 import torch.nn as nn
-from parus.models.temporal_transformer import TemporalTransformer
-from parus.models.wavenet_future import WaveNet
-from parus.train.data import get_train_datagen, get_val_datagen, get_test_datagen
+from parus.model.temporal_transformer import TemporalTransformer
+from parus.train.datagen import get_train_datagen, get_val_datagen, get_test_datagen
 from parus.train.train import train
 from parus.train.inference import inference
 
@@ -51,13 +50,14 @@ if __name__ == '__main__':
     test_hparams = {
         'experiment_folder_path': experiment_folder_path}
 
-    model = TemporalTransformer(300,16)
+    # sequence_length, embedding_dim, n_head, n_stack
+    model = TemporalTransformer(300, 16, 4, 6)
     criterion = nn.L1Loss(reduction='mean')
-    optimizer = torch.optim.AdamW(model.parameters(), lr=hparams["learning_rate"])
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=hparams["learning_rate"])
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, 1.0, gamma=hparams["lr_decay"])
-    
+
     train(model, criterion, optimizer, scheduler,
           train_datagen, val_datagen, train_hparams)
     inference(model, test_datagen, test_hparams)
-

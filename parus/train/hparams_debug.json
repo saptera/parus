@@ -1,0 +1,13 @@
+{
+  "model_name": "debug",
+  "sequence_length": 300,
+  "epoch": 1,
+  "batch_size": 8,
+  "learning_rate": 0.0017,
+  "lr_decay": 0.96,
+  "dropout": 0.1,
+  "model_param_clip": 0.5,
+  "steps_every_print": 500,
+  "experiment_folder": "experiments/",
+  "data_folder": "debug_data/"
+}
