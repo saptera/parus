@@ -17,6 +17,8 @@ from scipy import signal as sig
     bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.
 # Neuronal signal operations:
     neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.
+    sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
+    sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
 """
 
 
@@ -374,3 +376,55 @@ def neuron_sig_slc(rec, loc, rng):
     # Store spike, direct use anterior padding info from last iteration as no next check required
     spk_lst.append(np.concatenate((next_pad_a, rec[next_loc_a:curr_loc_p], curr_pad_p)))
     return spk_lst
+
+
+def sig_split(src, size, overlap=10, endpad=0.0):
+    """ Split signal into a list of parts with defined size.
+
+    Args:
+        src (np.ndarray or list[int or float]): {1D} Input signal
+        size (int): Sample size of each signal part
+        overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)
+        endpad (int or float): Padding value of the last part to the target size (default: 0)
+
+    Returns:
+        list[np.ndarray]: {1D - n * size} Output list of split signal
+    """
+    if type(src) != np.ndarray:
+        src = np.asarray(src)
+    dst = []  # INIT VAR
+    for i in range(0, len(src), size - overlap):
+        dst.append(src[i:i+size])
+    # Check the end padding
+    if len(dst[-1]) != size:
+        dst[-1] = np.append(dst[-1], np.full(size - len(dst[-1]), endpad, dtype=dst[-1].dtype))
+    return dst
+
+
+def sig_merge(src, overlap=10, trim=0):
+    """ Merge a list of signal parts into a signal trace.
+
+    Args:
+        src (list[np.ndarray or list[int or float]]): {1D - n * size} Input list of split signal
+        overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)
+        trim (int): Samples to remove at the end of merged signal
+
+    Returns:
+        np.ndarray: {1D} Output merged signal
+    """
+    # Get sizes
+    size = len(src[0])
+    lead = size - overlap
+    tot_len = len(src) * (size - overlap) + overlap
+    # Initialize arrays
+    dst = np.zeros(tot_len, dtype=type(src[0][0]))
+    crs = src[0][:overlap]
+    # Process merge
+    pos = [n * (size - overlap) for n in range(len(src))]
+    for i, p in enumerate(pos):
+        dst[p:p+overlap] = np.add(src[i][:overlap], crs) / 2
+        dst[p+overlap:p+lead] = src[i][overlap:-overlap]
+        crs = src[i][-overlap:]
+    # Process ending and return
+    dst[-overlap:] = crs
+    return dst[:tot_len-trim]
