@@ -9,7 +9,7 @@ import numpy as np
 # Private variables:
     __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
     __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
-    __tev_dt {list[tuple[int, str]}: TDT raw voltage traces datatype definition.
+    __tev_dt {dict[str, list[int or str]]}: TDT raw voltage traces datatype definition.
 """
 
 
@@ -23,7 +23,7 @@ __tsq_dt = np.dtype(
 __long2char4 = np.vectorize(lambda x: ''.join(chr(x >> (i << 3) & 0xFF) for i in range(4)) if x > 9999 else '%04d' % x)
 
 # TDT raw voltage traces datatype definition
-__tev_dt = [(1, 'float32'), (1, 'int32'), (2, 'int16'), (4, 'int8')]
+__tev_dt = {'count': [1, 1, 2, 4], 'dtype': ['float32', 'int32', 'int16', 'int8']}
 
 
 def tdt_tsq_read(tsq_file):
@@ -87,14 +87,14 @@ def tdt_tev_read(tev_file, tsq, name=None):
         # Get data basic info
         chs = np.unique(info['channel'])
         pos = [np.where(info['channel'] == c)[0] for c in chs]
-        dts = [__tev_dt[info['format'][p][0]][1] for p in pos]
+        dts = [__tev_dt['dtype'][info['format'][p][0]] for p in pos]
         fsc = [info['frequency'][p][0].item() for p in pos]
         # Get data timing info
         tms = [info['timestamp'][p] for p in pos]
         stc = [info['sortcode'][p] for p in pos]
         # Get data positions in file
         loc = [info['fp_loc'][p] for p in pos]
-        smp = (info['size'] - 10) * [__tev_dt[i][0] for i in info['format']]
+        smp = (info['size'] - 10) * [__tev_dt['count'][i] for i in info['format']]
         smp = [smp[p] for p in pos]
         # Set data structure
         data = {c: {'signal': np.zeros((len(smp[i]), max(smp[i])), dtype=dts[i]),
