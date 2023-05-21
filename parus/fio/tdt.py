@@ -6,6 +6,7 @@ import numpy as np
 """Function list:
     tdt_tsq_read(tsq_file): Import Tucker-Davis Technologies data storage event headers.
     tdt_tev_read(tev_file, tsq, name=None): Import Tucker-Davis Technologies data storage raw voltage traces.
+    tdt_chs_arng(ch_dat): Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
 # Private variables:
     __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
     __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
@@ -107,3 +108,22 @@ def tdt_tev_read(tev_file, tsq, name=None):
         tev[n] = copy.deepcopy(data)
     fp.close()
     return tev
+
+
+def tdt_chs_arng(ch_dat):
+    """ Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
+
+    Args:
+        ch_dat (dict[str, np.ndarray or float]): Tucker-Davis Technologies single channel raw data
+
+    Returns:
+        dict[str, np.ndarray]: Arranged channel recording
+            - signal (np.ndarray): {1D} Channel voltage trace
+            - timestamp (np.ndarray): {1D} Channel timestamps
+    """
+    # Flatten signal
+    signal = ch_dat['signal'].flatten(order='C')
+    # Flatten time
+    tm_incr = np.asarray([i / ch_dat['frequency'] for i in range(ch_dat['signal'].shape[1])], dtype='float64')
+    timestamp = np.add.outer(ch_dat['timestamp'], tm_incr).flatten(order='C')
+    return {'signal': signal, 'timestamp': timestamp}
