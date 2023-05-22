@@ -418,13 +418,17 @@ def sig_merge(src, overlap=10, trim=0):
     tot_len = len(src) * (size - overlap) + overlap
     # Initialize arrays
     dst = np.zeros(tot_len, dtype=type(src[0][0]))
-    crs = src[0][:overlap]
     # Process merge
-    pos = [n * (size - overlap) for n in range(len(src))]
-    for i, p in enumerate(pos):
-        dst[p:p+overlap] = np.add(src[i][:overlap], crs) / 2
-        dst[p+overlap:p+lead] = src[i][overlap:-overlap]
-        crs = src[i][-overlap:]
-    # Process ending and return
-    dst[-overlap:] = crs
+    if overlap > 0:
+        crs = src[0][:overlap]
+        # Process merge
+        pos = [n * (size - overlap) for n in range(len(src))]
+        for i, p in enumerate(pos):
+            dst[p:p+overlap] = np.add(src[i][:overlap], crs) / 2
+            dst[p+overlap:p+lead] = src[i][overlap:-overlap]
+            crs = src[i][-overlap:]
+        # Process ending and return
+        dst[-overlap:] = crs
+    else:
+        dst = np.asarray(src).flatten(order='C')
     return dst[:tot_len-trim]
