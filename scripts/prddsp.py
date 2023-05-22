@@ -2,6 +2,7 @@ import os
 import argparse
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 from parus.fio import pklz_read
 
 mpl.use('TkAgg')  # Use TkAgg backend
@@ -10,32 +11,38 @@ mpl.use('TkAgg')  # Use TkAgg backend
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
 parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
-parser.add_argument('path', type=str, metavar="resultsFolder", help="[%(type)s] Prediction results files location")
+parser.add_argument('path', type=str, metavar="resultsFolder", help="[%(type)s] Prediction results location")
 parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
+# Signal normalization function
+def sig_norm_plt(sig: np.ndarray):
+    nrm = max(abs(np.min(sig)), abs(np.max(sig)))
+    dst = sig if nrm == 0 else sig / nrm
+    return dst
+
+
 # Function for updating canvas
 def update_figure():
     # Read and process prediction data
-    data = pklz_read(pred_flst[i])
-    x = list(range(len(data['lbl'])))
+    data = pred[i] if s_flag else pklz_read(pred_flst[i])
+    x = list(range(len(data['inp'])))
+    title = "Viewing: SIG-%%0%dd" % len(str(n)) % i if s_flag else "Viewing: %s" % os.path.split(pred_flst[i])[1]
     if args.norm:
-        lbl_nrm = max(abs(data['lbl'].min()), abs(data['lbl'].max()))
-        lbl = data['lbl'] if lbl_nrm == 0 else data['lbl'] / lbl_nrm
-        inp_nrm = max(abs(data['inp'].min()), abs(data['inp'].max()))
-        inp = data['inp'] if inp_nrm == 0 else data['inp'] / inp_nrm
-        prd_nrm = max(abs(data['prd'].min()), abs(data['prd'].max()))
-        prd = data['prd'] if prd_nrm == 0 else data['prd'] / prd_nrm
+        lbl = sig_norm_plt(data['lbl']) if 'lbl' in data else None
+        inp = sig_norm_plt(data['inp'])
+        prd = sig_norm_plt(data['prd'])
     else:
-        lbl = data['lbl']
+        lbl = data.get('lbl', None)
         inp = data['inp']
         prd = data['prd']
     # Plotting
     ax.clear()
-    ax.set_title("Viewing: %s" % os.path.split(pred_flst[i])[1])
-    ax.plot(x, lbl, color=u'#2ca02c', label="Reference")
+    ax.set_title(title)
+    if lbl is not None:
+        ax.plot(x, lbl, color=u'#2ca02c', label="Reference")
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     ax.plot(x, prd, color=u'#1f77b4', label="Prediction")
     ax.legend(loc='upper right')
@@ -63,12 +70,23 @@ def on_press(event):
         plt.close('all')
 
 
-# Read file list in defined path
-pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
-n = len(pred_flst) - 1
-i = 0  # Global variable
+# Read file data in defined path
+if os.path.isfile(args.path):
+    raw = pklz_read(args.path)
+    pred = [{k: raw[k][s] for k in raw} for s in range(len(raw['inp']))]
+    n = len(pred) - 1
+    s_flag = True  # Global variable
+elif os.path.isdir(args.path):
+    pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
+    n = len(pred_flst) - 1
+    s_flag = False  # Global variable
+else:
+    print("Invalid prediction results path!")
+    s_flag = None  # Global variable
+    exit(-1)
 
 # Initialize figure
+i = 0  # Global variable
 fig, ax = plt.subplots()
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
