@@ -1,4 +1,4 @@
-# IntanTech file IO functions
+# IntanTech file import functions
 
 import os
 import numpy as np
@@ -10,7 +10,7 @@ import numpy as np
     intan_typ_amp_read(amp_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [amplifier] data.
     intan_typ_aux_read(aux_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [auxiliary input] data.
     intan_typ_vdd_read(vdd_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [supply voltage] data.
-    intan_typ_adc_read(adc_file, n, irc=False): Import IntanTech RHD2000 "One File Per Signal Type" [BOARD ADC] data.
+    intan_typ_adc_read(adc_file, n, irc=False): Import IntanTech RHD2000 "One File Per Signal Type" [BOARD ADC in] data.
     intan_typ_dio_read(dio_file): Import IntanTech RHD2000 "One File Per Signal Type" [BOARD digital I/O] data.
 # Datatype [One File Per Channel] files:
   # Single channel files:

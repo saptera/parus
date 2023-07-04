@@ -1,4 +1,4 @@
-# Tucker-Davis Technologies file IO functions
+# Tucker-Davis Technologies file import functions
 
 import copy
 import numpy as np
@@ -7,7 +7,7 @@ import numpy as np
     tdt_tsq_read(tsq_file): Import Tucker-Davis Technologies data storage event headers.
     tdt_tev_read(tev_file, tsq, name=None): Import Tucker-Davis Technologies data storage raw voltage traces.
     tdt_chs_arng(ch_dat): Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
-# Private variables:
+# Private constants:
     __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
     __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
     __tev_dt {dict[str, list[int or str]]}: TDT raw voltage traces datatype definition.
