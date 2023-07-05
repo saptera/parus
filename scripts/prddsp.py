@@ -1,11 +1,8 @@
 import os
 import argparse
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from parus.fio import pklz_read
-
-mpl.use('TkAgg')  # Use TkAgg backend
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -13,6 +10,8 @@ parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model 
 parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
+parser.add_argument('-x', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Plot y-axis max")
+parser.add_argument('-i', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Plot y-axis min")
 parser.add_argument('-l', '--lims', dest='lims', default=False, action='store_true', help="Plot global y-limit switch")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -47,7 +46,7 @@ def update_figure():
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     ax.plot(x, prd, color=u'#1f77b4', label="Prediction")
     ax.legend(loc='upper right')
-    if l_flag:
+    if (dn is not None) and (up is not None):
         ax.set_ylim(dn, up)
     # Update figure
     fig.canvas.draw()
@@ -73,13 +72,17 @@ def on_press(event):
         plt.close('all')
 
 
+# Get defined y-axis limit
+dn = args.ymin
+up = args.ymax
+
 # Read file data in defined path
 if os.path.isfile(args.path):
     raw = pklz_read(args.path)
     pred = [{k: raw[k][s] for k in raw} for s in range(len(raw['inp']))]
     n = len(pred) - 1
     s_flag = True  # Global variable
-    l_flag = args.lims  # Global variable
+    # Compute global y-axis limit
     if args.lims:
         lims = np.asarray([[max(i), min(i)] for i in raw['inp']])
         dn = np.floor(lims.min(initial=None) / 10) * 10  # Global variable
@@ -88,13 +91,9 @@ elif os.path.isdir(args.path):
     pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
     n = len(pred_flst) - 1
     s_flag = False  # Global variable
-    l_flag = False  # Global variable
-    dn = up = None  # Global variable
 else:
     print("Invalid prediction results path!")
     s_flag = None  # Global variable
-    l_flag = None  # Global variable
-    dn = up = None  # Global variable
     exit(-1)
 
 # Initialize figure
@@ -109,6 +108,5 @@ ax.hlines(-1, 0, 100, color=u'#1f77b4', label="Prediction")
 ax.set_ylim([-2, 2])
 ax.legend(loc='upper right')
 # Show plot
-mng = plt.get_current_fig_manager()
-mng.window.state('zoomed')
+plt.tight_layout()
 plt.show()
