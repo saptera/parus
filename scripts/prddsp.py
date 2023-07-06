@@ -29,7 +29,11 @@ def update_figure():
     # Read and process prediction data
     data = pred[i] if s_flag else pklz_read(pred_flst[i])
     x = list(range(len(data['inp'])))
-    title = "Viewing: SIG-%%0%dd" % len(str(n)) % i if s_flag else "Viewing: %s" % os.path.split(pred_flst[i])[1]
+    # Set title
+    file = os.path.split(args.path)[1] if s_flag else os.path.split(pred_flst[i])[1]
+    title = r"$\bf{Viewing: %s}$" % file.replace('_', '\\_')
+    title = title + "\nSection: %%0%dd of %%0%dd" % (len(str(n)), len(str(n))) % (i + 1, n + 1) if s_flag else title
+    # Arrange data
     if args.norm:
         lbl = sig_norm_plt(data['lbl']) if 'lbl' in data else None
         inp = sig_norm_plt(data['inp'])
@@ -84,7 +88,7 @@ if os.path.isfile(args.path):
     s_flag = True  # Global variable
     # Compute global y-axis limit
     if args.lims:
-        lims = np.asarray([[max(i), min(i)] for i in raw['inp']])
+        lims = np.asarray([[max(s), min(s)] for s in raw['inp']])
         dn = np.floor(lims.min(initial=None) / 10) * 10  # Global variable
         up = np.ceil(lims.max(initial=None) / 10) * 10  # Global variable
 elif os.path.isdir(args.path):
@@ -97,7 +101,7 @@ else:
     exit(-1)
 
 # Initialize figure
-i = 0  # Global variable
+i = -1  # Global variable
 fig, ax = plt.subplots()
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
