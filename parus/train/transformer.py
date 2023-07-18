@@ -67,13 +67,13 @@ class ContextLoader(nn.Module):
 class EncoderTransformer(nn.Module):
     def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward):
         super(EncoderTransformer, self).__init__()
-        self.input_linear = nn.Linear(input_dim, d_model)
+        self.input_linear = nn.Linear(context_dim, d_model)
         self.transformer_encoder_layer = nn.TransformerEncoderLayer(
-            d_model, nhead, dim_feedforward)
+            d_model, nhead, dim_feedforward, batch_first=True)
         self.transformer_encoder = nn.TransformerEncoder(
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
-        self.output_linear = nn.Linear(d_model, input_dim)
+        self.output_linear = nn.Linear(d_model, context_dim)
         self.context_loader = ContextLoader(embedding_dim=context_dim)
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
@@ -83,24 +83,26 @@ class EncoderTransformer(nn.Module):
         #print(x.shape) #[batch, context, 300]
         x = self.positional_encoding(x)
         #print(x.shape)  #[batch, context, 300]
+        x = x.transpose(-1,-2)
+        #print(x.shape) #[batch, 300, context]
         x = self.input_linear(x)
-        # print(x.shape) #[batch, context, 64]
+        #print(x.shape) #[batch, 300, 64]
         x = self.transformer_encoder(x)
-        # print(x.shape) # [batch, context, 64]
+        #print(x.shape) # [batch, 300, 64]
         x = self.output_linear(x)
-        # print(x.shape) # [batch, context, 300]
-        x = x.transpose(-2, -1) #swap context dimension to the last dimension, because linear operator on the last dimension
+        #print(x.shape) # [batch, 300, context]
+        #x = x.transpose(-2, -1) #swap context dimension to the last dimension, because linear operator on the last dimension
         # print(x.shape) # [batch, 300, context]
         x = self.context_linear(x)
-        # print(x.shape) # [batch, 300, 1]
+        #print(x.shape) # [batch, 300, 1]
         x = x.transpose(-1, -2) #swap back context dimension
-        # print(x.shape) # [batch,1,300]
-        # print("end of transformer")
+        #print(x.shape) # [batch,1,300]
+        #print("end of transformer")
         return x
 
 
 # Initialize model
-model = EncoderTransformer(input_dim=300, context_dim=8, d_model=64, nhead=8, num_layers=6, dim_feedforward=128)
+model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=6, dim_feedforward=128)
 model.train()  # set the model to training mode
 
 # Define loss function and optimizer
