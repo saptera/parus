@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, TensorDataset, Dataset
 from parus.train.datagen import get_train_datagen, get_val_datagen, get_test_datagen
 from parus.data import sim_sig_read, sim_lbl_read
 
+
 class SimulatedNoiseDataset(Dataset):
     def __init__(self, dataset_folder, list_id, seq_len):
         self.dataset_folder = dataset_folder
@@ -29,6 +30,7 @@ class SimulatedNoiseDataset(Dataset):
 
         return X, y
 
+
 class PositionalEncoding(nn.Module):
     def __init__(self, embedding_dim, dropout, max_len: int = 300):
         super().__init__()
@@ -48,21 +50,36 @@ class PositionalEncoding(nn.Module):
         x = x + x + self.pe # [1, context, 300] + [batch, context, 300] = [batch, context, 300] because of broadcasting
         return self.dropout(x)
 
-class ContextLoader(nn.Module):
-    def __init__(self, embedding_dim):
-        self.embedding_dim = embedding_dim
+
+class AnteriorContextLoader(nn.Module):
+    def __init__(self, emb_dim):
+        self.emb_dim = emb_dim
         super().__init__()
 
     def forward(self, x):
-        batch_size, _, seq_len = x.size()
-        x_context = torch.zeros(batch_size, self.embedding_dim, seq_len)
-        for i in range(batch_size):
-            for j in range(seq_len):
-                for k in range(self.embedding_dim):
-                    if j - k < 0:
-                        x_context[i][k][j] = 0
-                    x_context[i][k][j] = x[i][0][j-k]
+        bs, _, seq_len = x.shape
+        x_context = torch.zeros(bs, self.emb_dim, seq_len)
+        for j in range(seq_len):
+            k = j if j < self.emb_dim - 1 else self.emb_dim - 1
+            x_context[:, 0:k+1, j] = torch.flip(x[:, 0, j-k:j+1], dims=[1])
         return x_context
+
+
+class AdjacentContextLoader(nn.Module):
+    def __init__(self, emb_dim):
+        self.emb_dim = emb_dim
+        super().__init__()
+
+    def forward(self, x):
+        bs, _, seq_len = x.shape
+        x_context = torch.zeros(bs, self.emb_dim, seq_len)
+        for j in range(seq_len):
+            k = j if j < self.emb_dim - 1 else self.emb_dim - 1
+            fl = k // 2
+            fr = k - fl
+            x_context[:, 0:k+1, j] = torch.flip(x[:, 0, j-fl:j+fr], dims=[1])
+        return x_context
+
 
 class EncoderTransformer(nn.Module):
     def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward):
@@ -74,7 +91,7 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        self.context_loader = ContextLoader(embedding_dim=context_dim)
+        self.context_loader = AnteriorContextLoader(emb_dim=context_dim)
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
     def forward(self, x):
