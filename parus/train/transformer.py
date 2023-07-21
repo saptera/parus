@@ -1,5 +1,5 @@
-import math
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -38,7 +38,7 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, embedding_dim)  # [300, context]
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(
-            0, embedding_dim, 2).float() * (-math.log(10000.0) / embedding_dim))
+            0, embedding_dim, 2).float() * (-9.210340371976184 / embedding_dim))  # -9.210340371976184 = -ln(10000.0)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(1,2)
@@ -58,27 +58,30 @@ class AnteriorContextLoader(nn.Module):
 
     def forward(self, x):
         bs, _, seq_len = x.shape
-        x_context = torch.zeros(bs, self.emb_dim, seq_len)
+        x_context = np.zeros((bs, self.emb_dim, seq_len), dtype='float32')
+        x_np = x.numpy()  # Convert to NumPy array for efficiency
         for j in range(seq_len):
             k = j if j < self.emb_dim - 1 else self.emb_dim - 1
-            x_context[:, 0:k+1, j] = torch.flip(x[:, 0, j-k:j+1], dims=[1])
-        return x_context
+            x_context[:, 0:k+1, j] = np.flip(x_np[:, 0, j-k:j+1], axis=1)
+        return torch.from_numpy(x_context)
 
 
 class AdjacentContextLoader(nn.Module):
     def __init__(self, emb_dim):
         self.emb_dim = emb_dim
+        self.fl = self.emb_dim // 2  # Left flank
+        self.fr = self.emb_dim - self.fl  # Right flank
         super().__init__()
 
     def forward(self, x):
         bs, _, seq_len = x.shape
-        x_context = torch.zeros(bs, self.emb_dim, seq_len)
+        x_context = np.zeros((bs, self.emb_dim, seq_len), dtype='float32')
+        x_np = x.numpy()  # Convert to NumPy array for efficiency
         for j in range(seq_len):
-            k = j if j < self.emb_dim - 1 else self.emb_dim - 1
-            fl = k // 2
-            fr = k - fl
-            x_context[:, 0:k+1, j] = torch.flip(x[:, 0, j-fl:j+fr], dims=[1])
-        return x_context
+            il = 0 if j < self.fl else j - self.fl  # Left index
+            ir = j + self.fr if j + self.fr < seq_len else seq_len  # Right index
+            x_context[:, 0:ir-il, j] = np.flip(x_np[:, 0, il:ir], axis=1)
+        return torch.from_numpy(x_context)
 
 
 class EncoderTransformer(nn.Module):
