@@ -51,36 +51,20 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class AnteriorContextLoader(nn.Module):
-    def __init__(self, emb_dim):
+class ContextLoader(nn.Module):
+    def __init__(self, emb_dim, ant_samp):
         self.emb_dim = emb_dim
+        ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
+        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))  # Get padding width
         super().__init__()
 
     def forward(self, x):
-        bs, _, seq_len = x.shape
-        x_context = np.zeros((bs, self.emb_dim, seq_len), dtype='float32')
+        bs, nch, _ = x.shape
         x_np = x.numpy()  # Convert to NumPy array for efficiency
-        for j in range(seq_len):
-            k = j if j < self.emb_dim - 1 else self.emb_dim - 1
-            x_context[:, 0:k+1, j] = np.flip(x_np[:, 0, j-k:j+1], axis=1)
-        return torch.from_numpy(x_context)
-
-
-class AdjacentContextLoader(nn.Module):
-    def __init__(self, emb_dim):
-        self.emb_dim = emb_dim
-        self.fl = self.emb_dim // 2  # Left flank
-        self.fr = self.emb_dim - self.fl  # Right flank
-        super().__init__()
-
-    def forward(self, x):
-        bs, _, seq_len = x.shape
-        x_context = np.zeros((bs, self.emb_dim, seq_len), dtype='float32')
-        x_np = x.numpy()  # Convert to NumPy array for efficiency
-        for j in range(seq_len):
-            il = 0 if j < self.fl else j - self.fl  # Left index
-            ir = j + self.fr if j + self.fr < seq_len else seq_len  # Right index
-            x_context[:, 0:ir-il, j] = np.flip(x_np[:, 0, il:ir], axis=1)
+        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
+        x_win = np.lib.stride_tricks.sliding_window_view(x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
+        x_trs = np.transpose(x_win, axes=(1, 2, 0))
+        x_context = np.flip(x_trs, axis=1)
         return torch.from_numpy(x_context)
 
 
@@ -94,7 +78,7 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        self.context_loader = AnteriorContextLoader(emb_dim=context_dim)
+        self.context_loader = ContextLoader(emb_dim=context_dim)
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
     def forward(self, x):
