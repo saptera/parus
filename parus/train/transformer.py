@@ -1,3 +1,4 @@
+import time
 import os
 import numpy as np
 import torch
@@ -6,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 from parus.train.datagen import get_train_datagen, get_val_datagen, get_test_datagen
 from parus.data import sim_sig_read, sim_lbl_read
-
+from parus.fio import pklz_write
 
 class SimulatedNoiseDataset(Dataset):
     def __init__(self, dataset_folder, list_id, seq_len):
@@ -64,7 +65,7 @@ class ContextLoader(nn.Module):
         x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
         x_win = np.lib.stride_tricks.sliding_window_view(x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
         x_trs = np.transpose(x_win, axes=(1, 2, 0))
-        x_context = np.flip(x_trs, axis=1)
+        x_context = np.flip(x_trs, axis=1).copy()
         return torch.from_numpy(x_context)
 
 
@@ -78,7 +79,7 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        self.context_loader = ContextLoader(emb_dim=context_dim)
+        self.context_loader = ContextLoader(emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
     def forward(self, x):
@@ -111,22 +112,34 @@ model.train()  # set the model to training mode
 
 # Define loss function and optimizer
 criterion = nn.L1Loss(reduction='mean')
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.AdamW(model.parameters(), lr=0.0003)
 
 # Generate random training data
 sequence_length = 300
 epochs = 100
-batch_size = 32
-data_folder_path = "/home/proj_wavemoto/dataset/generated_data/v5_ss_1m"
-train_data_hparams = {'batch_size': 32,
+batch_size = 64
+data_folder_path = "/home/proj_wavemoto/dataset/generated_data/v5_1m"
+train_data_hparams = {'batch_size': batch_size,
                       'shuffle': True,
                       'num_workers': 10}
-dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"trn"), [str(num).zfill(5) for num in range(1000)], sequence_length)
-datagen = DataLoader(dataset, **train_data_hparams)
+
+test_data_hparams = {'batch_size': 1,
+                     'shuffle': False,
+                     'num_workers': 1}
+
+trn_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"trn"), [str(num).zfill(5) for num in range(10000)], sequence_length)
+val_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"val"), [str(num).zfill(5) for num in range(1000)], sequence_length)
+tst_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"tst"), [str(num).zfill(5) for num in range(1000)], sequence_length)
+
+trn_datagen = DataLoader(trn_dataset, **train_data_hparams)
+val_datagen = DataLoader(val_dataset, **train_data_hparams)
+tst_datagen = DataLoader(tst_dataset, **test_data_hparams)
 
 for epoch in range(epochs):
+    start = time.perf_counter()
+    model.train()
     total_loss = 0
-    for input_data, target_data in datagen:
+    for input_data, target_data in trn_datagen:
         # Reset the gradients
         optimizer.zero_grad()
 
@@ -143,7 +156,45 @@ for epoch in range(epochs):
         optimizer.step()
 
         total_loss += loss.item()
+    
+    model.eval()
+    val_loss = 0
+    for input_data, target_data in val_datagen:
+        output = model(input_data)
+        loss = criterion(output, target_data)
+        val_loss += loss.item()
+
 
     # Print average loss for this epoch
-    avg_loss = total_loss / len(datagen)
-    print(f'Epoch {epoch+1}, Avg Loss: {avg_loss}')
+    avg_loss = total_loss / len(trn_datagen)
+    avg_val_loss = val_loss / len(val_datagen)
+    finish = time.perf_counter()
+    print(f'Epoch {epoch+1}, Avg Loss: {avg_loss}, Avg Val Loss: {avg_val_loss}, Time: {finish-start}s')
+
+print("finished training, starting inference")
+# setup experiments folder
+experiment_name = "_".join(["transformer_encoder", time.strftime("%Y-%m-%d_%H:%M")])
+experiment_folder_path = os.path.join("/home/proj_wavemoto/experiments/" , experiment_name)
+os.mkdir(experiment_folder_path)
+print("Directory '% s' created" % experiment_folder_path)
+
+pred_folder_path = os.path.join(experiment_folder_path, "pred")
+os.mkdir(pred_folder_path)
+print("Directory '% s' created" % pred_folder_path)
+
+# prediction and saving
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+with torch.no_grad():
+    counter = 0
+    for inputs, labels in tst_datagen:
+            #inputs = inputs.to(device)
+            outputs = model(inputs)
+
+            inp = inputs.squeeze().cpu().numpy()
+            pred = outputs.squeeze().cpu().numpy()
+            labels = labels.squeeze().cpu().numpy()
+
+            filename = "pred_" + str(counter).zfill(5) + ".sim"
+            pklz_write(os.path.join(pred_folder_path, filename), {"inp":inp,  "prd": pred, "lbl": labels})
+            counter += 1
+
