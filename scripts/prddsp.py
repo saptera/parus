@@ -9,6 +9,7 @@ from parus.fio import pklz_read
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
 parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
+parser.add_argument('-f', '--noref', dest='noref', default=True, action='store_false', help="Reference plot switch")
 parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
 parser.add_argument('-x', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Plot y-axis max")
 parser.add_argument('-i', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Plot y-axis min")
@@ -45,7 +46,7 @@ def update_figure():
     # Plotting
     ax.clear()
     ax.set_title(title)
-    if lbl is not None:
+    if (lbl is not None) and args.noref:
         ax.plot(x, lbl, color=u'#2ca02c', label="Reference")
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     ax.plot(x, prd, color=u'#1f77b4', label="Prediction")
