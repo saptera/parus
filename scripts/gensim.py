@@ -253,6 +253,8 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
                 grp_temp[arc_typ[sel[i]]] += 1  # STAT
+    else:
+        pos = []
     [grp_stat[k].append(grp_temp[k]) for k in grp_stat.keys()]  # STAT SUM
 
     # Get simulated noise
@@ -283,7 +285,7 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
     for i in lbl['signal']:
         sig = np.add(sig, i)
     # Return generation
-    return sig, lbl
+    return sig, lbl, pos
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -292,10 +294,11 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
 print("Process generation:")
 for n in range(args.num_sim):
     curr_gen = np.random.choice([True, False], size=None, replace=True, p=[1 - args.no_rat, args.no_rat])
-    gen_sig, gen_lbl = gen_sim_dat(has_spk=curr_gen)
+    gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=curr_gen)
     # Save and report
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
+    pklz_write(os.path.join(lbl_out_dir, "pos_%05d.sim" % n), gen_pos, level=-1)  # Write position file
     prog_print(n + 1, args.num_sim, "    Simulated data generation:", "created.")
 
 # Arrange and save generation statistics
@@ -312,9 +315,10 @@ if args.num_eg is not None:
     # Standard examples, generated that same way as data generation (without noise only data)
     nrm_eg = args.num_eg // 4 + 1
     for n in range(nrm_eg):
-        gen_sig, gen_lbl = gen_sim_dat()
+        gen_sig, gen_lbl, gen_pos = gen_sim_dat()
         pklz_write(os.path.join(eg_out_dir, "sig_nrm_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
         pklz_write(os.path.join(eg_out_dir, "lbl_nrm_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
+        pklz_write(os.path.join(eg_out_dir, "pos_nrm_%05d.sim" % n), gen_pos, level=-1)  # Write position file
         prog_print(n + 1, nrm_eg, "    Standard extra example generation:", "created.")
     # Special examples, generate signal for each group (if has group) and noise only
     spc_eg = args.num_eg - nrm_eg
@@ -332,9 +336,10 @@ if args.num_eg is not None:
     spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))  # Set noise only examples
     spc_eg_lst = spc_eg_spk + spc_eg_noi  # Set final list
     for n in range(spc_eg):
-        gen_sig, gen_lbl = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
+        gen_sig, gen_lbl, gen_pos = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
         pklz_write(os.path.join(eg_out_dir, "sig_spc_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
         pklz_write(os.path.join(eg_out_dir, "lbl_spc_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
+        pklz_write(os.path.join(eg_out_dir, "pos_spc_%05d.sim" % n), gen_pos, level=-1)  # Write position file
         prog_print(n + 1, spc_eg, "    Special extra example generation:", "created.")
 
 print("Process done, call [python gensta.py %s] to visualize generation statistics." % rep_file)
