@@ -107,18 +107,20 @@ class EncoderTransformer(nn.Module):
 
 
 # Initialize model
-model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=6, dim_feedforward=128)
+model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=24, dim_feedforward=128)
 model.train()  # set the model to training mode
 
 # Define loss function and optimizer
 criterion = nn.L1Loss(reduction='mean')
-optimizer = optim.AdamW(model.parameters(), lr=0.0003)
+optimizer = optim.AdamW(model.parameters(), lr=0.0001)
+scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, 3.0, gamma=0.96)
 
 # Generate random training data
 sequence_length = 300
-epochs = 100
+epochs = 50
 batch_size = 64
-data_folder_path = "/home/proj_wavemoto/dataset/generated_data/v5_1m"
+data_folder_path = "/home/proj_wavemoto/dataset/generated_data/v5_1m_pos"
 train_data_hparams = {'batch_size': batch_size,
                       'shuffle': True,
                       'num_workers': 10}
@@ -163,7 +165,8 @@ for epoch in range(epochs):
         output = model(input_data)
         loss = criterion(output, target_data)
         val_loss += loss.item()
-
+    
+    scheduler.step()
 
     # Print average loss for this epoch
     avg_loss = total_loss / len(trn_datagen)
