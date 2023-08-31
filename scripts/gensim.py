@@ -175,6 +175,7 @@ else:
 
 # Make output directories
 lbl_out_dir = make_outdir(os.path.join(args.out_dir, "lbl/"), err_msg="Invalid simulated labels output directory!")
+pos_out_dir = make_outdir(os.path.join(args.out_dir, "pos/"), err_msg="Invalid simulated labels output directory!")
 sig_out_dir = make_outdir(os.path.join(args.out_dir, "sig/"), err_msg="Invalid simulated signal output directory!")
 if args.num_eg is not None:
     eg_out_dir = make_outdir(os.path.join(args.out_dir, "eg/"), err_msg="Invalid extra example output directory!")
@@ -234,17 +235,18 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
     grp_temp = {k: 0 for k in grp_stat.keys()}  # STAT VAR, grouped signal occurrence per file
 
     # Get simulated signals
+    pos = np.zeros(args.tot_len, dtype=int)  # INIT VAR, signal peak position
     if has_spk:
-        sel, pos = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, sig_idx, grp_pas)
-        for i in range(len(pos)):
+        sel, idx = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, sig_idx, grp_pas)
+        for i in range(len(idx)):
             curr_fac = 1.0 if args.sig_fac is None else np.random.uniform(args.sig_fac[0], args.sig_fac[1])
             arc_stat[sel[i]] += 1  # STAT
             sig_fac_stat.append(curr_fac)  # STAT
             # Set signal assign range
-            asgn_a = max(pos[i] - arc_pos_a[sel[i]], 0)
-            asgn_p = min(pos[i] + arc_pos_p[sel[i]], args.tot_len)
+            asgn_a = max(idx[i] - arc_pos_a[sel[i]], 0)
+            asgn_p = min(idx[i] + arc_pos_p[sel[i]], args.tot_len)
             # Set signal slice range
-            rang_a = arc_pos_a[sel[i]] - pos[i] + asgn_a
+            rang_a = arc_pos_a[sel[i]] - idx[i] + asgn_a
             rang_p = rang_a - asgn_a + asgn_p
             # Assign signal
             if args.sig_grp is None:
@@ -253,8 +255,8 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
                 grp_temp[arc_typ[sel[i]]] += 1  # STAT
-    else:
-        pos = []
+            # Set position
+            pos[idx[i]] = 1
     [grp_stat[k].append(grp_temp[k]) for k in grp_stat.keys()]  # STAT SUM
 
     # Get simulated noise
@@ -298,7 +300,7 @@ for n in range(args.num_sim):
     # Save and report
     pklz_write(os.path.join(sig_out_dir, "sig_%05d.sim" % n), gen_sig, level=-1)  # Write signal file
     pklz_write(os.path.join(lbl_out_dir, "lbl_%05d.sim" % n), gen_lbl, level=-1)  # Write label file
-    pklz_write(os.path.join(lbl_out_dir, "pos_%05d.sim" % n), gen_pos, level=-1)  # Write position file
+    pklz_write(os.path.join(pos_out_dir, "pos_%05d.sim" % n), gen_pos, level=-1)  # Write position file
     prog_print(n + 1, args.num_sim, "    Simulated data generation:", "created.")
 
 # Arrange and save generation statistics
