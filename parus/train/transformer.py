@@ -83,6 +83,8 @@ class EncoderTransformer(nn.Module):
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
     def forward(self, x):
+        scale = torch.abs(x).max(2, keepdim=True)[0]
+        x = x / scale
         #print(x.shape) #[batch,1,300]
         x = self.context_loader(x)
         #print(x.shape) #[batch, context, 300]
@@ -103,11 +105,12 @@ class EncoderTransformer(nn.Module):
         x = x.transpose(-1, -2) #swap back context dimension
         #print(x.shape) # [batch,1,300]
         #print("end of transformer")
+        x *= scale
         return x
 
 
 # Initialize model
-model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=24, dim_feedforward=128)
+model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=12, dim_feedforward=128)
 model.train()  # set the model to training mode
 
 # Define loss function and optimizer
@@ -118,7 +121,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(
 
 # Generate random training data
 sequence_length = 300
-epochs = 50
+epochs = 5
 batch_size = 64
 data_folder_path = "/home/proj_wavemoto/dataset/generated_data/v5_1m_pos"
 train_data_hparams = {'batch_size': batch_size,
@@ -129,7 +132,7 @@ test_data_hparams = {'batch_size': 1,
                      'shuffle': False,
                      'num_workers': 1}
 
-trn_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"trn"), [str(num).zfill(5) for num in range(10000)], sequence_length)
+trn_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"trn"), [str(num).zfill(5) for num in range(500000)], sequence_length)
 val_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"val"), [str(num).zfill(5) for num in range(1000)], sequence_length)
 tst_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"tst"), [str(num).zfill(5) for num in range(1000)], sequence_length)
 
