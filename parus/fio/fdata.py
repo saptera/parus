@@ -7,6 +7,7 @@ import json
 import zlib
 import hashlib
 import pickle as pkl
+import h5py as h5
 import matplotlib.pyplot as plt
 
 """Function list:
@@ -23,6 +24,9 @@ import matplotlib.pyplot as plt
   -> NOI data structure definition
     noi_read(noi_file): Read recording noise sample file.
     noi_write(noi_file, noi_data): Write recording noise sample file.
+# Simulated data reading functions:
+ sim_args_read(sim_fp): Read simulated signal generation parameters.
+ sim_data_read(sim_fp, idx, ex=False): Read simulated signal data.
 """
 
 
@@ -360,3 +364,57 @@ def noi_write(noi_file, noi_data):
     # Saving data
     cjsh_write(noi_file, noi_data, level=9)
     return True
+
+
+# Simulated data reading functions ----------------------------------------------------------------------------------- #
+
+def sim_args_read(sim_fp):
+    """ Read simulated signal generation parameters.
+
+    Args:
+        sim_fp (h5.File): Simulated signal data file
+
+    Returns:
+        dict: Parameter dictionary
+    """
+    kl = list(sim_fp['args'].keys())
+    arg = {k: None for k in kl}  # INIT VAR
+    for k in kl:
+        v = sim_fp['args'][k][()]
+        if type(v) == bytes:
+            dc = v.decode('utf-8')
+            if dc != 'NULL':
+                arg[k] = dc
+        else:
+            arg[k] = v.item()
+    return arg
+
+
+def sim_data_read(sim_fp, idx, ex=False):
+    """ Read simulated signal data.
+
+    Args:
+        sim_fp (h5.File): Simulated signal data file
+        idx (int): Simulated data index
+        ex (bool): Read extra generated data sample flag (default = False: read standard simulated data)
+
+    Returns:
+        Generated signal and label
+            - sig (np.ndarray): {1D} Simulated signal data
+            - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
+                - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
+                - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
+            - pos (np.ndarray): {1D, 0 or 1} Simulated signal data spike position (one-hot)
+            - typ (str): Sample generation type ('sim': standard, 'nrm': extra standard, 'spc': extra special)
+    """
+    grp = 'exeg' if ex else 'sims'
+    pos_ref = sim_fp.get("%s/%d" % (grp, idx), None)
+    if pos_ref is None:
+        return None
+    else:
+        return {
+            'sig': sim_fp[grp][str(idx)]['sig'][()],
+            'lbl': {k: sim_fp[grp][str(idx)]['lbl'][k][()] for k in ['signal', 'noise']},
+            'pos': sim_fp[grp][str(idx)]['pos'][()],
+            'typ': sim_fp[grp][str(idx)].attrs.get('type', None)
+        }
