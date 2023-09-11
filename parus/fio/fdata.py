@@ -410,6 +410,7 @@ def sim_data_read(sim_fp, idx, ex=False):
     grp = 'exeg' if ex else 'sims'
     pos_ref = sim_fp.get("%s/%d" % (grp, idx), None)
     if pos_ref is None:
+        warnings.warn("Invalid index: %d" % idx, RuntimeWarning, stacklevel=2)
         return None
     else:
         return {
