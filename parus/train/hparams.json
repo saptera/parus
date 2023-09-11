@@ -1,13 +1,41 @@
-{   
-    "model_name": "1m_test",
+{
+  "data": {
+    "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5_1m_pos",
+    "batch_size_train": 64,
+    "batch_size_inference": 1024,
+    "n_trn_samples": 500000,
+    "n_val_samples": 1000,
+    "n_tst_samples": 1000,
+    "n_worker": 10
+  },
+  "model": {
+    "model_name": "transformer_encoder",
     "sequence_length": 300,
-    "epoch": 10,
+    "d_context": 16,
+    "d_model": 64,
+    "n_head": 8,
+    "n_layers": 12,
+    "d_feedforward": 128,
+    "dropout": 0.1
+  },
+  "train": {
+    "experiment_folder": "/home/proj_wavemoto/experiments/",
+    "start_epoch": 1,
+    "total_epoch": 10,
     "batch_size": 64,
+    "steps_per_eval": 1000,
     "learning_rate": 0.0017,
     "lr_decay": 0.96,
-    "dropout": 0.1,
-    "model_param_clip": 0.5,
-    "steps_every_print": 500,
-    "experiment_folder": "/home/proj_wavemoto/experiments/",
-    "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5_1m"
+    "model_param_clip": 0.5
+  },
+  "debug": {
+    "data": {
+      "n_trn_samples": 500,
+      "n_val_samples": 500,
+      "n_tst_samples": 500
+    },
+    "train": {
+      "epoch": 2
+    }
+  }
 }

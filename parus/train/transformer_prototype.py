@@ -4,23 +4,26 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset, Dataset
-from parus.train.datagen import get_train_datagen, get_val_datagen, get_test_datagen
+from torch.utils.data import DataLoader, Dataset
 from parus.data import sim_sig_read, sim_lbl_read
 from parus.fio import pklz_write
+
 
 class SimulatedNoiseDataset(Dataset):
     def __init__(self, dataset_folder, list_id, seq_len):
         self.dataset_folder = dataset_folder
         self.list_id = list_id
         self.seq_len = seq_len
+
     def __len__(self):
         return len(self.list_id)
 
     def __getitem__(self, index):
         id = self.list_id[index]
-        sig_filename = os.path.join(self.dataset_folder, "sig", "sig_" + id + ".sim")
-        lbl_filename = os.path.join(self.dataset_folder, "lbl", "lbl_" + id + ".sim")
+        sig_filename = os.path.join(
+            self.dataset_folder, "sig", "sig_" + id + ".sim")
+        lbl_filename = os.path.join(
+            self.dataset_folder, "lbl", "lbl_" + id + ".sim")
         sig = sim_sig_read(sig_filename)
         lbl = sim_lbl_read(lbl_filename)
 
@@ -42,13 +45,14 @@ class PositionalEncoding(nn.Module):
             0, embedding_dim, 2).float() * (-9.210340371976184 / embedding_dim))  # -9.210340371976184 = -ln(10000.0)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(1,2)
+        pe = pe.unsqueeze(0).transpose(1, 2)
         self.register_buffer('pe', pe)  # allows state-save
 
     def forward(self, x):
-        #print("x.shape: ", x.shape) # [batch, context, 300]
-        #print("pe.shape: ", self.pe.shape) [1, context, 300]
-        x = x + x + self.pe # [1, context, 300] + [batch, context, 300] = [batch, context, 300] because of broadcasting
+        # print("x.shape: ", x.shape) # [batch, context, 300]
+        # print("pe.shape: ", self.pe.shape) [1, context, 300]
+        # [1, context, 300] + [batch, context, 300] = [batch, context, 300] because of broadcasting
+        x = x + x + self.pe
         return self.dropout(x)
 
 
@@ -56,14 +60,17 @@ class ContextLoader(nn.Module):
     def __init__(self, emb_dim, ant_samp):
         self.emb_dim = emb_dim
         ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
-        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))  # Get padding width
+        # Get padding width
+        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))
         super().__init__()
 
     def forward(self, x):
         bs, nch, _ = x.shape
         x_np = x.numpy()  # Convert to NumPy array for efficiency
-        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
-        x_win = np.lib.stride_tricks.sliding_window_view(x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
+        x_pad = np.pad(x_np, pad_width=self.pw,
+                       mode='constant', constant_values=0.0)
+        x_win = np.lib.stride_tricks.sliding_window_view(
+            x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
         x_trs = np.transpose(x_win, axes=(1, 2, 0))
         x_context = np.flip(x_trs, axis=1).copy()
         return torch.from_numpy(x_context)
@@ -79,45 +86,49 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        self.context_loader = ContextLoader(emb_dim=context_dim, ant_samp=context_dim // 2)
+        self.context_loader = ContextLoader(
+            emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_linear = nn.Linear(context_dim, 1)
-        self.positional_encoding = PositionalEncoding(embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
+        self.positional_encoding = PositionalEncoding(
+            embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
+
     def forward(self, x):
         scale = torch.abs(x).max(2, keepdim=True)[0]
         x = x / scale
-        #print(x.shape) #[batch,1,300]
+        # print(x.shape) #[batch,1,300]
         x = self.context_loader(x)
-        #print(x.shape) #[batch, context, 300]
+        # print(x.shape) #[batch, context, 300]
         x = self.positional_encoding(x)
-        #print(x.shape)  #[batch, context, 300]
-        x = x.transpose(-1,-2)
-        #print(x.shape) #[batch, 300, context]
+        # print(x.shape)  #[batch, context, 300]
+        x = x.transpose(-1, -2)
+        # print(x.shape) #[batch, 300, context]
         x = self.input_linear(x)
-        #print(x.shape) #[batch, 300, 64]
+        # print(x.shape) #[batch, 300, 64]
         x = self.transformer_encoder(x)
-        #print(x.shape) # [batch, 300, 64]
+        # print(x.shape) # [batch, 300, 64]
         x = self.output_linear(x)
-        #print(x.shape) # [batch, 300, context]
-        #x = x.transpose(-2, -1) #swap context dimension to the last dimension, because linear operator on the last dimension
+        # print(x.shape) # [batch, 300, context]
+        # x = x.transpose(-2, -1) #swap context dimension to the last dimension, because linear operator on the last dimension
         # print(x.shape) # [batch, 300, context]
         x = self.context_linear(x)
-        #print(x.shape) # [batch, 300, 1]
-        x = x.transpose(-1, -2) #swap back context dimension
-        #print(x.shape) # [batch,1,300]
-        #print("end of transformer")
+        # print(x.shape) # [batch, 300, 1]
+        x = x.transpose(-1, -2)  # swap back context dimension
+        # print(x.shape) # [batch,1,300]
+        # print("end of transformer")
         x *= scale
         return x
 
 
 # Initialize model
-model = EncoderTransformer(input_dim=300, context_dim=16, d_model=64, nhead=8, num_layers=12, dim_feedforward=128)
+model = EncoderTransformer(input_dim=300, context_dim=16,
+                           d_model=64, nhead=8, num_layers=12, dim_feedforward=128)
 model.train()  # set the model to training mode
 
 # Define loss function and optimizer
 criterion = nn.L1Loss(reduction='mean')
 optimizer = optim.AdamW(model.parameters(), lr=0.0001)
 scheduler = torch.optim.lr_scheduler.StepLR(
-        optimizer, 3.0, gamma=0.96)
+    optimizer, 3.0, gamma=0.96)
 
 # Generate random training data
 sequence_length = 300
@@ -132,9 +143,12 @@ test_data_hparams = {'batch_size': 1,
                      'shuffle': False,
                      'num_workers': 1}
 
-trn_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"trn"), [str(num).zfill(5) for num in range(500000)], sequence_length)
-val_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"val"), [str(num).zfill(5) for num in range(1000)], sequence_length)
-tst_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path,"tst"), [str(num).zfill(5) for num in range(1000)], sequence_length)
+trn_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path, "trn"), [
+                                    str(num).zfill(5) for num in range(500000)], sequence_length)
+val_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path, "val"), [
+                                    str(num).zfill(5) for num in range(1000)], sequence_length)
+tst_dataset = SimulatedNoiseDataset(os.path.join(data_folder_path, "tst"), [
+                                    str(num).zfill(5) for num in range(1000)], sequence_length)
 
 trn_datagen = DataLoader(trn_dataset, **train_data_hparams)
 val_datagen = DataLoader(val_dataset, **train_data_hparams)
@@ -161,26 +175,29 @@ for epoch in range(epochs):
         optimizer.step()
 
         total_loss += loss.item()
-    
+
     model.eval()
     val_loss = 0
     for input_data, target_data in val_datagen:
         output = model(input_data)
         loss = criterion(output, target_data)
         val_loss += loss.item()
-    
+
     scheduler.step()
 
     # Print average loss for this epoch
     avg_loss = total_loss / len(trn_datagen)
     avg_val_loss = val_loss / len(val_datagen)
     finish = time.perf_counter()
-    print(f'Epoch {epoch+1}, Avg Loss: {avg_loss}, Avg Val Loss: {avg_val_loss}, Time: {finish-start}s')
+    print(
+        f'Epoch {epoch+1}, Avg Loss: {avg_loss}, Avg Val Loss: {avg_val_loss}, Time: {finish-start}s')
 
 print("finished training, starting inference")
 # setup experiments folder
-experiment_name = "_".join(["transformer_encoder", time.strftime("%Y-%m-%d_%H:%M")])
-experiment_folder_path = os.path.join("/home/proj_wavemoto/experiments/" , experiment_name)
+experiment_name = "_".join(
+    ["transformer_encoder", time.strftime("%Y-%m-%d_%H:%M")])
+experiment_folder_path = os.path.join(
+    "/home/proj_wavemoto/experiments/", experiment_name)
 os.mkdir(experiment_folder_path)
 print("Directory '% s' created" % experiment_folder_path)
 
@@ -193,14 +210,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 with torch.no_grad():
     counter = 0
     for inputs, labels in tst_datagen:
-            #inputs = inputs.to(device)
-            outputs = model(inputs)
+        # inputs = inputs.to(device)
+        outputs = model(inputs)
 
-            inp = inputs.squeeze().cpu().numpy()
-            pred = outputs.squeeze().cpu().numpy()
-            labels = labels.squeeze().cpu().numpy()
+        inp = inputs.squeeze().cpu().numpy()
+        pred = outputs.squeeze().cpu().numpy()
+        labels = labels.squeeze().cpu().numpy()
 
-            filename = "pred_" + str(counter).zfill(5) + ".sim"
-            pklz_write(os.path.join(pred_folder_path, filename), {"inp":inp,  "prd": pred, "lbl": labels})
-            counter += 1
-
+        filename = "pred_" + str(counter).zfill(5) + ".sim"
+        pklz_write(os.path.join(pred_folder_path, filename),
+                   {"inp": inp,  "prd": pred, "lbl": labels})
+        counter += 1
