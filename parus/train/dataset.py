@@ -8,13 +8,14 @@ class LabelledMultipleFileDataset(data.Dataset):
     # TODO: maybe we can remove seq_len as an input
     def __init__(self, sig_folder, lbl_folder, n_samples, seq_len):
         self.sig_folder = sig_folder
+        print(sig_folder)
         self.lbl_folder = lbl_folder
+        print(lbl_folder)
         sig_file_lst = sorted(os.listdir(sig_folder))
         lbl_file_lst = sorted(os.listdir(lbl_folder))
-        assert len(self.sig_file_lst) == len(
-            self.lbl_file_lst), "number of sig and lbl does not match"
-        assert len(
-            self.sig_file_lst) >= n_samples, "not enough samples in the dataset"
+        print(len(sig_file_lst), len(lbl_file_lst))
+        assert len(sig_file_lst) == len(lbl_file_lst), "number of sig and lbl does not match"
+        assert len(sig_file_lst) >= n_samples, "not enough samples in the dataset"
         self.sig_file_lst = sig_file_lst[:n_samples]
         self.lbl_file_lst = lbl_file_lst[:n_samples]
         self.seq_len = seq_len

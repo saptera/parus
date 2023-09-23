@@ -6,14 +6,13 @@ import torch.nn as nn
 from parus.util import plt_mdl_perf
 
 
-def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, train_hparams):
+def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
     # load model onto gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     # make an empty log.txt file in the experiment folder
-    log_file_path = os.path.join(
-        train_hparams["experiment_folder"], "log.txt")
+    log_file_path = os.path.join(cur_experiment_folder_path, "log.txt")
     f = open(log_file_path, "w+")
     f.close()
 
@@ -36,7 +35,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, tr
                 val_loss = evaluate(model, val_datagen, criterion, device)
                 scheduler.step()  # learning rate updates everytime the loop prints
                 if val_loss <= val_loss_min:
-                    save(train_hparams["experiment_folder"],
+                    save(cur_experiment_folder_path,
                          model, optimizer, epoch_i)
                     saving_str = 'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
                         val_loss_min, val_loss)
@@ -50,8 +49,8 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, tr
                                       "Learning Rate: {}...".format(
                                           optimizer.param_groups[0]['lr']),
                                       "Loss: {:.6f}...".format(loss.item()),
-                                      "Val Loss: {:.6f}".format(val_loss)],
-                                     "Time: {}s".format(finish_time-start_time))
+                                      "Val Loss: {:.6f}...".format(val_loss),
+                                     "Time: {}s...".format(finish_time-start_time)])
                 log_and_print(log_file_path, status_str)
                 start_time = time.perf_counter()
 
@@ -96,7 +95,7 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
     torch.save(ckpt, ckpt_path)
 
 
-def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, train_hparams):
+def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
     ckpt = torch.load(ckpt_path)
 
     model.load_state_dict(ckpt['model_state_dict'])
@@ -105,4 +104,4 @@ def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val
     train_hparams['start_epoch'] = ckpt['epoch']
 
     train(model, criterion, optimizer, scheduler,
-          train_datagen, val_datagen, train_hparams)
+          train_datagen, val_datagen, cur_experiment_folder_path, train_hparams)

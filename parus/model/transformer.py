@@ -17,7 +17,7 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)  # allows state-save
 
     def forward(self, x):
-        x = x + x + self.pe
+        x = x + self.pe
         return self.dropout(x)
 
 
@@ -31,14 +31,14 @@ class ContextLoader(nn.Module):
 
     def forward(self, x):
         bs, nch, _ = x.shape
-        x_np = x.numpy()
+        x_np = x.cpu().numpy()
         x_pad = np.pad(x_np, pad_width=self.pw,
                        mode='constant', constant_values=0.0)
         x_win = np.lib.stride_tricks.sliding_window_view(
             x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
         x_trs = np.transpose(x_win, axes=(1, 2, 0))
         x_context = np.flip(x_trs, axis=1).copy()
-        return torch.from_numpy(x_context)
+        return torch.from_numpy(x_context).cuda()
 
 
 class EncoderTransformer(nn.Module):
