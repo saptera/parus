@@ -71,7 +71,6 @@ if __name__ == '__main__':
         "--inference", help="run inference", action="store_true")
     argParser.add_argument(
         "--load_model", help="load model from saved checkpoint", action="store_true")
-    argParser.add_arguement()
     args = argParser.parse_args()
 
     # load hparams
@@ -138,6 +137,7 @@ if __name__ == '__main__':
 
         for filename in filename_lst:
             file_path = os.path.join(inference_data_folder, filename)
+            print(file_path)
             inference_dataset = NoLabelSingleFileDataset(
                 file_path, model_hparams["sequence_length"])
             inference_datagen = data.DataLoader(

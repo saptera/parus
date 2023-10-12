@@ -9,7 +9,7 @@
   "model": {
     "model_name": "transformer_encoder",
     "experiment_folder": "/home/proj_wavemoto/experiments/",
-    "checkpoint_file": "/home/proj_wavemoto/experiments/",
+    "checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2023-09-13_01:34/epoch10.ckpt",
     "sequence_length": 300,
     "d_context": 16,
     "d_model": 64,
@@ -29,8 +29,7 @@
   },
   "inference": {
     "batch_size": 1024,
-    "inference_model_path": "/home/proj_wavemoto/experiments/",
-    "inference_data_folder": "/home/proj_wavemoto/dataset/"
+    "inference_data_folder": "/home/proj_wavemoto/dataset/inference_data"
   },
   "debug": {
     "data": {
