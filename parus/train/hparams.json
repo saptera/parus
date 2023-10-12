@@ -1,8 +1,6 @@
 {
   "data": {
     "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5_1m_pos",
-    "batch_size_train": 64,
-    "batch_size_inference": 1024,
     "n_trn_samples": 500000,
     "n_val_samples": 1000,
     "n_tst_samples": 1000,
@@ -10,6 +8,8 @@
   },
   "model": {
     "model_name": "transformer_encoder",
+    "experiment_folder": "/home/proj_wavemoto/experiments/",
+    "checkpoint_file": "/home/proj_wavemoto/experiments/",
     "sequence_length": 300,
     "d_context": 16,
     "d_model": 64,
@@ -19,7 +19,6 @@
     "dropout": 0.1
   },
   "train": {
-    "experiment_folder": "/home/proj_wavemoto/experiments/",
     "start_epoch": 1,
     "total_epoch": 10,
     "batch_size": 64,
@@ -27,6 +26,11 @@
     "learning_rate": 0.0001,
     "lr_decay": 0.96,
     "model_param_clip": 0.5
+  },
+  "inference": {
+    "batch_size": 1024,
+    "inference_model_path": "/home/proj_wavemoto/experiments/",
+    "inference_data_folder": "/home/proj_wavemoto/dataset/"
   },
   "debug": {
     "data": {

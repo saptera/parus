@@ -20,7 +20,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
     val_loss_min = np.Inf
     for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
         start_time = time.perf_counter()
-        for step_i, (inputs, labels) in enumerate(train_datagen):
+        for step_i, (inputs, labels, _) in enumerate(train_datagen):
             model.train()
             optimizer.zero_grad()
             inputs, labels = inputs.to(device), labels.to(device)
@@ -66,7 +66,7 @@ def evaluate(model, val_datagen, criterion, device):
     model.eval()
     val_losses = []
 
-    for i, (inputs, labels) in enumerate(val_datagen):
+    for i, (inputs, labels, _) in enumerate(val_datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
         cur_val_loss = criterion(outputs, labels.float())
@@ -93,6 +93,12 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
         experiment_folder_path, "epoch" + str(cur_epoch) + ".ckpt")
 
     torch.save(ckpt, ckpt_path)
+
+
+def load_model(ckpt_path, model):
+    ckpt = torch.load(ckpt_path)
+    model.load_state_dict(ckpt['model_state_dict'])
+    return model
 
 
 def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):

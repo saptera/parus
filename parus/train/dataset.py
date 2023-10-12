@@ -1,3 +1,4 @@
+import 
 import os
 import torch
 from torch.utils import data
@@ -30,6 +31,7 @@ class LabelledMultipleFileDataset(data.Dataset):
             self.sig_folder, sig_filename)
         lbl_filename = os.path.join(
             self.lbl_folder, lbl_filename)
+        file_num_str = sig_filename[sig_filename.index('_')+1:sig_filename.index('.')] # e.g. sig_00202.sim -> 00202
         sig = sim_sig_read(sig_filename)
         lbl = sim_lbl_read(lbl_filename)
 
@@ -40,7 +42,7 @@ class LabelledMultipleFileDataset(data.Dataset):
         # TODO: maybe we don't need to convert type
         X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
 
-        return X, y
+        return X, y, file_num_str
 
 
 class NoLabelMultipleFileDataset(data.Dataset):
@@ -59,3 +61,17 @@ class NoLabelMultipleFileDataset(data.Dataset):
         X = X.type(torch.FloatTensor)
 
         return X
+
+
+class NoLabelSingleFileDataset(data.Dataset):
+    def __init__(self, dataset_file_path, seq_len):
+        sig_lst_numpy = sim_sig_read(dataset_file_path)
+        sig_lst_tensor = torch.from_numpy(sig_lst_numpy)
+        self.sig_lst_tensor = sig_lst_tensor.type(torch.FloatTensor)
+        self.seq_len = seq_len
+
+    def __len__(self):
+        return len(self.sig_lst_tensor)
+
+    def __getitem__(self, index):
+        return self.sig_lst_tensor[index].view(1, self.seq_len)
