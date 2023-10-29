@@ -64,13 +64,13 @@ class NoLabelMultipleFileDataset(data.Dataset):
 
 class NoLabelSingleFileDataset(data.Dataset):
     def __init__(self, dataset_file_path, seq_len):
-        sig_lst_numpy = sim_sig_read(dataset_file_path)
-        sig_lst_tensor = torch.from_numpy(sig_lst_numpy)
-        self.sig_lst_tensor = sig_lst_tensor.type(torch.FloatTensor)
+        self.sig_lst_numpy = sim_sig_read(dataset_file_path)
+        #sig_lst_tensor = torch.from_numpy(sig_lst_numpy)
+        #self.sig_lst_tensor = sig_lst_tensor.type(torch.FloatTensor)
         self.seq_len = seq_len
 
     def __len__(self):
-        return len(self.sig_lst_tensor)
+        return len(self.sig_lst_numpy)
 
     def __getitem__(self, index):
-        return self.sig_lst_tensor[index].view(1, self.seq_len)
+        return torch.from_numpy(self.sig_lst_numpy[index]).type(torch.FloatTensor).view(1, self.seq_len)

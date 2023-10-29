@@ -28,7 +28,7 @@
     "model_param_clip": 0.5
   },
   "inference": {
-    "batch_size": 1024,
+    "batch_size": 2048,
     "inference_data_folder": "/home/proj_wavemoto/dataset/inference_data"
   },
   "debug": {

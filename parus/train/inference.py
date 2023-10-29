@@ -1,4 +1,5 @@
 import os
+import numpy
 import torch
 from parus.fio import pklz_write
 
@@ -13,6 +14,7 @@ need:
 
 def test(model, tst_datagen, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
     # prediction and saving
     with torch.no_grad():
@@ -31,17 +33,22 @@ def test(model, tst_datagen, pred_save_folder):
 
 def inference(model, inference_datagen, filename, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
     # prediction and saving
     with torch.no_grad():
-
+        inp_numpy_lst = []
+        pred_numpy_lst = []
         for inputs in inference_datagen:
             inputs = inputs.to(device)
             outputs = model(inputs)
 
             inp = inputs.squeeze().cpu().numpy()
             pred = outputs.squeeze().cpu().numpy()
+            inp_numpy_lst.append(inp)
+            pred_numpy_lst.append(pred)
 
-            filename = "pred_" + filename
-            pklz_write(os.path.join(pred_save_folder, filename),
-                       {"inp": inp,  "prd": pred})
+        pred_filename = "pred_" + filename
+        pklz_write(os.path.join(pred_save_folder, pred_filename), 
+                {"inp": numpy.concatenate(inp_numpy_lst, axis=0),  
+                 "prd": numpy.concatenate(pred_numpy_lst, axis=0)})
