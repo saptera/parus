@@ -23,7 +23,7 @@
     "total_epoch": 10,
     "batch_size": 64,
     "steps_per_eval": 1000,
-    "learning_rate": 0.0001,
+    "learning_rate": 0.0005,
     "lr_decay": 0.96,
     "model_param_clip": 0.5
   },
@@ -33,12 +33,12 @@
   },
   "debug": {
     "data": {
-      "n_trn_samples": 50000,
-      "n_val_samples": 5000,
-      "n_tst_samples": 5000
+      "n_trn_samples": 5000,
+      "n_val_samples": 500,
+      "n_tst_samples": 500
     },
     "train": {
-      "epoch": 10,
+      "total_epoch": 1,
       "steps_per_eval": 80
     }
   }

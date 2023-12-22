@@ -186,6 +186,16 @@ def sim_lbl_read(sim_lbl_file):
         lbl = np.add(lbl, sig)
     return lbl
 
+def sim_pos_read(sim_pos_file):
+    # Read-in file data
+    with open(sim_pos_file, 'rb') as infile:
+        comp = pkl.load(infile)
+        pos_lst = pkl.loads(zlib.decompress(comp))
+        lbl = [0] * 300
+        for pos in pos_lst:
+            lbl[pos] = 1
+
+    return np.array(lbl)
 
 def trn_plot(file, overlay=True):
     """ Plot model training related files.

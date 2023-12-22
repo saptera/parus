@@ -98,7 +98,8 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        criterion = nn.L1Loss(reduction='mean')
+        #criterion = nn.L1Loss(reduction='mean')
+        criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
         scheduler = torch.optim.lr_scheduler.StepLR(
@@ -107,13 +108,13 @@ if __name__ == '__main__':
         # get datagen
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
         trn_datagen = get_lbl_datagen(os.path.join(trn_folder, "sig"), os.path.join(
-            trn_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
+            trn_folder, "pos"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
         val_folder = os.path.join(data_hparams["data_folder"], "val")
         val_datagen = get_lbl_datagen(os.path.join(val_folder, "sig"), os.path.join(
-            val_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
+            val_folder, "pos"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
         tst_datagen = get_lbl_datagen(os.path.join(tst_folder, "sig"), os.path.join(
-            tst_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "tst")
+            tst_folder, "pos"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
         # run experiment with labelled data
         train(model, criterion, optimizer, scheduler,

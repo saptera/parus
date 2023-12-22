@@ -1,7 +1,7 @@
 import os
 import torch
 from torch.utils import data
-from parus.data import sim_sig_read, sim_lbl_read
+from parus.data import sim_sig_read, sim_lbl_read, sim_pos_read
 
 
 class LabelledMultipleFileDataset(data.Dataset):
@@ -26,13 +26,13 @@ class LabelledMultipleFileDataset(data.Dataset):
     def __getitem__(self, index):
         sig_filename = self.sig_file_lst[index]
         lbl_filename = self.lbl_file_lst[index]
-        sig_filename = os.path.join(
+        sig_file_path = os.path.join(
             self.sig_folder, sig_filename)
-        lbl_filename = os.path.join(
+        lbl_file_path = os.path.join(
             self.lbl_folder, lbl_filename)
         file_num_str = sig_filename[sig_filename.index('_')+1:sig_filename.index('.')] # e.g. sig_00202.sim -> 00202
-        sig = sim_sig_read(sig_filename)
-        lbl = sim_lbl_read(lbl_filename)
+        sig = sim_sig_read(sig_file_path)
+        lbl = sim_pos_read(lbl_file_path)
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)

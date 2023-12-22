@@ -25,8 +25,8 @@ def test(model, tst_datagen, pred_save_folder):
             inp = inputs.squeeze().cpu().numpy()
             pred = outputs.squeeze().cpu().numpy()
             labels = labels.squeeze().cpu().numpy()
-
-            filename = "pred_" + file_num_str + ".sim"
+            
+            filename = "pred_" + file_num_str[0] + ".sim"
             pklz_write(os.path.join(pred_save_folder, filename),
                        {"inp": inp,  "prd": pred, "lbl": labels})
 

@@ -26,6 +26,13 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             inputs, labels = inputs.to(device), labels.to(device)
             output = model(inputs)
             loss = criterion(output, labels.float())
+            #print("output shape: ", output.shape)
+            #print(output)
+            #print("labels shape: ", labels.shape)
+            #print(labels)
+            #print("loss: ", loss)
+            #print("criterion: ", criterion)
+
             loss.backward()
             optimizer.step()
             nn.utils.clip_grad_norm_(
