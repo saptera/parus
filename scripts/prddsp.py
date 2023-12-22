@@ -28,6 +28,33 @@ def sig_norm_plt(sig: np.ndarray):
     return dst
 
 
+# Spike position acquisition function
+def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float):
+    px = np.where(pos > 0.8)[0]
+    pv = spk[px]
+    py = pv + np.sign(pv) * sft
+    return {'x': px, 'y': py}
+
+
+# Label and prediction arrangement function
+def lbl_prd_plt(dat, sft: float, nrm: bool):
+    if nrm:
+        if type(dat) == dict:
+            dat_spk = sig_norm_plt(dat['spk'])
+            dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
+        else:
+            dat_spk = sig_norm_plt(dat)
+            dat_pos = None
+    else:
+        if type(dat) == dict:
+            dat_spk = dat['spk']
+            dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
+        else:
+            dat_spk = dat
+            dat_pos = None
+    return dat_spk, dat_pos
+
+
 # Function for updating canvas
 def update_figure():
     global i, x_pos, s_flag
@@ -43,21 +70,34 @@ def update_figure():
     title = r"$\bf{Viewing: %s}$" % file.replace('_', '\\_')
     title = title + "\nSection: %%0%dd of %%0%dd" % (len(str(n)), len(str(n))) % (i + 1, n + 1) if s_flag else title
     # Arrange data
+    inp = data['inp']
+    lbl = data.get('lbl', None)
+    prd = data['prd']
     if args.norm:
-        lbl = sig_norm_plt(data['lbl']) if 'lbl' in data else None
         inp = sig_norm_plt(data['inp'])
-        prd = sig_norm_plt(data['prd'])
+        lbl_spk, lbl_pos = (None, None) if lbl is None else lbl_prd_plt(lbl, sft=10., nrm=True)
+        prd_spk, prd_pos = lbl_prd_plt(prd, sft=25., nrm=True)
     else:
-        lbl = data.get('lbl', None)
-        inp = data['inp']
-        prd = data['prd']
-    # Plotting
+        lbl_spk, lbl_pos = (None, None) if lbl is None else lbl_prd_plt(lbl, sft=10., nrm=False)
+        prd_spk, prd_pos = lbl_prd_plt(prd, sft=25., nrm=False)
+    # Plot initialization
     ax.clear()
     ax.set_title(title)
-    if (lbl is not None) and args.noref:
-        ax.plot(x, lbl, color=u'#2ca02c', label="Reference")
+    # Plot input data
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
-    ax.plot(x, prd, color=u'#1f77b4', label="Prediction")
+    # Plot labels
+    if (lbl is not None) and args.noref:
+        if lbl_pos is None:
+            ax.plot(x, lbl_spk, color=u'#2ca02c', label="Reference")
+        else:
+            ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
+            ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#2ca02c', marker='^', label="Position Reference")
+    # Plot model predictions
+    if prd_pos is None:
+        ax.plot(x, prd_spk, color=u'#1f77b4', label="Prediction")
+    else:
+        ax.plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
+        ax.scatter(prd_pos['x'], prd_pos['y'], color=u'#1f77b4', marker='o', label="Position Prediction")
     # Set Y axis limits
     if (dn is not None) and (up is not None):
         ax.set_ylim(dn, up)
@@ -125,8 +165,8 @@ fig, ax = plt.subplots()
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
 ax.set_title("Ready!")
-ax.hlines(0, 0, 100, color=u'#2ca02c', label="Reference")
 ax.hlines(1, 0, 100, color=u'#ff7f0e', label="Input")
+ax.hlines(0, 0, 100, color=u'#2ca02c', label="Reference")
 ax.hlines(-1, 0, 100, color=u'#1f77b4', label="Prediction")
 ax.set_ylim([-2, 2])
 ax.legend(loc='upper right')
