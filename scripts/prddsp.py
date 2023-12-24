@@ -7,17 +7,17 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.0")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
-parser.add_argument('-r', '--noref', dest='noref', default=True, action='store_false', help="Reference plot switch")
+parser.add_argument('-r', '--noref', dest='noref', default=False, action='store_true', help="Disable reference plot")
 parser.add_argument('-p', '--pospd', dest='pospd', default=False, action='store_true', help="Position only prediction")
-parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
-parser.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Continuous sample switch")
-parser.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample section overlap")
+parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Enable data normalization")
+parser.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Enable continuous sampling")
+parser.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample overlapping length")
 parser.add_argument('-f', '--freq', dest='freq', type=float, default=None, metavar="[float]", help="Sampling frequency")
-parser.add_argument('-x', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Plot y-axis max")
-parser.add_argument('-i', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Plot y-axis min")
-parser.add_argument('-l', '--lims', dest='lims', default=False, action='store_true', help="Plot global y-limit switch")
+parser.add_argument('-x', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis max value")
+parser.add_argument('-i', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis min value")
+parser.add_argument('-l', '--lims', dest='lims', default=False, action='store_true', help="Enable global y-axis limits")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -97,7 +97,7 @@ def update_figure():
     # Plot input data
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     # Plot labels
-    if args.noref:
+    if not args.noref:
         if lbl_spk is not None:
             ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
         if lbl_pos is not None:
