@@ -7,7 +7,7 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.1")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-r', '--noref', dest='noref', default=False, action='store_true', help="Disable reference plot")
 parser.add_argument('-p', '--pospd', dest='pospd', default=False, action='store_true', help="Position only prediction")
@@ -49,6 +49,7 @@ def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float):
 # Label and prediction arrangement function
 def lbl_prd_plt(dat, inp: np.ndarray, sft: float):
     if args.norm:
+        sft /= 500  # Adapt marker position shift
         if type(dat) == dict:
             dat_spk = sig_norm_plt(dat['spk'])
             dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
