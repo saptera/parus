@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model 
 parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v1.5")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-r', '--noref', dest='noref', default=True, action='store_false', help="Reference plot switch")
+parser.add_argument('-p', '--pospd', dest='pospd', default=False, action='store_true', help="Position only prediction")
 parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Plot normalization switch")
 parser.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Continuous sample switch")
 parser.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample section overlap")
@@ -30,28 +31,45 @@ def sig_norm_plt(sig: np.ndarray):
 
 # Spike position acquisition function
 def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float):
+    # Detect spike position
     px = np.where(pos > 0.8)[0]
-    pv = spk[px]
-    py = pv + np.sign(pv) * sft
+    if px.size == 0:
+        py = np.empty(0)
+    else:
+        # Get spike trend
+        grd = np.gradient(spk, 2, edge_order=1)
+        idx = px - 1
+        idx[0] = 0 if idx[0] < 0 else idx[0]  # Avoid negative index
+        sp = np.sign(grd[idx])
+        # Set Y positions for marker
+        py = spk[px] + sp * sft
     return {'x': px, 'y': py}
 
 
 # Label and prediction arrangement function
-def lbl_prd_plt(dat, sft: float, nrm: bool):
-    if nrm:
+def lbl_prd_plt(dat, inp: np.ndarray, sft: float):
+    if args.norm:
         if type(dat) == dict:
             dat_spk = sig_norm_plt(dat['spk'])
             dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
         else:
-            dat_spk = sig_norm_plt(dat)
-            dat_pos = None
+            if args.pospd:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat, sft)
+            else:
+                dat_spk = sig_norm_plt(dat)
+                dat_pos = None
     else:
         if type(dat) == dict:
             dat_spk = dat['spk']
             dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
         else:
-            dat_spk = dat
-            dat_pos = None
+            if args.pospd:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat, sft)
+            else:
+                dat_spk = dat
+                dat_pos = None
     return dat_spk, dat_pos
 
 
@@ -70,34 +88,25 @@ def update_figure():
     title = r"$\bf{Viewing: %s}$" % file.replace('_', '\\_')
     title = title + "\nSection: %%0%dd of %%0%dd" % (len(str(n)), len(str(n))) % (i + 1, n + 1) if s_flag else title
     # Arrange data
-    inp = data['inp']
-    lbl = data.get('lbl', None)
-    prd = data['prd']
-    if args.norm:
-        inp = sig_norm_plt(data['inp'])
-        lbl_spk, lbl_pos = (None, None) if lbl is None else lbl_prd_plt(lbl, sft=10., nrm=True)
-        prd_spk, prd_pos = lbl_prd_plt(prd, sft=25., nrm=True)
-    else:
-        lbl_spk, lbl_pos = (None, None) if lbl is None else lbl_prd_plt(lbl, sft=10., nrm=False)
-        prd_spk, prd_pos = lbl_prd_plt(prd, sft=25., nrm=False)
+    inp = sig_norm_plt(data['inp']) if args.norm else data['inp']
+    lbl_spk, lbl_pos = lbl_prd_plt(data['lbl'], inp, sft=10.) if 'lbl' in data else (None, None)
+    prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=25.)
     # Plot initialization
     ax.clear()
     ax.set_title(title)
     # Plot input data
     ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     # Plot labels
-    if (lbl is not None) and args.noref:
-        if lbl_pos is None:
-            ax.plot(x, lbl_spk, color=u'#2ca02c', label="Reference")
-        else:
+    if args.noref:
+        if lbl_spk is not None:
             ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
-            ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#2ca02c', marker='^', label="Position Reference")
+        if lbl_pos is not None:
+            ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
     # Plot model predictions
-    if prd_pos is None:
-        ax.plot(x, prd_spk, color=u'#1f77b4', label="Prediction")
-    else:
+    if prd_spk is not None:
         ax.plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
-        ax.scatter(prd_pos['x'], prd_pos['y'], color=u'#1f77b4', marker='o', label="Position Prediction")
+    if prd_pos is not None:
+        ax.scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
     # Set Y axis limits
     if (dn is not None) and (up is not None):
         ax.set_ylim(dn, up)
@@ -165,10 +174,12 @@ fig, ax = plt.subplots()
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
 ax.set_title("Ready!")
-ax.hlines(1, 0, 100, color=u'#ff7f0e', label="Input")
-ax.hlines(0, 0, 100, color=u'#2ca02c', label="Reference")
-ax.hlines(-1, 0, 100, color=u'#1f77b4', label="Prediction")
-ax.set_ylim([-2, 2])
+ax.hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
+ax.hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
+ax.scatter(list(range(0, 101, 10)), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
+ax.hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+ax.scatter(list(range(0, 101, 10)), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+ax.set_ylim([-3, 3])
 ax.legend(loc='upper right')
 # Show plot
 plt.tight_layout()
