@@ -7,9 +7,9 @@ import torch.nn as nn
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
-from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset
+from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset
 from parus.train.train import train, load_model
-from parus.train.inference import test, inference
+from parus.train.inference import duo_test, test, inference
 
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
@@ -26,7 +26,7 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
     return hparams
 
 
-def get_lbl_datagen(sig_folder, lbl_folder, seq_len, batch_size, data_hparams, train_mode="trn"):
+def get_lbl_datagen(sig_folder, lbl_folder, seq_len, batch_size, data_hparams, train_mode="trn", lbl2_folder=None):
     if train_mode == "trn":
         dataset = LabelledMultipleFileDataset(
             sig_folder, lbl_folder, data_hparams["n_trn_samples"], seq_len)
@@ -36,6 +36,9 @@ def get_lbl_datagen(sig_folder, lbl_folder, seq_len, batch_size, data_hparams, t
     elif train_mode == "tst":
         dataset = LabelledMultipleFileDataset(
             sig_folder, lbl_folder, data_hparams["n_tst_samples"], seq_len)
+    elif train_mode == "duo":
+        dataset = DuoLabelMultipleFileDataset(
+            sig_folder, lbl_folder, lbl2_folder, data_hparams["n_tst_samples"], seq_len)
     else:
         raise Exception("invalid training mode, must be trn, val, or tst")
 
@@ -98,7 +101,7 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        #criterion = nn.L1Loss(reduction='mean')
+        # criterion = nn.L1Loss(reduction='mean')
         criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
@@ -114,7 +117,8 @@ if __name__ == '__main__':
             val_folder, "pos"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
         tst_datagen = get_lbl_datagen(os.path.join(tst_folder, "sig"), os.path.join(
-            tst_folder, "pos"), model_hparams["sequence_length"], 1, data_hparams, "tst")
+            tst_folder, "lbl"), model_hparams["sequence_length"], 1, data_hparams, "duo", os.path.join(
+            tst_folder, "pos"))
 
         # run experiment with labelled data
         train(model, criterion, optimizer, scheduler,
@@ -124,7 +128,16 @@ if __name__ == '__main__':
         tst_pred_folder = os.path.join(
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
-        test(model, tst_datagen, tst_pred_folder)
+        # test(model, tst_datagen, tst_pred_folder)
+        spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                                       context_dim=model_hparams["d_context"],
+                                       d_model=model_hparams["d_model"],
+                                       nhead=model_hparams["n_head"],
+                                       num_layers=model_hparams["n_layers"],
+                                       dim_feedforward=model_hparams["d_feedforward"])
+        spk_model = load_model(model_hparams["checkpoint_file"], spk_model)
+        pos_model = model
+        duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 
     if args.inference:
         inference_hparams = hparams["inference"]
