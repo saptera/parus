@@ -325,9 +325,9 @@ sim_fp = h5.File(os.path.join(args.out_dir, gen_time + '.sim'), 'w')
 print("Saving generation parameters")
 meta = sim_fp.create_group('args')
 for k, v in vars(args).items():
-    if type(v) == str:
+    if isinstance(v, str):
         meta.create_dataset(name=k, data=v, dtype=h5.string_dtype(encoding='utf-8', length=None))
-    elif type(v) == int or type(v) == float:
+    elif isinstance(v, (int, float)):
         meta.create_dataset(name=k, data=np.asarray(v))
     else:
         meta.create_dataset(name=k, data='NULL', dtype=h5.string_dtype(encoding='utf-8', length=None))

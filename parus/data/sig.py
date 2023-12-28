@@ -390,7 +390,7 @@ def sig_split(src, size, overlap=10, endpad=0.0):
     Returns:
         list[np.ndarray]: {1D - n * size} Output list of split signal
     """
-    if type(src) != np.ndarray:
+    if not isinstance(src, np.ndarray):
         src = np.asarray(src)
     dst = []  # INIT VAR
     for i in range(0, len(src), size - overlap):

@@ -381,7 +381,7 @@ def sim_args_read(sim_fp):
     arg = {k: None for k in kl}  # INIT VAR
     for k in kl:
         v = sim_fp['args'][k][()]
-        if type(v) == bytes:
+        if isinstance(v, bytes):
             dc = v.decode('utf-8')
             if dc != 'NULL':
                 arg[k] = dc

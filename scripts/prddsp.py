@@ -50,7 +50,7 @@ def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float):
 def lbl_prd_plt(dat, inp: np.ndarray, sft: float):
     if args.norm:
         sft /= 500  # Adapt marker position shift
-        if type(dat) == dict:
+        if isinstance(dat, dict):
             dat_spk = sig_norm_plt(dat['spk'])
             dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
         else:
@@ -61,7 +61,7 @@ def lbl_prd_plt(dat, inp: np.ndarray, sft: float):
                 dat_spk = sig_norm_plt(dat)
                 dat_pos = None
     else:
-        if type(dat) == dict:
+        if isinstance(dat, dict):
             dat_spk = dat['spk']
             dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
         else:

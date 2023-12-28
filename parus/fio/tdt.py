@@ -76,7 +76,7 @@ def tdt_tev_read(tev_file, tsq, name=None):
     if name is None:
         name = np.unique(tsq['name'])
     else:
-        if type(name) == str:
+        if isinstance(name, str):
             name = [name]
     # Process import
     fp = open(tev_file, 'rb')
