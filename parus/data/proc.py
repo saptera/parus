@@ -41,15 +41,15 @@ def spk_merge(spk_data):
 
 def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
     """ Random slice and extract neuronal signal data for training models.
-            This function only return NumPy-Int8 0-1 type labels.
-            Samples form this function are simple random slices of raw signal.
+            This function only return NumPy-int8[0|1] (one-hot) type labels
+            Samples form this function are simple random slices of raw signal
 
     Args:
-        sig (np.ndarray): {1D} Single channel neuronal signal data.
-        time (np.ndarray): {1D} Recording time data, must be sorted and the same size as [sig].
-        lbl (np.ndarray): {1D} Labelled timestamp of neuron spikes.
-        num (int): Number of samples to extract. (default: 1000)
-        size (int): Data point length of each sample. (default: 150)
+        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
+        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
+        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
+        num (int): Number of samples to extract (default: 1000)
+        size (int): Data point length of each sample (default: 150)
 
     Returns:
         list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:
@@ -76,15 +76,15 @@ def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
 
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
-            This function only return NumPy-Int8 0-1 type labels.
-            Samples form this function will always containing spikes.
+            This function only return NumPy-int8[0|1] (one-hot) type labels
+            Samples form this function will always contain spikes
 
     Args:
-        sig (np.ndarray): {1D} Single channel neuronal signal data.
-        time (np.ndarray): {1D} Recording time data, must be sorted and the same size as [sig].
-        lbl (np.ndarray): {1D} Labelled timestamp of neuron spikes.
-        num (int): Number of samples to extract. (default: 1000)
-        size (int): Data point length of each sample. (default: 150)
+        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
+        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
+        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
+        num (int): Number of samples to extract (default: 1000)
+        size (int): Data point length of each sample (default: 150)
 
     Returns:
         list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:
@@ -116,20 +116,21 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
     """ Extract neuronal signal for archiving.
 
     Args:
-        sig (np.ndarray): {1D} Single channel neuronal signal data.
-        time (np.ndarray): {1D} Recording time data, must be sorted and the same size as [sig].
-        lbl (np.ndarray): {1D} Labelled timestamp of neuron spikes.
-        size (int): Data point length of sample. (default: 50)
-        pos (int or None): Location of spike. (default: None = center of sample)
-        method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'none')
-                                                  'min':  detect minimum of signal within [-rng_srch, rng_srch]
-                                                  'max':  detect maximum of signal within [-rng_srch, rng_srch]
-                                                  'none': keep original label from [sig_data], ignoring [rng_srch]
-        rng_srch (int): Range to search local extremum. (default: 10)
+        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
+        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
+        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
+        size (int): Data point length of sample (default: 50)
+        pos (int | None): Location of spike (default: None = center of sample)
+        method (str): {'min' | 'max' | 'none'}: Local extremum search method. (default: 'none')
+            - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
+            - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
+            - 'none': keep original label from [sig_data], ignoring [rng_srch]
+        rng_srch (int): Range to search local extremum (default: 10)
 
     Returns:
-        tuple[np.ndarray, int]: np.mean(sig_samp): {1D-FLOAT64} Neuronal signal samples.
-                                pos: {INT} Index of spike.
+        tuple[np.ndarray, int]: Averaged signal sample
+            - mean: {1D-float64} Neuronal signal samples
+            - pos: {int} Index of spike
     """
     pos = int(size / 2) if pos is None else pos
     # Verify inputs
@@ -201,10 +202,8 @@ def trn_plot(file, overlay=True):
     """ Plot model training related files.
 
     Args:
-        file (str): File containing data generated for training or predicted by model (*.sim, *.tst).
-        overlay (bool): Set [True] to plot data in one plot, [False] to plot in subplots. (default: True)
-
-    Returns:
+        file (str): File containing data generated for training or predicted by model (*.sim, *.tst)
+        overlay (bool): Set [True] to plot data in one plot, [False] to plot in subplots (default: True)
     """
     # Read file
     file_ext = os.path.splitext(file)[1].lstrip('.')
@@ -263,18 +262,19 @@ def trn_plot(file, overlay=True):
 
 
 def pred_mae(data, th=35):
-    """ Get evaluation score of predicted signal, by computing MAE.
+    """ Get evaluation score of predicted signal, by computing mean absolute error (MAE).
 
     Args:
         data (dict): Denoised signal output from model, structure as below:
-            'inp': (np.ndarray): Input signal
-            'prd': (np.ndarray): Predicted signal
-            'lbl': (np.ndarray): Signal label
-        th (int or float): Quality threshold (default: 10)
+            - 'inp': (np.ndarray): Input signal
+            - 'prd': (np.ndarray): Predicted signal
+            - 'lbl': (np.ndarray): Signal label
+        th (int | float): Quality threshold (default: 10)
 
     Returns:
-        tuple[float, bool]: score: {FLOAT} Evaluation score
-                            q: {BOOL} Quality check result
+        tuple[float, bool]: Mean absolute error (MAE) result of prediction
+            - score: {float} Evaluation score
+            - q: {bool} Quality check result
     """
     score = np.mean(np.abs(np.subtract(data['lbl'], data['prd']))).item()
     q = score < th
@@ -283,18 +283,19 @@ def pred_mae(data, th=35):
 
 def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
     """ Assign a value list around the signal.
-            This function only accept NumPy-Int8 0-1 type labels.
-            This function will return NumPy-Float64 type labels.
+            This function only accept NumPy-int8[0|1] (one-hot) type labels
+            This function will return NumPy-float64 type labels
     Args:
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
-                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}
-        rng_asgn (int): Range to assign values.
-        val_lst (tuple or list or np.ndarray): List of value to be assigned.
-        method (str): {'min' OR 'max' OR 'none'}: Local extremum search method. (default: 'min')
-                                                  'min':  detect minimum of signal within [-rng_srch, rng_srch]
-                                                  'max':  detect maximum of signal within [-rng_srch, rng_srch]
-                                                  'none': keep original label from [sig_data], ignoring [rng_srch]
-        rng_srch (int): Range to search local extremum. (default: 10)
+                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8[0|1])}
+        rng_asgn (int): Range to assign values
+        val_lst (list | np.ndarray): List of value to be assigned
+        method (str): {'min' | 'max' | 'none'}: Local extremum search method (default: 'min')
+            - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
+            - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
+            - 'none': keep original label from [sig_data], ignoring [rng_srch]
+        rng_srch (int): Range to search local extremum (default: 10)
+
     Returns:
         dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
                                {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-float64)}

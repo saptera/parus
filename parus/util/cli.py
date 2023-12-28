@@ -18,11 +18,11 @@ def yn_query(query, default=None):
     """ Simple yes/no query.
 
     Args:
-        query (str): Query message.
-        default (bool or None): Default output with [ENTER], set to None to disable default. (default: None)
+        query (str): Query message
+        default (bool | None): Default output with [ENTER], set to None to disable default (default: None)
 
     Returns:
-        bool: User response.
+        bool: User response
     """
     if default is True:
         prompt = " [Y/n]: "
@@ -46,11 +46,11 @@ def cli_path_in(msg_ppt=None, msg_err=None):
     """ Get a command line input of path.
 
     Args:
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
 
     Returns:
-        str: Inputted path.
+        str: Inputted path
     """
     msg_ppt = "Please define a path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid path, please try again: " if msg_err is None else msg_err
@@ -66,11 +66,11 @@ def cli_file_in(msg_ppt=None, msg_err=None):
     """ Get a command line input of file.
 
     Args:
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
 
     Returns:
-        str: Inputted file path.
+        str: Inputted file path
     """
     msg_ppt = "Please define a file path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid file path, please try again: " if msg_err is None else msg_err
@@ -86,14 +86,14 @@ def cli_int_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
     """ Get a command line input of an integer.
 
     Args:
-        low (int or None): Minimum value for input.
-        high (int or None): Maximum value for input.
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
-        msg_rng (str or None): Error message for invalid range.
+        low (int | None): Minimum value for input
+        high (int | None): Maximum value for input
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
+        msg_rng (str | None): Error message for invalid range
 
     Returns:
-        int: Inputted integer.
+        int: Inputted integer
     """
     msg_ppt = "Please define an integer: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid input, please try again: " if msg_err is None else msg_err
@@ -139,11 +139,11 @@ def cli_float_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
     """ Get a command line input of a float.
 
     Args:
-        low (float or None): Minimum value for input.
-        high (float or None): Maximum value for input.
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
-        msg_rng (str or None): Error message for invalid range.
+        low (float | None): Minimum value for input
+        high (float | None): Maximum value for input
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
+        msg_rng (str | None): Error message for invalid range
 
     Returns:
         float: Inputted float.
@@ -192,12 +192,12 @@ def cli_list_sel(list_in, msg_ppt=None, msg_err=None):
     """ Get a command line selection of string list.
 
     Args:
-        list_in (list[str]): List with element to select from.
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
+        list_in (list[str]): List with element to select from
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
 
     Returns:
-        str: Inputted path.
+        str: Inputted path
     """
     msg_ppt = "Please select from following - " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid selection, please try again: " if msg_err is None else msg_err
@@ -223,11 +223,11 @@ def cli_outdir(msg_ppt=None, msg_err=None):
     """ Get a command line input of an output path.
 
     Args:
-        msg_ppt (str or None): Prompt message for input.
-        msg_err (str or None): Error message for invalid input.
+        msg_ppt (str | None): Prompt message for input
+        msg_err (str | None): Error message for invalid input
 
     Returns:
-        str: Inputted path.
+        str: Inputted path
     """
     msg_ppt = "Please define a path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid path, please try again: " if msg_err is None else msg_err

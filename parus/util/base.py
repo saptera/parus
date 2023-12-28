@@ -7,10 +7,10 @@ from scipy.stats import norm, laplace
 
 """Function list:
 x64_sys(): Check if current system architecture is 64-bit based.
-make_outdir(out_dir, err_msg): Recursive create an output leaf directory for data.
-altmk_outdirs(out_dir, alt_dir, err_msg): Recursive create an output leaf directory with alternative directory.
-search_files(base_dir, fpre, fsuf):  Find all files meets the search conditions.
-prog_print(iteration, total, prefix, suffix): Create a terminal progress bar for a loop.
+make_outdir(out_dir, err_msg="Invalid output directory!"): Recursive create an output leaf directory for data.
+altmk_outdirs(out_dir, alt_dir, err_msg="Inv..."): Recursive create an output leaf directory with alternative directory.
+search_files(base_dir, fpre=str(), fsuf=str()):  Find all files meets the search conditions.
+prog_print(iteration, total, prefix=str(), suffix=str()): Create a terminal progress bar for a loop.
 arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
 norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
 laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
@@ -19,25 +19,24 @@ laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distributi
 
 def x64_sys():
     """ Check if current system architecture is 64-bit based.
-    Args:
 
     Returns:
         bool: True (if system is x64); False (if system is x32)
     """
-    return sys.maxsize > 4294967296    # Max size for 32-bit system: 2**32 = 4294967296
+    return sys.maxsize > 4294967296  # Max size for 32-bit system: 2**32 = 4294967296
 
 
-def make_outdir(out_dir, err_msg='Invalid output directory!'):
+def make_outdir(out_dir, err_msg="Invalid output directory!"):
     """ Recursive create an output leaf directory for data.
 
     Args:
-        out_dir (str): Output directory.
-        err_msg (str): Error message when creation error happens.
+        out_dir (str): Output directory
+        err_msg (str): Error message when creation error happens
 
     Returns:
-        str: Created output directory.
+        str: Created output directory
     """
-    if not os.path.isdir(out_dir):    # Check if folder exists
+    if not os.path.isdir(out_dir):  # Check if folder exists
         try:
             os.makedirs(out_dir)
         except OSError:
@@ -46,20 +45,20 @@ def make_outdir(out_dir, err_msg='Invalid output directory!'):
     return out_dir
 
 
-def altmk_outdirs(out_dir, alt_dir, err_msg='Invalid output directory!'):
+def altmk_outdirs(out_dir, alt_dir, err_msg="Invalid output directory!"):
     """ Recursive create an output leaf directory with alternative directory.
 
     Args:
-        out_dir (str): Output directory.
-        alt_dir (str): Alternative directory when [out_dir] is missing.
-        err_msg (str): Error message when creation error happens.
+        out_dir (str): Output directory
+        alt_dir (str): Alternative directory when [out_dir] is missing
+        err_msg (str): Error message when creation error happens
 
     Returns:
-        str: Created output directory.
+        str: Created output directory
     """
     if (out_dir == str()) or (out_dir is None):
         out_path = alt_dir
-        if not os.path.isdir(out_path):    # Check again if folder exists
+        if not os.path.isdir(out_path):  # Check again if folder exists
             os.makedirs(out_path)
     elif not os.path.isdir(out_dir):
         try:
@@ -74,26 +73,25 @@ def search_files(base_dir, fpre=str(), fsuf=str()):
     """ Find all files meets the search conditions.
 
     Args:
-        base_dir (str): The base folder path to search files.
-        fpre (str): Prefix of files to be found, use empty string to find all. (default: str())
-        fsuf (str): Suffix of files to be found, use empty string to find all. (default: str())
+        base_dir (str): The base folder path to search files
+        fpre (str): Prefix of files to be found, use empty string to find all (default: str())
+        fsuf (str): Suffix of files to be found, use empty string to find all (default: str())
 
     Returns:
-        tuple[list[list[str]], list[str]]:
-            flst (list[list[str]]): A list of lists(leaf-folders) with absolute path of files meets search conditions.
-            dlst (list[str]): A list of all leaf folder names contains files found.
-            --  [flst] and [dlst] have same length, the order of elements are matched.
+        tuple[list[list[str]], list[str]]: File absolute path and their leaf folders, the order of elements are matched
+            flst (list[list[str]]): A list of lists (leaf-folders) with absolute path of files meets search conditions
+            dlst (list[str]): A list of all leaf folder names contains files found
     """
     # Get files and their leaf-folder path
-    flst = []    # INIT VAR
-    dlst = []    # INIT VAR
+    flst = []  # INIT VAR
+    dlst = []  # INIT VAR
     for path, _, file in os.walk(base_dir):
-        tmp_lst = []    # RESET VAR
+        tmp_lst = []  # RESET VAR
         for filename in [f for f in file if f.startswith(fpre) and f.endswith(fsuf)]:
             tmp_lst.append(os.path.join(path, filename))
         if tmp_lst:
-            flst.append(tmp_lst)    # Get files
-            dlst.append(path)    # Get leaf-folder
+            flst.append(tmp_lst)  # Get files
+            dlst.append(path)  # Get leaf-folder
     # Trim the common prefix of leaf-folders
     base = os.path.commonpath(dlst)
     for i in range(len(dlst)):
@@ -105,17 +103,16 @@ def prog_print(iteration, total, prefix=str(), suffix=str()):
     """Create a terminal progress bar for a loop.
 
     Args:
-        iteration (int): Current iteration.
-        total (int): Total iterations.
-        prefix (str): Prefix string of progress bar. (default: str())
-        suffix (str): Suffix string of progress bar. (default: str())
-
-    Returns:
+        iteration (int): Current iteration (0-based)
+        total (int): Total iterations
+        prefix (str): Prefix string of progress bar (default: str())
+        suffix (str): Suffix string of progress bar (default: str())
     """
     # Basic settings
     decimals = 2  # Decimals in percent completed
     length = 50  # Character length of bar
     fill = '>'  # Bar fill character
+    iteration += 1  # Convert to 1-based count
     # Create percentage bar
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / total))
     filled = int(length * iteration // total)
@@ -131,13 +128,13 @@ def arr_rand_samp(arr, n_samp):
     """ Random sampling of unique samples from a NumPy array.
 
     Args:
-        arr (np.ndarray): Input array.
-        n_samp (int): Number of samples.
+        arr (np.ndarray): Input array
+        n_samp (int): Number of samples
 
     Returns:
-        np.ndarray: {1D} Samples from original array.
+        np.ndarray: {1D} Samples from original array
     """
-    mask = np.array([True]*n_samp + [False]*(arr.size - n_samp))
+    mask = np.array([True] * n_samp + [False] * (arr.size - n_samp))
     np.random.shuffle(mask)
     mask = np.reshape(mask, arr.shape)
     return arr[mask]
@@ -147,15 +144,15 @@ def norm_lst_gen(peak, side, level=2):
     """ Generate a list obeying normal distribution.
 
     Args:
-        peak (float): Peak (centre) value of output.
-        side (int): Number of samples around the peak.
-        level (int): {1 OR 2 OR 3}: Level of three-sigma rule within the [size]. (default: 2)
-                     1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
-                     2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
-                     3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
+        peak (float): Peak (centre) value of output
+        side (int): Number of samples around the peak
+        level (int): {1 | 2 | 3}: Level of three-sigma rule within the [size]. (default: 2)
+            - 1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
+            - 2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
+            - 3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
 
     Returns:
-        list[float]: Output list of generated value.
+        list[float]: Output list of generated value
     """
     lvl_dic = {1: 1, 2: 2, 3: 3}
     nd = norm(loc=0, scale=side / lvl_dic[level])  # Normal distribution sigma range
@@ -170,9 +167,9 @@ def laplace_lst_gen(peak, side, scale=1):
     """ Generate a list obeying laplace distribution.
 
     Args:
-        peak (float): Peak (centre) value of output.
-        side (int): Number of samples around the peak.
-        scale (int or float): : Diversity of generated samples. (default: 1)
+        peak (float): Peak (centre) value of output
+        side (int): Number of samples around the peak
+        scale (int | float): : Diversity of generated samples (default: 1)
 
     Returns:
         list[float]: Output list of generated value.

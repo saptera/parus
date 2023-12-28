@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
     pklz_read(file): Read compressed pickled data from a file.
     pklz_write(file, data, level=-1): Write compressed pickled data to a file.
     cjsh_read(file): Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
-    cjsh_write(file, data, level=9): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
+    cjsh_write(file, data, level=-1): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
 # Neural data file IO functions:
   -> ARC data structure definition
     arc_read(arc_file): Read archival neural signal data file.
@@ -39,7 +39,7 @@ def pklz_read(file):
         file (str): File contained compressed pickled data (*.*)
 
     Returns:
-        data: Imported data
+        Imported data
     """
     with open(file, 'rb') as infile:
         comp = pkl.load(infile)
@@ -53,7 +53,7 @@ def pklz_write(file, data, level=-1):
     Args:
         file (str): File to write data (*.*)
         data: Any type of picklable data
-        level (int): Compress level of input data, valid value [-1, 9] (default: -1)
+        level (int): {-1 ~ 9} Compress level of input data (default: -1)
 
     Returns:
         bool: File creation status
@@ -92,13 +92,13 @@ def cjsh_read(file):
     return data
 
 
-def cjsh_write(file, data, level=9):
+def cjsh_write(file, data, level=-1):
     """ Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
 
     Args:
         file (str): Output file name
         data: Any type of data that is JSON serializable
-        level (int): Compress level of input data, valid value [-1, 9] (default: 9)
+        level (int): {-1 ~ 9} Compress level of input data (default: -1)
 
     Returns:
         bool: File creation status
@@ -127,15 +127,15 @@ def cjsh_write(file, data, level=9):
         data (dict): signal data structure {
             sig (list[float]): neural signal data
             pos (int): index of spike location in [sig]
-            rng (list[int, int] or None): 2 indices to define refined signal range
-            freq (int or float): recording frequency of [sig]
+            rng (list[int, int] | None): 2 indices to define refined signal range
+            freq (int | float): recording frequency of [sig]
         }
         meta (dict): metadata structure of the signal {
             organism (dict): organism for the signal recording {
                 gn (str): generic name
                 se (str): specific epithet
                 st (str): strain,
-                mod (str or None): genetic modification, None for wildtype
+                mod (str | None): genetic modification, None for wildtype
                 note (Any): extra notes
             }
             region (list): recoding region(s) of the signal
@@ -149,7 +149,7 @@ def cjsh_write(file, data, level=9):
                 mfr (str): system manufacture
                 pn (str): manufacture part number or model
                 sn (str): manufacture serial number or batch number
-                soc (int or float or str): Socket in system for recording
+                soc (int | float | str): Socket in system for recording
                 note (Any): extra notes
             }
             probe (dict): recording probe information {
@@ -268,14 +268,14 @@ def arc_plot(arc_file, save=False):
     noi_data (dict): recording noise signal: {
         data (dict): neural recording noise data structure {
             noi (list[float]): neural recording noise data
-            freq (int or float): recording frequency of [noi]
+            freq (int | float): recording frequency of [noi]
         }
         meta (dict): metadata structure of the noise {
             organism (dict): organism for the signal recording {
                 gn (str): generic name
                 se (str): specific epithet
                 st (str): strain,
-                mod (str or None): genetic modification, None for wildtype
+                mod (str | None): genetic modification, None for wildtype
                 note (Any): extra notes
             }
             region (list): recoding region(s) of the signal
@@ -288,7 +288,7 @@ def arc_plot(arc_file, save=False):
                 mfr (str): system manufacture
                 pn (str): manufacture part number or model
                 sn (str): manufacture serial number or batch number
-                soc (int or float or str): Socket in system for recording
+                soc (int | float | str): Socket in system for recording
                 note (Any): extra notes
             }
             probe (dict): recording probe information {
@@ -296,7 +296,7 @@ def arc_plot(arc_file, save=False):
                 mfr (str): probe manufacture
                 pn (str): manufacture part number or model
                 sn (str): manufacture serial number or batch number
-                chn (int or float): recording site channel number
+                chn (int | float): recording site channel number
                 note (Any): extra notes
             }
             datetime (str[datetime.ISO-format]): recording date and time information
@@ -400,11 +400,11 @@ def sim_data_read(sim_fp, idx, ex=False):
 
     Returns:
         Generated signal and label
-            - sig (np.ndarray): {1D} Simulated signal data
+            - sig (np.ndarray): {1D-scalar} Simulated signal data
             - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
-                - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
-                - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
-            - pos (np.ndarray): {1D, 0 or 1} Simulated signal data spike position (one-hot)
+                - 'noise' (np.ndarray): {1D-scalar} Noise ground truth of [sig]
+                - 'signal' (list[np.ndarray]): {1D-scalar} Grouped noise-free signal of [sig]
+            - pos (np.ndarray): {1D-0|1} Simulated signal data spike position (one-hot)
             - typ (str): Sample generation type ('sim': standard, 'nrm': extra standard, 'spc': extra special)
     """
     grp = 'exeg' if ex else 'sims'

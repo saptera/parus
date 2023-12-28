@@ -7,18 +7,20 @@ import warnings
 
 """Function list:
 plt_mdl_perf(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
+fit_exp_loss(trn_loss, vld_loss): Estimate future loss with exponential model.
 """
 
 
 def plt_mdl_perf(prd, sig, lbl, size=(256, 32)):
     """ Plot current model performance with ground truth on terminal.
+
     Args:
         prd (np.ndarray): {1D} Model prediction of [sig]
         sig (np.ndarray): {1D} Raw data input to model
         lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
             - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
             - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal ground truth of [sig]
-        size (tuple[int, int] or list[int, int] or None): Plot size, width * height (default: 256 * 32)
+        size (tuple[int, int] | list[int, int] | None): Plot size, width * height (default: 256 * 32)
     """
     # Set theme
     ptx.theme('dark')
@@ -50,9 +52,8 @@ def fit_exp_loss(trn_loss, vld_loss):
     """ Estimate future loss with exponential model.
 
     Args:
-        trn_loss (list[int or float] or np.ndarray): Current list of training loss
-        vld_loss (list[int or float] or np.ndarray): Current list of validation loss
-
+        trn_loss (list[int | float] | np.ndarray): Current list of training loss
+        vld_loss (list[int | float] | np.ndarray): Current list of validation loss
     """
 
     def fit_exp(x, y):
