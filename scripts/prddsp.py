@@ -7,17 +7,22 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.1")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.3")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
-parser.add_argument('-r', '--noref', dest='noref', default=False, action='store_true', help="Disable reference plot")
-parser.add_argument('-p', '--pospd', dest='pospd', default=False, action='store_true', help="Position only prediction")
+parser.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
+parser.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide all spike plots")
+parser.add_argument('-sr', '--spkrf', dest='spkrf', default=True, action='store_false', help="Hide spike reference")
+parser.add_argument('-sp', '--spkpd', dest='spkpd', default=True, action='store_false', help="Hide spike prediction")
+parser.add_argument('-p', '--pos', dest='pos', default=True, action='store_false', help="Hide all position plots")
+parser.add_argument('-pr', '--posrf', dest='posrf', default=True, action='store_false', help="Hide position reference")
+parser.add_argument('-pp', '--pospd', dest='pospd', default=True, action='store_false', help="Hide position prediction")
 parser.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Enable data normalization")
 parser.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Enable continuous sampling")
 parser.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample overlapping length")
 parser.add_argument('-f', '--freq', dest='freq', type=float, default=None, metavar="[float]", help="Sampling frequency")
-parser.add_argument('-x', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis max value")
-parser.add_argument('-i', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis min value")
-parser.add_argument('-l', '--lims', dest='lims', default=False, action='store_true', help="Enable global y-axis limits")
+parser.add_argument('-yx', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis max value")
+parser.add_argument('-yi', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis min value")
+parser.add_argument('-lm', '--lims', dest='lims', default=False, action='store_true', help="Enable global y-axis limit")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -30,46 +35,64 @@ def sig_norm_plt(sig: np.ndarray):
 
 
 # Spike position acquisition function
-def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float):
+def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float, fix: bool):
     # Detect spike position
     px = np.where(pos > 0.8)[0]
     if px.size == 0:
         py = np.empty(0)
     else:
-        # Get spike trend
-        grd = np.gradient(spk, 2, edge_order=1)
-        idx = px - 1
-        idx[0] = 0 if idx[0] < 0 else idx[0]  # Avoid negative index
-        sp = np.sign(grd[idx])
-        # Set Y positions for marker
-        py = spk[px] + sp * sft
+        if fix:
+            # Set Y positions for marker
+            py = spk[px] + sft
+        else:
+            # Get spike trend
+            grd = np.gradient(spk, 2, edge_order=1)
+            idx = px - 1
+            idx[0] = 0 if idx[0] < 0 else idx[0]  # Avoid negative index
+            sp = np.sign(grd[idx])
+            # Set Y positions for marker
+            py = spk[px] + sp * sft
     return {'x': px, 'y': py}
 
 
 # Label and prediction arrangement function
-def lbl_prd_plt(dat, inp: np.ndarray, sft: float):
+def lbl_prd_plt(dat, inp: np.ndarray, sft: float, spk_on: bool, pos_on: bool):
     if args.norm:
         sft /= 500  # Adapt marker position shift
         if isinstance(dat, dict):
-            dat_spk = sig_norm_plt(dat['spk'])
-            dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
-        else:
-            if args.pospd:
-                dat_spk = None
-                dat_pos = spk_pos_plt(inp, dat, sft)
+            if spk_on:
+                dat_spk = sig_norm_plt(dat['spk'])
+                dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft, (not args.inp)) if pos_on else None
             else:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat['pos'], sft, (not args.inp)) if pos_on else None
+        else:
+            if spk_on:
                 dat_spk = sig_norm_plt(dat)
+                dat_pos = None
+            elif pos_on:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat, sft, (not args.inp))
+            else:
+                dat_spk = None
                 dat_pos = None
     else:
         if isinstance(dat, dict):
-            dat_spk = dat['spk']
-            dat_pos = spk_pos_plt(dat_spk, dat['pos'], sft)
-        else:
-            if args.pospd:
-                dat_spk = None
-                dat_pos = spk_pos_plt(inp, dat, sft)
+            if spk_on:
+                dat_spk = dat['spk']
+                dat_pos = spk_pos_plt(dat['spk'], dat['pos'], sft, (not args.inp)) if pos_on else None
             else:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat['pos'], sft, (not args.inp)) if pos_on else None
+        else:
+            if spk_on:
                 dat_spk = dat
+                dat_pos = None
+            elif pos_on:
+                dat_spk = None
+                dat_pos = spk_pos_plt(inp, dat, sft, (not args.inp))
+            else:
+                dat_spk = None
                 dat_pos = None
     return dat_spk, dat_pos
 
@@ -88,21 +111,39 @@ def update_figure():
     file = os.path.split(args.path)[1] if s_flag else os.path.split(pred_flst[i])[1]
     title = r"$\bf{Viewing: %s}$" % file.replace('_', '\\_')
     title = title + "\nSection: %%0%dd of %%0%dd" % (len(str(n)), len(str(n))) % (i + 1, n + 1) if s_flag else title
-    # Arrange data
-    inp = sig_norm_plt(data['inp']) if args.norm else data['inp']
-    lbl_spk, lbl_pos = lbl_prd_plt(data['lbl'], inp, sft=10.) if 'lbl' in data else (None, None)
-    prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=25.)
+    # Arrange input data
+    if args.inp:
+        inp = sig_norm_plt(data['inp']) if args.norm else data['inp']
+        lbl_pos_sft = 10.
+        prd_pos_sft = 25.
+    else:
+        inp = np.full(len(data['inp']), 0., dtype=float)
+        lbl_pos_sft = 1.
+        prd_pos_sft = -1.
+    # Arrange label data
+    if 'lbl' in data:
+        spk_rf = args.spk and args.spkrf
+        pos_rf = args.pos and args.posrf
+    else:
+        spk_rf, pos_rf = False, False
+    lbl_spk, lbl_pos = lbl_prd_plt(data['lbl'], inp, sft=lbl_pos_sft, spk_on=spk_rf, pos_on=pos_rf)
+    # Arrange prediction data
+    if 'prd' in data:
+        spk_pd = args.spk and args.spkpd
+        pos_pd = args.pos and args.pospd
+    else:
+        spk_pd, pos_pd = False, False
+    prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=prd_pos_sft, spk_on=spk_pd, pos_on=pos_pd)
     # Plot initialization
     ax.clear()
     ax.set_title(title)
     # Plot input data
-    ax.plot(x, inp, color=u'#ff7f0e', label="Input")
+    args.inp and ax.plot(x, inp, color=u'#ff7f0e', label="Input")
     # Plot labels
-    if not args.noref:
-        if lbl_spk is not None:
-            ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
-        if lbl_pos is not None:
-            ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
+    if lbl_spk is not None:
+        ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
+    if lbl_pos is not None:
+        ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
     # Plot model predictions
     if prd_spk is not None:
         ax.plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
@@ -142,9 +183,19 @@ def on_press(event):
         plt.close('all')
 
 
+# Validate plot settings
+spk_flag = (args.spk and args.spkrf) or (args.spk and args.spkpd)
+pos_flag = (args.pos and args.posrf) or (args.pos and args.pospd)
+if not (args.inp or spk_flag or pos_flag):
+    raise RuntimeError("Nothing to plot! Please check your settings.")
 # Get defined y-axis limit
-dn = args.ymin
-up = args.ymax
+if args.inp or spk_flag:
+    dn = args.ymin
+    up = args.ymax
+else:
+    dn = -4
+    up = 4
+    args.lims = True
 
 # Read file data in defined path
 if os.path.isfile(args.path):
@@ -164,9 +215,8 @@ elif os.path.isdir(args.path):
     sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp  # Global variable
     s_flag = False  # Global variable
 else:
-    print("Invalid prediction results path!")
     s_flag = None  # Global variable
-    exit(-1)
+    raise RuntimeError("Invalid prediction results path!")
 
 # Initialize figure
 i = -1  # Global variable
