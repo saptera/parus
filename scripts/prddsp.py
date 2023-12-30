@@ -7,7 +7,7 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.3")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.5")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
 parser.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide all spike plots")
@@ -23,6 +23,7 @@ parser.add_argument('-f', '--freq', dest='freq', type=float, default=None, metav
 parser.add_argument('-yx', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis max value")
 parser.add_argument('-yi', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis min value")
 parser.add_argument('-lm', '--lims', dest='lims', default=False, action='store_true', help="Enable global y-axis limit")
+parser.add_argument('-sb', '--sub', dest='sub', default=False, action='store_true', help="Enable subplot mode")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -109,13 +110,13 @@ def update_figure():
         x_tk = x_tk / (args.freq / 1000)
     # Set title
     file = os.path.split(args.path)[1] if s_flag else os.path.split(pred_flst[i])[1]
-    title = r"$\bf{Viewing: %s}$" % file.replace('_', '\\_')
+    title = r"$\bf{Viewing:\ %s}$" % file.replace('_', '\\_')
     title = title + "\nSection: %%0%dd of %%0%dd" % (len(str(n)), len(str(n))) % (i + 1, n + 1) if s_flag else title
     # Arrange input data
     if args.inp:
         inp = sig_norm_plt(data['inp']) if args.norm else data['inp']
         lbl_pos_sft = 10.
-        prd_pos_sft = 25.
+        prd_pos_sft = 10. if args.sub else 25.
     else:
         inp = np.full(len(data['inp']), 0., dtype=float)
         lbl_pos_sft = 1.
@@ -135,28 +136,30 @@ def update_figure():
         spk_pd, pos_pd = False, False
     prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=prd_pos_sft, spk_on=spk_pd, pos_on=pos_pd)
     # Plot initialization
-    ax.clear()
-    ax.set_title(title)
+    for ax in axes:
+        ax.clear()
+    fig.suptitle(title)
     # Plot input data
-    args.inp and ax.plot(x, inp, color=u'#ff7f0e', label="Input")
+    args.inp and axes[ax_i].plot(x, inp, color=u'#ff7f0e', label="Input")
     # Plot labels
     if lbl_spk is not None:
-        ax.plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
+        axes[ax_l].plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
     if lbl_pos is not None:
-        ax.scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
+        axes[ax_l].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
     # Plot model predictions
     if prd_spk is not None:
-        ax.plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
+        axes[ax_p].plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
     if prd_pos is not None:
-        ax.scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
+        axes[ax_p].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
     # Set Y axis limits
     if (dn is not None) and (up is not None):
-        ax.set_ylim(dn, up)
+        axes[0].set_ylim(dn, up)  # Y-axes are shared
     # Set annotations
-    ax.set_xticks(x_tk, labels=None, minor=False)
-    ax.set_xlabel("Sample Unit", size=10) if args.freq is None else ax.set_xlabel("Time (ms)", size=10)
-    ax.set_ylabel("Amplitude", size=10)
-    ax.legend(loc='upper right')
+    axes[-1].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
+    for ax in axes:
+        ax.set_xticks(x_tk, labels=None, minor=False)
+        ax.set_ylabel("Amplitude", size=10)
+        ax.legend(loc='upper right')
     # Update figure
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -183,11 +186,21 @@ def on_press(event):
         plt.close('all')
 
 
-# Validate plot settings
+# Get plot settings
 spk_flag = (args.spk and args.spkrf) or (args.spk and args.spkpd)
 pos_flag = (args.pos and args.posrf) or (args.pos and args.pospd)
+ref_flag = (args.spk and args.spkrf) or (args.pos and args.posrf)
+prd_flag = (args.spk and args.spkpd) or (args.pos and args.pospd)
+# Validate plot settings
 if not (args.inp or spk_flag or pos_flag):
     raise RuntimeError("Nothing to plot! Please check your settings.")
+# Set plot axis index
+if args.sub:
+    ax_i = 0 if args.inp else -1
+    ax_l = ax_i + 1 if ref_flag else ax_i
+    ax_p = ax_l + 1 if prd_flag else ax_l
+else:
+    ax_i = ax_l = ax_p = 0
 # Get defined y-axis limit
 if args.inp or spk_flag:
     dn = args.ymin
@@ -221,17 +234,32 @@ else:
 # Initialize figure
 i = -1  # Global variable
 x_pos = 0  # Global variable
-fig, ax = plt.subplots()
+fig, axes = plt.subplots(nrows=ax_p + 1, ncols=1, sharex='all', sharey='all')
+axes = axes if args.sub else [axes]
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
-ax.set_title("Ready!")
-ax.hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
-ax.hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
-ax.scatter(list(range(0, 101, 10)), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
-ax.hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-ax.scatter(list(range(0, 101, 10)), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-ax.set_ylim([-3, 3])
-ax.legend(loc='upper right')
+fig.suptitle(r"$\bf{System\ Ready}$")
+if args.sub:
+    if args.inp:
+        axes[ax_i].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
+        axes[ax_i].legend(loc='upper right')
+    if ref_flag:
+        axes[ax_l].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
+        axes[ax_l].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
+        axes[ax_l].legend(loc='upper right')
+    if prd_flag:
+        axes[ax_p].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+        axes[ax_p].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+        axes[ax_p].legend(loc='upper right')
+    axes[0].set_ylim([-3, 3])  # Y-axes are shared
+else:
+    axes[0].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
+    axes[0].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
+    axes[0].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
+    axes[0].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+    axes[0].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+    axes[0].set_ylim([-3, 3])
+    axes[0].legend(loc='upper right')
 # Show plot
 plt.tight_layout()
 plt.show()
