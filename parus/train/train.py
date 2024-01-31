@@ -118,3 +118,54 @@ def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val
 
     train(model, criterion, optimizer, scheduler,
           train_datagen, val_datagen, cur_experiment_folder_path, train_hparams)
+
+
+def eval_bin_cls(prediction, reference, allowed_distance=2, binary_threshold=0.5):
+    """ Binary detection evaluation.
+
+    Args:
+        prediction (torch.Tensor): Prediction tensor
+        reference (torch.Tensor): Ground truth tensor, the same shape as [prediction]
+        allowed_distance (int): Index tolerance for binary detection (default: 2)
+        binary_threshold (int | float): Threshold to make binary tensor (default: 0.5)
+
+    Returns:
+        tuple[float, dict[str, int]]:
+            - ota (float): On-target accuracy (%) of binary detection, with allowance defined by [allowed_distance]
+            - sas (dict[str, int]): Four factors for sensitivity and specificity (actual raw values)
+    """
+    # On-target accuracy #
+    # Get basic info
+    win = allowed_distance * 2 + 1
+    pos_prd = torch.where(prediction > binary_threshold)
+    pos_ref = torch.where(reference > binary_threshold)
+    tot_spk = pos_ref[0].nelement()
+    # Get target allowed indices
+    accu_chk = [torch.repeat_interleave(p, win) for p in pos_ref]
+    for i in range(win):
+        accu_chk[2][i::win] = accu_chk[2][i::win] - allowed_distance + i
+    accu_chk[2] = torch.clip(accu_chk[2], min=0, max=reference.size(2) - 1)
+    # Set target value matrix
+    accu_mat = torch.clone(reference)
+    for i in range(tot_spk * (allowed_distance * 2 + 1)):
+        accu_mat[accu_chk[0][i], accu_chk[1][i], accu_chk[2][i]] = 1.0
+    # Check prediction
+    tot_det = 0
+    for i in range(pos_prd[0].nelement()):
+        if accu_mat[pos_prd[0][i], pos_prd[1][i], pos_prd[2][i]] > binary_threshold:
+            tot_det += 1
+    # Summarize
+    ota = tot_det / tot_spk * 100
+
+    # Sensitivity and specificity #
+    # Get confusion vector
+    bin_prd = torch.where(prediction > binary_threshold, 1.0, 0.0)
+    bin_ref = torch.where(reference > binary_threshold, 1.0, 0.0)
+    confusion = bin_prd / bin_ref
+    # Compute four factors
+    tp = torch.sum(confusion == 1).item()
+    tn = torch.sum(torch.isnan(confusion)).item()
+    fp = torch.sum(confusion == float('inf')).item()
+    fn = torch.sum(confusion == 0).item()
+
+    return ota, {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn}
