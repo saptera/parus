@@ -101,7 +101,7 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        # criterion = nn.L1Loss(reduction='mean')
+        #criterion = nn.L1Loss(reduction='mean')
         criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
@@ -129,13 +129,17 @@ if __name__ == '__main__':
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
         # test(model, tst_datagen, tst_pred_folder)
+        checkpoint_file = model_hparams["checkpoint_file"]
+        spk_hparams = load_hparams(os.path.join(model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
+        model_hparams = spk_hparams["model"]
         spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                        context_dim=model_hparams["d_context"],
                                        d_model=model_hparams["d_model"],
                                        nhead=model_hparams["n_head"],
                                        num_layers=model_hparams["n_layers"],
                                        dim_feedforward=model_hparams["d_feedforward"])
-        spk_model = load_model(model_hparams["checkpoint_file"], spk_model)
+        spk_model = nn.DataParallel(spk_model)
+        spk_model = load_model(checkpoint_file, spk_model)
         pos_model = model
         duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 

@@ -41,7 +41,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
                 val_loss = evaluate(model, val_datagen, criterion, device)
                 scheduler.step()  # learning rate updates everytime the loop prints
-                if val_loss <= val_loss_min:
+                if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
                     save(cur_experiment_folder_path,
                          model, optimizer, epoch_i)
                     saving_str = 'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
@@ -104,6 +104,7 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
 
 def load_model(ckpt_path, model):
     ckpt = torch.load(ckpt_path)
+    #print(ckpt['model_state_dict'])
     model.load_state_dict(ckpt['model_state_dict'])
     return model
 
