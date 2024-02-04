@@ -10,7 +10,7 @@ import numpy as np
 # Private constants:
     __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
     __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
-    __tev_dt {dict[str, list[int or str]]}: TDT raw voltage traces datatype definition.
+    __tev_dt {dict[str, list[int | str]]}: TDT raw voltage traces datatype definition.
 """
 
 
@@ -61,7 +61,7 @@ def tdt_tev_read(tev_file, tsq, name=None):
     Args:
         tev_file (str): Tucker-Davis Technologies raw voltage trace file (*.tev)
         tsq (dict[str, np.ndarray]): Tucker-Davis Technologies data storage event header info
-        name (str or list[str] or None): Store ID(s) to read, set None to read all (default: None)
+        name (str | list[str] | None): Store ID(s) to read, set None to read all (default: None)
 
     Returns:
         dict[str, dict[int, dict]]: Recording raw voltage traces
@@ -76,7 +76,7 @@ def tdt_tev_read(tev_file, tsq, name=None):
     if name is None:
         name = np.unique(tsq['name'])
     else:
-        if type(name) == str:
+        if isinstance(name, str):
             name = [name]
     # Process import
     fp = open(tev_file, 'rb')
@@ -114,7 +114,7 @@ def tdt_chs_arng(ch_dat):
     """ Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
 
     Args:
-        ch_dat (dict[str, np.ndarray or float]): Tucker-Davis Technologies single channel raw data
+        ch_dat (dict[str, np.ndarray | float]): Tucker-Davis Technologies single channel raw data
 
     Returns:
         dict[str, np.ndarray]: Arranged channel recording

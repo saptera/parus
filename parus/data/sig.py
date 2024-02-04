@@ -11,8 +11,8 @@ from scipy import signal as sig
     spk_notch(x, fnotch, fs): Digital notch filter for neurological signals.
 # Noise generators:
     noise_white(size, mode=0, amp=1.0, seed=None): White noise generator.
-    noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown(red) noise generator.
-    noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue(Azure) and violet(purple) noise generator.
+    noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown (red) noise generator.
+    noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue (azure) and violet (purple) noise generator.
     bsl_sft_lin(size, amp_rng): Linear baseline shifting generator.
     bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.
 # Neuronal signal operations:
@@ -36,12 +36,12 @@ def spk_lowpass(x, fpass, fs):
     The combined filter has zero phase and a filter order twice that of the original.
 
     Args:
-        x (np.ndarray): The array of data to be filtered.
-        fpass (float): Passband edge frequency (Hz).
-        fs (float): The sampling frequency of the digital system (Hz).
+        x (np.ndarray): The array of data to be filtered
+        fpass (float): Passband edge frequency (Hz)
+        fs (float): The sampling frequency of the digital system (Hz)
 
     Returns:
-        np.ndarray: The filtered output with the same shape as x.
+        np.ndarray: The filtered output with the same shape as x
     """
     ws = fpass * 1.1
     ordr, wn = sig.buttord(fpass, ws, 2, 50, False, fs)
@@ -62,12 +62,12 @@ def spk_highpass(x, fpass, fs):
     The combined filter has zero phase and a filter order twice that of the original.
 
     Args:
-        x (np.ndarray): The array of data to be filtered.
-        fpass (float): Passband edge frequency (Hz).
-        fs (float): The sampling frequency of the digital system (Hz).
+        x (np.ndarray): The array of data to be filtered
+        fpass (float): Passband edge frequency (Hz)
+        fs (float): The sampling frequency of the digital system (Hz)
 
     Returns:
-        np.ndarray: The filtered output with the same shape as x.
+        np.ndarray: The filtered output with the same shape as x
     """
     ws = fpass * 0.9
     ordr, wn = sig.buttord(fpass, ws, 2, 50, False, fs)
@@ -88,13 +88,13 @@ def spk_bandpass(x, fpass, fstop, fs):
     The combined filter has zero phase and a filter order twice that of the original.
 
     Args:
-        x (np.ndarray): The array of data to be filtered.
-        fpass (float): Passband edge frequency (Hz).
-        fstop (float): Stopband edge frequency (Hz).
-        fs (float): The sampling frequency of the digital system (Hz).
+        x (np.ndarray): The array of data to be filtered
+        fpass (float): Passband edge frequency (Hz)
+        fstop (float): Stopband edge frequency (Hz)
+        fs (float): The sampling frequency of the digital system (Hz)
 
     Returns:
-        np.ndarray: The filtered output with the same shape as x.
+        np.ndarray: The filtered output with the same shape as x
     """
     wp = [fpass, fstop]
     ws = [fpass * 0.9, fstop * 1.1]
@@ -117,12 +117,12 @@ def spk_notch(x, fnotch, fs):
     The combined filter has zero phase and a filter order twice that of the original.
 
     Args:
-        x (np.ndarray): The array of data to be filtered.
-        fnotch (float): Frequency to remove from a signal (Hz).
-        fs (float): The sampling frequency of the digital system (Hz).
+        x (np.ndarray): The array of data to be filtered
+        fnotch (float): Frequency to remove from a signal (Hz)
+        fs (float): The sampling frequency of the digital system (Hz)
 
     Returns:
-        np.ndarray: The filtered output with the same shape as x.
+        np.ndarray: The filtered output with the same shape as x
     """
     q = fnotch / 2
     b, a = sig.iirnotch(fnotch, q, fs)
@@ -139,15 +139,15 @@ def noise_white(size, mode=0, amp=1.0, seed=None):
     The signal has equal power in any band of a given bandwidth (power spectral density).
 
     Args:
-        size (int): Number of samples to be generated.
-        mode (int): {0 or 1} White noise random distribution type. (default: 0 = UNIFORM)
-                --  0 = UNIFORM distribution
-                --  1 = GAUSSIAN distribution
-        amp (float): Amplitude of noise (default: 1.0 = [-0.5 0.5))
-        seed (int or None): Random seed used to initialize the pseudo-random number generator.
+        size (int): Number of samples to be generated
+        mode (int): {0 | 1} White noise random distribution type. (default: 0 = UNIFORM)
+            - 0 = UNIFORM distribution
+            - 1 = GAUSSIAN distribution
+        amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
+        seed (int | None): Random seed used to initialize the pseudo-random number generator
 
     Returns:
-        np.ndarray: {1D} Generated white noise.
+        np.ndarray: {1D-scalar} Generated white noise
     """
     # Set random status
     ran = np.random.RandomState(seed)
@@ -165,7 +165,7 @@ def noise_white(size, mode=0, amp=1.0, seed=None):
 
 
 def noise_freq_decr(size, mode=0, amp=1.0, seed=None):
-    """ Pink and brown(red) noise generator.
+    """ Pink and brown (red) noise generator.
 
     Pink noise's power density decreases 3 dB per octave
     with increasing frequency (density proportional to 1/f) finite frequency range.
@@ -176,15 +176,15 @@ def noise_freq_decr(size, mode=0, amp=1.0, seed=None):
     with increasing frequency (density proportional to 1/f^2) finite frequency range.
 
     Args:
-        size (int): Number of samples to be generated.
-        mode (int): {0 or 1} White noise random distribution type. (default: 0 = PINK)
-                --  0 = PINK noise generation
-                --  1 = BROWN(RED) noise generation
-        amp (float): Amplitude of noise (default: 1.0 = [-0.5 0.5))
-        seed (int or None): Random seed used to initialize the pseudo-random number generator.
+        size (int): Number of samples to be generated
+        mode (int): {0 | 1} White noise random distribution type (default: 0 = PINK)
+            - 0 = PINK noise generation
+            - 1 = BROWN (RED) noise generation
+        amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
+        seed (int | None): Random seed used to initialize the pseudo-random number generator
 
     Returns:
-        np.ndarray: {1D} Generated noise.
+        np.ndarray: {1D-scalar} Generated noise
     """
     # Set random status
     ran = np.random.RandomState(seed)
@@ -210,7 +210,7 @@ def noise_freq_decr(size, mode=0, amp=1.0, seed=None):
 
 
 def noise_freq_incr(size, mode=0, amp=1.0, seed=None):
-    """ Blue(Azure) and violet(purple) noise generator.
+    """ Blue (azure) and violet (purple) noise generator.
 
     Blue noise's power density increases 3 dB per octave,
     with increasing frequency (density proportional to f) over a finite frequency range.
@@ -219,15 +219,15 @@ def noise_freq_incr(size, mode=0, amp=1.0, seed=None):
     with increasing frequency (density proportional to f^2) over a finite frequency range.
 
     Args:
-        size (int): Number of samples to be generated.
-        mode (int): {0 or 1} White noise random distribution type. (default: 0 = BLUE)
-                --  0 = BLUE(AZURE) noise generation
-                --  1 = VIOLET(PURPLE) noise generation
-        amp (float): Amplitude of noise (default: 1.0 = [-0.5 0.5))
-        seed (int or None): Random seed used to initialize the pseudo-random number generator.
+        size (int): Number of samples to be generated
+        mode (int): {0 | 1} White noise random distribution type (default: 0 = BLUE)
+            - 0 = BLUE (AZURE) noise generation
+            - 1 = VIOLET (PURPLE) noise generation
+        amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
+        seed (int | None): Random seed used to initialize the pseudo-random number generator
 
     Returns:
-        np.ndarray: {1D} Generated noise.
+        np.ndarray: {1D-scalar} Generated noise
     """
     # Set random status
     ran = np.random.RandomState(seed)
@@ -256,11 +256,11 @@ def bsl_sft_lin(size, amp_rng):
     """ Linear baseline shifting generator.
 
     Args:
-        size (int): Number of samples to be generated.
-        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
+        size (int): Number of samples to be generated
+        amp_rng (tuple[int | float, int | float]): Randomize range of baseline shift amplitude
 
     Returns:
-        np.ndarray: {1D} Generated shifted noise.
+        np.ndarray: {1D-scalar} Generated baseline shift
     """
     # Compute random values for periodic signal
     amp_a, amp_p = np.random.uniform(amp_rng[0], amp_rng[1], 2)
@@ -273,13 +273,13 @@ def bsl_sft_sin(size, fs, amp_rng, freq_rng):
     """ Sinusoid baseline shifting generator.
 
     Args:
-        size (int): Number of samples to be generated.
-        fs (int or float): The sampling frequency of the digital system (Hz).
-        amp_rng (tuple[float, float]): Randomize range of baseline shift amplitude.
-        freq_rng (tuple[int or float, int or float]): Randomize range of baseline shift frequency (Hz).
+        size (int): Number of samples to be generated
+        fs (int | float): The sampling frequency of the digital system (Hz)
+        amp_rng (tuple[int | float, int | float]): Randomize range of baseline shift amplitude
+        freq_rng (tuple[int | float, int | float]): Randomize range of baseline shift frequency (Hz)
 
     Returns:
-        np.ndarray: {1D} Generated shifted noise.
+        np.ndarray: {1D-scalar} Generated baseline shift
     """
     # Compute random values for periodic signal
     amp = np.random.uniform(amp_rng[0], amp_rng[1])
@@ -297,12 +297,12 @@ def neuron_sig_slc(rec, loc, rng):
     """ Slice and pad neuronal signal to individual spikes with defined length.
 
     Args:
-        rec (np.ndarray): {1D} Recorded neuronal signal.
-        loc (list[int]): Detected spike peak locations, stored as index of iterable [rec].
-        rng (list[tuple[int, int]]): Length of data points for each [loc], in order (anterior, posterior).
+        rec (np.ndarray): {1D-scalar} Recorded neuronal signal
+        loc (list[int]): Detected spike peak locations, stored as index of iterable [rec]
+        rng (list[tuple[int, int]]): Length of data points for each [loc], in order (anterior, posterior)
 
     Returns:
-        list[np.ndarray]: Sliced signals.
+        list[np.ndarray]: {1D-scalar, n*rng} Sliced signals
     """
     # Extract and convert data from inputs
     tot_spk = len(loc)
@@ -382,15 +382,15 @@ def sig_split(src, size, overlap=10, endpad=0.0):
     """ Split signal into a list of parts with defined size.
 
     Args:
-        src (np.ndarray or list[int or float]): {1D} Input signal
+        src (np.ndarray | list[int | float]): {1D-scalar} Input signal
         size (int): Sample size of each signal part
         overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)
-        endpad (int or float): Padding value of the last part to the target size (default: 0)
+        endpad (int | float): Padding value of the last part to the target size (default: 0)
 
     Returns:
-        list[np.ndarray]: {1D - n * size} Output list of split signal
+        list[np.ndarray]: {1D-scalar, n*size} Output list of split signal
     """
-    if type(src) != np.ndarray:
+    if not isinstance(src, np.ndarray):
         src = np.asarray(src)
     dst = []  # INIT VAR
     for i in range(0, len(src), size - overlap):
@@ -405,12 +405,12 @@ def sig_merge(src, overlap=10, trim=0):
     """ Merge a list of signal parts into a signal trace.
 
     Args:
-        src (list[np.ndarray or list[int or float]]): {1D - n * size} Input list of split signal
+        src (list[np.ndarray | list[int | float]]): {1D - n * size} Input list of split signal
         overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)
         trim (int): Samples to remove at the end of merged signal
 
     Returns:
-        np.ndarray: {1D} Output merged signal
+        np.ndarray: {1D-scalar} Output merged signal
     """
     # Get sizes
     size = len(src[0])

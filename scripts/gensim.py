@@ -189,7 +189,7 @@ def sig_asgn_lst(low, high, max_pos, sig_lst, grp_pas=None):
         high (int): Maximum index difference between 2 signal events
         max_pos (int): Total length of final signal sample (in index)
         sig_lst (list[list[int]]): Signal sample indices arranged by group
-        grp_pas (list[float] or None): Probabilities associations of each group (default: None)
+        grp_pas (list[float] | None): Probabilities associations of each group (default: None)
 
     Returns:
         tuple[list[int], list[int]]: sel_lst (list[int]): Signal selection list
@@ -217,7 +217,7 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
 
     Args:
         has_spk (bool): Defines if the simulated data has neuronal spikes (default: True)
-        grp_pas (list[float] or None): Probabilities associations of each group (default: args.grp_rat)
+        grp_pas (list[float] | None): Probabilities associations of each group (default: args.grp_rat)
 
     Returns:
         tuple[np.ndarray, dict[str, np.ndarray, str, list[np.ndarray]], np.ndarray]: Generated signal and label
@@ -225,7 +225,7 @@ def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
             lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
                 - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
                 - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
-            pos (np.ndarray): {1D, 0 or 1} Simulated signal data spike position (one-hot)
+            pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
     """
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
@@ -300,7 +300,7 @@ def save_gen_h5(h5_fp, name, gen_typ, sig, lbl, pos):
         lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
             - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
             - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
-        pos (np.ndarray): {1D, 0 or 1} Simulated signal data spike position (one-hot)
+        pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
     """
     # Initialize group
     sdg = h5_fp.create_group(name)
@@ -325,9 +325,9 @@ sim_fp = h5.File(os.path.join(args.out_dir, gen_time + '.sim'), 'w')
 print("Saving generation parameters")
 meta = sim_fp.create_group('args')
 for k, v in vars(args).items():
-    if type(v) == str:
+    if isinstance(v, str):
         meta.create_dataset(name=k, data=v, dtype=h5.string_dtype(encoding='utf-8', length=None))
-    elif type(v) == int or type(v) == float:
+    elif isinstance(v, (int, float)):
         meta.create_dataset(name=k, data=np.asarray(v))
     else:
         meta.create_dataset(name=k, data='NULL', dtype=h5.string_dtype(encoding='utf-8', length=None))
