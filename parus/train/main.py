@@ -4,6 +4,7 @@ import time
 import shutil
 import torch
 import torch.nn as nn
+import torchvision.ops as tv
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
@@ -102,7 +103,8 @@ if __name__ == '__main__':
         train_hparams = hparams["train"]
 
         #criterion = nn.L1Loss(reduction='mean')
-        criterion = nn.BCEWithLogitsLoss()
+        #criterion = nn.BCEWithLogitsLoss()
+        criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
         scheduler = torch.optim.lr_scheduler.StepLR(

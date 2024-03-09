@@ -25,7 +25,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             optimizer.zero_grad()
             inputs, labels = inputs.to(device), labels.to(device)
             output = model(inputs)
-            loss = criterion(output, labels.float())
+            loss = criterion(output, labels.float(), alpha=0.95 ,reduction="mean")
             #print("output shape: ", output.shape)
             #print(output)
             #print("labels shape: ", labels.shape)
@@ -39,7 +39,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
                 model.parameters(), train_hparams["model_param_clip"])  # clipping to avoid exploding gradient
 
             if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
-                val_loss = evaluate(model, val_datagen, criterion, device)
+                val_loss = evaluate(model, val_datagen, criterion, device) 
                 scheduler.step()  # learning rate updates everytime the loop prints
                 if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
                     save(cur_experiment_folder_path,
@@ -76,7 +76,19 @@ def evaluate(model, val_datagen, criterion, device):
     for i, (inputs, labels, _) in enumerate(val_datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
-        cur_val_loss = criterion(outputs, labels.float())
+        cur_val_loss = criterion(outputs, labels.float(), alpha=0.95, reduction="mean")
+        cur_val_ota, cur_val_metrics_dct = eval_bin_cls(outputs, labels.float())
+        #print(outputs)
+        #print(labels.float())
+        print("batch on target accuracy: ", cur_val_ota)
+        print("tp", cur_val_metrics_dct["tp"]) 
+        print("tn", cur_val_metrics_dct["tn"])
+        print("fp", cur_val_metrics_dct["fp"])
+        print("fn", cur_val_metrics_dct["fn"])
+        print("% spike correct", cur_val_metrics_dct["tp"]/(cur_val_metrics_dct["tp"] + cur_val_metrics_dct["fn"]))
+        
+        
+        
         val_losses.append(cur_val_loss.item())
 
         if i == 0:
@@ -121,7 +133,7 @@ def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val
           train_datagen, val_datagen, cur_experiment_folder_path, train_hparams)
 
 
-def eval_bin_cls(prediction, reference, allowed_distance=2, binary_threshold=0.5):
+def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5):
     """ Binary detection evaluation.
 
     Args:
