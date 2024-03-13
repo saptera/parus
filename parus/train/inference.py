@@ -80,6 +80,38 @@ def inference(model, inference_datagen, filename, pred_save_folder):
                     "prd": numpy.concatenate(pred_numpy_lst, axis=0)})
 
 
+def duo_inference(spk_model, pos_model, inference_datagen, filename, pred_save_folder):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # prediction and saving
+    with torch.no_grad():
+        inp_numpy_lst = []
+        spk_pred_numpy_lst = []
+        pos_pred_numpy_lst = []
+        for inputs in inference_datagen:
+            inputs = inputs.to(device)
+            spk_model.to(device)
+            spk_outputs = spk_model(inputs)
+            pos_model.to(device)
+            pos_outputs = pos_model(inputs)
+
+            inp = inputs.squeeze().cpu().numpy()
+            spk_pred = spk_outputs.squeeze().cpu().numpy()
+            pos_pred = pos_outputs.squeeze().cpu().numpy()
+            inp_numpy_lst.append(inp)
+            spk_pred_numpy_lst.append(spk_pred)
+            pos_pred_numpy_lst.append(pos_pred)
+
+        pred_filename = "pred_" + filename
+        inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0)
+        pred_numpy_dict = {"spk": numpy.concatenate(spk_pred_numpy_lst, axis=0),
+                           "pos": numpy.concatenate(pos_pred_numpy_lst, axis=0)}
+
+        pklz_write(os.path.join(pred_save_folder, pred_filename),
+                   {"inp": inp_numpy,
+                    "prd": pred_numpy_dict})
+
+
 def flt_pos(sig_inp, pos_prd, min_dst=5, th=0.5):
     """ Filter position prediction for multiple points in a window.
 

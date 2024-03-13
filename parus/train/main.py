@@ -10,7 +10,7 @@ from torch.utils import data
 from parus.model.transformer import EncoderTransformer
 from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset
 from parus.train.train import train, load_model
-from parus.train.inference import duo_test, test, inference
+from parus.train.inference import duo_test, test, duo_inference, inference
 
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
@@ -97,13 +97,25 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
 
     if args.load_model:
-        model = load_model(model_hparams["checkpoint_file"], model)
+        pos_model = load_model(model_hparams["pos_checkpoint_file"], model)
+        spk_hparams = load_hparams(os.path.join(
+            model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
+        model_hparams = spk_hparams["model"]
+        spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                                       context_dim=model_hparams["d_context"],
+                                       d_model=model_hparams["d_model"],
+                                       nhead=model_hparams["n_head"],
+                                       num_layers=model_hparams["n_layers"],
+                                       dim_feedforward=model_hparams["d_feedforward"])
+        spk_model = nn.DataParallel(spk_model)
+        checkpoint_file = model_hparams["checkpoint_file"]
+        spk_model = load_model(checkpoint_file, spk_model)
 
     if args.train:
         train_hparams = hparams["train"]
 
-        #criterion = nn.L1Loss(reduction='mean')
-        #criterion = nn.BCEWithLogitsLoss()
+        # criterion = nn.L1Loss(reduction='mean')
+        # criterion = nn.BCEWithLogitsLoss()
         criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
@@ -132,7 +144,8 @@ if __name__ == '__main__':
         os.mkdir(tst_pred_folder)
         # test(model, tst_datagen, tst_pred_folder)
         checkpoint_file = model_hparams["checkpoint_file"]
-        spk_hparams = load_hparams(os.path.join(model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
+        spk_hparams = load_hparams(os.path.join(
+            model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
         model_hparams = spk_hparams["model"]
         spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                        context_dim=model_hparams["d_context"],
@@ -166,5 +179,5 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            inference(model, inference_datagen,
-                      filename, inference_pred_folder)
+            duo_inference(spk_model, pos_model, inference_datagen,
+                          filename, inference_pred_folder)
