@@ -25,7 +25,7 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             optimizer.zero_grad()
             inputs, labels = inputs.to(device), labels.to(device)
             output = model(inputs)
-            loss = criterion(output, labels.float(), alpha=0.95 ,reduction="mean")
+            loss = criterion(output, labels.float())
             #print("output shape: ", output.shape)
             #print(output)
             #print("labels shape: ", labels.shape)
@@ -76,7 +76,7 @@ def evaluate(model, val_datagen, criterion, device):
     for i, (inputs, labels, _) in enumerate(val_datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
-        cur_val_loss = criterion(outputs, labels.float(), alpha=0.95, reduction="mean")
+        cur_val_loss = criterion(outputs, labels.float())
         cur_val_ota, cur_val_metrics_dct = eval_bin_cls(outputs, labels.float())
         #print(outputs)
         #print(labels.float())

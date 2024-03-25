@@ -114,9 +114,9 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        # criterion = nn.L1Loss(reduction='mean')
+        criterion = nn.L1Loss(reduction='mean')
         # criterion = nn.BCEWithLogitsLoss()
-        criterion = tv.sigmoid_focal_loss
+        # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
         scheduler = torch.optim.lr_scheduler.StepLR(
@@ -125,10 +125,10 @@ if __name__ == '__main__':
         # get datagen
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
         trn_datagen = get_lbl_datagen(os.path.join(trn_folder, "sig"), os.path.join(
-            trn_folder, "pos"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
+            trn_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
         val_folder = os.path.join(data_hparams["data_folder"], "val")
         val_datagen = get_lbl_datagen(os.path.join(val_folder, "sig"), os.path.join(
-            val_folder, "pos"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
+            val_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
         tst_datagen = get_lbl_datagen(os.path.join(tst_folder, "sig"), os.path.join(
             tst_folder, "lbl"), model_hparams["sequence_length"], 1, data_hparams, "duo", os.path.join(
@@ -143,19 +143,19 @@ if __name__ == '__main__':
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
         # test(model, tst_datagen, tst_pred_folder)
-        checkpoint_file = model_hparams["checkpoint_file"]
-        spk_hparams = load_hparams(os.path.join(
-            model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
-        model_hparams = spk_hparams["model"]
-        spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+        checkpoint_file = model_hparams["pos_checkpoint_file"]
+        pos_hparams = load_hparams(os.path.join(
+            model_hparams["experiment_folder"], "transformer_encoder_2024-03-09_01:30/hparams.json"), args.debug)
+        model_hparams = pos_hparams["model"]
+        pos_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                        context_dim=model_hparams["d_context"],
                                        d_model=model_hparams["d_model"],
                                        nhead=model_hparams["n_head"],
                                        num_layers=model_hparams["n_layers"],
                                        dim_feedforward=model_hparams["d_feedforward"])
-        spk_model = nn.DataParallel(spk_model)
-        spk_model = load_model(checkpoint_file, spk_model)
-        pos_model = model
+        pos_model = nn.DataParallel(pos_model)
+        pos_model = load_model(checkpoint_file, pos_model)
+        spk_model = model
         duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 
     if args.inference:
