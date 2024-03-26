@@ -223,7 +223,8 @@ if os.path.isfile(args.path):
         dn = np.floor(lims.min(initial=None) / 10) * 10  # Global variable
         up = np.ceil(lims.max(initial=None) / 10) * 10  # Global variable
 elif os.path.isdir(args.path):
-    pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
+    pred_flst = [os.path.join(args.path, f)
+                 for f in os.listdir(args.path) if (not f.startswith('.')) and f.endswith('.sim')]
     n = len(pred_flst) - 1  # Global variable
     sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp  # Global variable
     s_flag = False  # Global variable
