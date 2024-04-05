@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import warnings
 
 
 class PositionalEncoding(nn.Module):
@@ -22,23 +23,100 @@ class PositionalEncoding(nn.Module):
 
 
 class ContextLoader(nn.Module):
-    def __init__(self, emb_dim, ant_samp):
+    def __init__(self, emb_dim, ant_samp, n_samp, sel_meth='stp', gap=1):
+        """ Signal data context loader.
+
+        Args:
+            emb_dim (int): Embedding element length
+            ant_samp (int): Anterior element length
+            n_samp (int): Total number of samples per patch
+            sel_meth (str): Flanking elements indices selection method (default: 'stp')
+                - 'stp': Constant gap selection
+                - 'lin': Linear increased gap selection
+                - 'geo': Geometrical increased gap selection
+            gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for selection
+        """
         self.emb_dim = emb_dim
-        ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
-        # Get padding width
-        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))
+        self.ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
+        self.samp = n_samp
+        # Get index positions
+        self.spc_num = max(self.ant, self.emb_dim - self.ant)  # Number of space samples
+        if sel_meth == 'stp':
+            idx = self.stp_idx(gap)
+        elif sel_meth == 'lin':
+            idx = self.lin_idx(gap)
+        elif sel_meth == 'geo':
+            idx = self.geo_idx(gap)
+        else:
+            # Fallback method
+            warnings.warn("Invalid sampling method, fallback to constant step sampling.", SyntaxWarning, stacklevel=2)
+            idx = self.stp_idx(gap)
+        # Get sampling features
+        self.pw = ((0, 0), (0, 0), (-idx[-1], idx[0]))
+        self.tgt = np.add.outer(idx, range(-idx[-1], n_samp - idx[-1]))
+        # Super
         super().__init__()
 
+    def _spc2idx(func):
+        """ Decorator for converting space to indices.
+
+        Args:
+            func (function): Space generation function
+
+        Returns:
+            function: Indices generation from space generation function
+        """
+        def inner(self, gap):
+            space = func(self, gap)
+            # Get accumulative distance
+            distance = np.add.accumulate(space).astype(int)
+            # Set origin on the posterior side
+            idx = np.concatenate((distance[self.ant - 1::-1] * -1, distance[:self.emb_dim - self.ant] - distance[0]))
+            return idx[::-1]  # Flip for transformer context loading order
+        return inner
+
+    @_spc2idx
+    def stp_idx(self, gap=1):
+        """ Return evenly spaced indices.
+
+        Args:
+            gap (int | float): Constant index distance between two adjacent selections (default: 1)
+
+        Returns:
+            np.ndarray: {1D-int} Relative index for the target position
+        """
+        return np.asarray([max(round(gap), 1)] * self.spc_num)  # Min distance is 1
+
+    @_spc2idx
+    def lin_idx(self, gap=3.0):
+        """ Return indices spaced with a linear interval.
+
+        Args:
+            gap (int | float): Maximum index distance between two adjacent selections (default: 3.0)
+
+        Returns:
+            np.ndarray: {1D-int} Relative index for the target position
+        """
+        return np.linspace(1, gap, self.spc_num, endpoint=True).round(0)  # Min distance is 1
+
+    @_spc2idx
+    def geo_idx(self, gap=3.0):
+        """ Return indices spaced with a geometric progression.
+
+        Args:
+            gap (int | float): Maximum index distance between two adjacent selections (default: 3.0)
+
+        Returns:
+            np.ndarray: {1D-int} Relative index for the target position
+        """
+        return np.geomspace(1, gap, self.spc_num, endpoint=True).round(0)  # Min distance is 1
+
     def forward(self, x):
-        bs, nch, _ = x.shape
+        bs, ctx, _ = x.shape
         x_np = x.cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw,
-                       mode='constant', constant_values=0.0)
-        x_win = np.lib.stride_tricks.sliding_window_view(
-            x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
-        x_trs = np.transpose(x_win, axes=(1, 2, 0))
-        x_context = np.flip(x_trs, axis=1).copy()
-        return torch.from_numpy(x_context).cuda()
+        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
+        x_context = x_pad[:, :, self.tgt]
+        return torch.from_numpy(x_context[:, 0, :, :]).cuda()
 
 
 class EncoderTransformer(nn.Module):
