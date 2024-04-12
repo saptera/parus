@@ -127,6 +127,7 @@ def update_figure():
         pos_rf = args.pos and args.posrf
     else:
         spk_rf, pos_rf = False, False
+        data['lbl'] = None
     lbl_spk, lbl_pos = lbl_prd_plt(data['lbl'], inp, sft=lbl_pos_sft, spk_on=spk_rf, pos_on=pos_rf)
     # Arrange prediction data
     if 'prd' in data:
@@ -134,6 +135,7 @@ def update_figure():
         pos_pd = args.pos and args.pospd
     else:
         spk_pd, pos_pd = False, False
+        data['prd'] = {'spk': None, 'pos': None}
     prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=prd_pos_sft, spk_on=spk_pd, pos_on=pos_pd)
     # Plot initialization
     for ax in axes:
@@ -213,7 +215,7 @@ else:
 # Read file data in defined path
 if os.path.isfile(args.path):
     raw = pklz_read(args.path)
-    pred = [{k: raw[k][s] for k in raw} for s in range(len(raw['inp']))]
+    pred = [{'inp': raw['inp'][s], 'prd': {k: raw['prd'][k][s] for k in raw['prd']}} for s in range(len(raw['inp']))]
     n = len(pred) - 1  # Global variable
     sec = len(pred[0]['inp']) - args.ovlp  # Global variable
     s_flag = True  # Global variable
@@ -223,7 +225,8 @@ if os.path.isfile(args.path):
         dn = np.floor(lims.min(initial=None) / 10) * 10  # Global variable
         up = np.ceil(lims.max(initial=None) / 10) * 10  # Global variable
 elif os.path.isdir(args.path):
-    pred_flst = [os.path.join(args.path, f) for f in os.listdir(args.path) if f.endswith('.sim')]
+    pred_flst = [os.path.join(args.path, f)
+                 for f in os.listdir(args.path) if (not f.startswith('.')) and f.endswith('.sim')]
     n = len(pred_flst) - 1  # Global variable
     sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp  # Global variable
     s_flag = False  # Global variable
