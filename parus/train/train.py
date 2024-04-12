@@ -26,20 +26,83 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             inputs, labels = inputs.to(device), labels.to(device)
             output = model(inputs)
             loss = criterion(output, labels.float())
-            #print("output shape: ", output.shape)
-            #print(output)
-            #print("labels shape: ", labels.shape)
-            #print(labels)
-            #print("loss: ", loss)
-            #print("criterion: ", criterion)
+            # print("output shape: ", output.shape)
+            # print(output)
+            # print("labels shape: ", labels.shape)
+            # print(labels)
+            # print("loss: ", loss)
+            # print("criterion: ", criterion)
 
             loss.backward()
             optimizer.step()
             nn.utils.clip_grad_norm_(
-                model.parameters(), train_hparams["model_param_clip"])  # clipping to avoid exploding gradient
+                # clipping to avoid exploding gradient
+                model.parameters(), train_hparams["model_param_clip"])
 
             if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
-                val_loss = evaluate(model, val_datagen, criterion, device) 
+                val_loss = evaluate(model, val_datagen, criterion, device)
+                scheduler.step()  # learning rate updates everytime the loop prints
+                if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
+                    save(cur_experiment_folder_path,
+                         model, optimizer, epoch_i)
+                    saving_str = 'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
+                        val_loss_min, val_loss)
+                    log_and_print(log_file_path, saving_str)
+                    val_loss_min = val_loss
+
+                # log and print status, reset time counter
+                finish_time = time.perf_counter()
+                status_str = "".join(["Epoch: {}/{}...".format(epoch_i, train_hparams["total_epoch"]),
+                                      "Step: {}...".format(step_i),
+                                      "Learning Rate: {}...".format(
+                                          optimizer.param_groups[0]['lr']),
+                                      "Loss: {:.6f}...".format(loss.item()),
+                                      "Val Loss: {:.6f}...".format(val_loss),
+                                     "Time: {}s...".format(finish_time-start_time)])
+                log_and_print(log_file_path, status_str)
+                start_time = time.perf_counter()
+
+
+def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
+    # load model onto gpu
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    spk_model.to(device)
+
+    # make an empty log.txt file in the experiment folder
+    log_file_path = os.path.join(cur_experiment_folder_path, "log.txt")
+    f = open(log_file_path, "w+")
+    f.close()
+
+    # training loop
+    val_loss_min = np.Inf
+    for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
+        start_time = time.perf_counter()
+        for step_i, (inputs, labels, _) in enumerate(train_datagen):
+            model.train()
+            optimizer.zero_grad()
+            inputs, labels = inputs.to(device), labels.to(device)
+            spk_output = spk_model(inputs)
+            output = model(spk_output)
+            loss = criterion(output,
+                             labels.float(),
+                             alpha=0.95,
+                             reduction="mean")
+            # print("output shape: ", output.shape)
+            # print(output)
+            # print("labels shape: ", labels.shape)
+            # print(labels)
+            # print("loss: ", loss)
+            # print("criterion: ", criterion)
+
+            loss.backward()
+            optimizer.step()
+            nn.utils.clip_grad_norm_(
+                # clipping to avoid exploding gradient
+                model.parameters(), train_hparams["model_param_clip"])
+
+            if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
+                val_loss = evaluate(model, val_datagen, criterion, device)
                 scheduler.step()  # learning rate updates everytime the loop prints
                 if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
                     save(cur_experiment_folder_path,
@@ -76,19 +139,23 @@ def evaluate(model, val_datagen, criterion, device):
     for i, (inputs, labels, _) in enumerate(val_datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
-        cur_val_loss = criterion(outputs, labels.float())
-        cur_val_ota, cur_val_metrics_dct = eval_bin_cls(outputs, labels.float())
-        #print(outputs)
-        #print(labels.float())
+        cur_val_loss = criterion(
+            outputs,
+            labels.float(),
+            alpha=0.95,
+            reduction="mean")
+        cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
+            outputs, labels.float())
+        # print(outputs)
+        # print(labels.float())
         print("batch on target accuracy: ", cur_val_ota)
-        print("tp", cur_val_metrics_dct["tp"]) 
+        print("tp", cur_val_metrics_dct["tp"])
         print("tn", cur_val_metrics_dct["tn"])
         print("fp", cur_val_metrics_dct["fp"])
         print("fn", cur_val_metrics_dct["fn"])
-        print("% spike correct", cur_val_metrics_dct["tp"]/(cur_val_metrics_dct["tp"] + cur_val_metrics_dct["fn"]))
-        
-        
-        
+        print("% spike correct", cur_val_metrics_dct["tp"]/(
+            cur_val_metrics_dct["tp"] + cur_val_metrics_dct["fn"]))
+
         val_losses.append(cur_val_loss.item())
 
         if i == 0:
@@ -116,7 +183,7 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
 
 def load_model(ckpt_path, model):
     ckpt = torch.load(ckpt_path)
-    #print(ckpt['model_state_dict'])
+    # print(ckpt['model_state_dict'])
     model.load_state_dict(ckpt['model_state_dict'])
     return model
 
