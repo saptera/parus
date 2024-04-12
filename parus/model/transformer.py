@@ -11,7 +11,8 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, embedding_dim)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(
-            0, embedding_dim, 2).float() * (-9.210340371976184 / embedding_dim))  # -9.210340371976184 = -ln(10000.0)
+            # -9.210340371976184 = -ln(10000.0)
+            0, embedding_dim, 2).float() * (-9.210340371976184 / embedding_dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(1, 2)
@@ -23,6 +24,26 @@ class PositionalEncoding(nn.Module):
 
 
 class ContextLoader(nn.Module):
+    def __init__(self, emb_dim, ant_samp):
+        self.emb_dim = emb_dim
+        ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
+        # Get padding width
+        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))
+        super().__init__()
+
+    def forward(self, x):
+        bs, nch, _ = x.shape
+        x_np = x.cpu().numpy()
+        x_pad = np.pad(x_np, pad_width=self.pw,
+                       mode='constant', constant_values=0.0)
+        x_win = np.lib.stride_tricks.sliding_window_view(
+            x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
+        x_trs = np.transpose(x_win, axes=(1, 2, 0))
+        x_context = np.flip(x_trs, axis=1).copy()
+        return torch.from_numpy(x_context).cuda()
+
+
+class SparseContextLoader(nn.Module):
     def __init__(self, emb_dim, ant_samp, n_samp, sel_meth='stp', gap=1):
         """ Signal data context loader.
 
@@ -39,7 +60,8 @@ class ContextLoader(nn.Module):
         self.emb_dim = emb_dim
         self.ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
         # Get index positions
-        self.spc_num = max(self.ant, self.emb_dim - self.ant)  # Number of space samples
+        # Number of space samples
+        self.spc_num = max(self.ant, self.emb_dim - self.ant)
         idx = self.get_idx(sel_meth, gap)
         # Get sampling features
         self.pw = ((0, 0), (0, 0), (-idx[-1], idx[0]))
@@ -69,18 +91,21 @@ class ContextLoader(nn.Module):
             space = np.geomspace(1, gap, self.spc_num, endpoint=True).round(0)
         else:
             # Fallback method
-            warnings.warn("Invalid sampling method, fallback to constant gap sampling.", SyntaxWarning, stacklevel=2)
+            warnings.warn(
+                "Invalid sampling method, fallback to constant gap sampling.", SyntaxWarning, stacklevel=2)
             space = np.asarray([max(round(gap), 1)] * self.spc_num)
         # Get accumulative distance
         distance = np.add.accumulate(space).astype(int)
         # Set origin on the posterior side
-        idx = np.concatenate((distance[self.ant - 1::-1] * -1, distance[:self.emb_dim - self.ant] - distance[0]))
+        idx = np.concatenate(
+            (distance[self.ant - 1::-1] * -1, distance[:self.emb_dim - self.ant] - distance[0]))
         return idx[::-1]  # Flip for transformer context loading order
 
     def forward(self, x):
         bs, ctx, _ = x.shape
         x_np = x.cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
+        x_pad = np.pad(x_np, pad_width=self.pw,
+                       mode='constant', constant_values=0.0)
         x_context = x_pad[:, :, self.tgt]
         # TODO: Dimension reserved future contexts, currently removed for efficiency
         return torch.from_numpy(x_context[:, 0, :, :]).cuda()
