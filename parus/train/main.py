@@ -97,9 +97,22 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
 
     if args.load_model:
-        pos_model = load_model(model_hparams["pos_checkpoint_file"], model)
+        pos_ckpt = model_hparams["pos_checkpoint_file"]
+        spk_ckpt = model_hparams["checkpoint_file"]
+        pos_hparams = load_hparams(os.path.join(
+            model_hparams["experiment_folder"], "transformer_encoder_2024-03-09_01:30/hparams.json"), args.debug)
+        model_hparams = pos_hparams["model"]
+        pos_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                                       context_dim=model_hparams["d_context"],
+                                       d_model=model_hparams["d_model"],
+                                       nhead=model_hparams["n_head"],
+                                       num_layers=model_hparams["n_layers"],
+                                       dim_feedforward=model_hparams["d_feedforward"])
+        pos_model = nn.DataParallel(pos_model)
+        pos_model = load_model(pos_ckpt, pos_model)
+
         spk_hparams = load_hparams(os.path.join(
-            model_hparams["experiment_folder"], "transformer_encoder_2024-01-28_10:40/hparams.json"), args.debug)
+            model_hparams["experiment_folder"], "transformer_encoder_2024-03-24_22:56/hparams.json"), args.debug)
         model_hparams = spk_hparams["model"]
         spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                        context_dim=model_hparams["d_context"],
@@ -108,8 +121,7 @@ if __name__ == '__main__':
                                        num_layers=model_hparams["n_layers"],
                                        dim_feedforward=model_hparams["d_feedforward"])
         spk_model = nn.DataParallel(spk_model)
-        checkpoint_file = model_hparams["checkpoint_file"]
-        spk_model = load_model(checkpoint_file, spk_model)
+        spk_model = load_model(spk_ckpt, spk_model)
 
     if args.train:
         train_hparams = hparams["train"]

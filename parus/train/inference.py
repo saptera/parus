@@ -41,7 +41,7 @@ def duo_test(spk_model, pos_model, tst_datagen, pred_save_folder):
             spk_model.to(device)
             spk_outputs = spk_model(inputs)
             pos_model.to(device)
-            pos_outputs = pos_model(inputs)
+            pos_outputs = pos_model(spk_outputs)
 
             inp = inputs.squeeze().cpu().numpy()
             spk_pred = spk_outputs.squeeze().cpu().numpy()
