@@ -33,7 +33,7 @@ class ContextLoader(nn.Module):
 
     def forward(self, x):
         bs, nch, _ = x.shape
-        x_np = x.cpu().numpy()
+        x_np = x.detach().cpu().numpy()
         x_pad = np.pad(x_np, pad_width=self.pw,
                        mode='constant', constant_values=0.0)
         x_win = np.lib.stride_tricks.sliding_window_view(

@@ -86,7 +86,7 @@ def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datag
             output = model(spk_output)
             loss = criterion(output,
                              labels.float(),
-                             alpha=0.95,
+                             alpha=0.99,
                              reduction="mean")
             # print("output shape: ", output.shape)
             # print(output)
@@ -142,7 +142,7 @@ def evaluate(model, val_datagen, criterion, device):
         cur_val_loss = criterion(
             outputs,
             labels.float(),
-            alpha=0.95,
+            alpha=0.99,
             reduction="mean")
         cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
             outputs, labels.float())

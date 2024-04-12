@@ -34,7 +34,7 @@ class LabelledMultipleFileDataset(data.Dataset):
         file_num_str = sig_filename[sig_filename.index(
             '_')+1:sig_filename.index('.')]  # e.g. sig_00202.sim -> 00202
         sig = sim_sig_read(sig_file_path)
-        lbl = sim_lbl_read(lbl_file_path)
+        lbl = sim_pos_read(lbl_file_path)
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
