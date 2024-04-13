@@ -146,15 +146,19 @@ def evaluate(model, val_datagen, criterion, device):
             reduction="mean")
         cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
             outputs, labels.float())
-        # print(outputs)
-        # print(labels.float())
+        tp = cur_val_metrics_dct["tp"]
+        tn = cur_val_metrics_dct["tn"]
+        fp = cur_val_metrics_dct["fp"]
+        fn = cur_val_metrics_dct["fn"]
         print("batch on target accuracy: ", cur_val_ota)
-        print("tp", cur_val_metrics_dct["tp"])
-        print("tn", cur_val_metrics_dct["tn"])
-        print("fp", cur_val_metrics_dct["fp"])
-        print("fn", cur_val_metrics_dct["fn"])
-        print("% spike correct", cur_val_metrics_dct["tp"]/(
-            cur_val_metrics_dct["tp"] + cur_val_metrics_dct["fn"]))
+        print("tp", tp)
+        print("tn", tn)
+        print("fp", fp)
+        print("fn", fn)
+        print("f1", (2*tp)/(2*tp + fp + tn))
+        print("recall", tp/(tp + fn))
+        print("precision", tp/(tp + fp))
+        print("accuracy", (tp + tn)/(tp + tn + fp + fn))
 
         val_losses.append(cur_val_loss.item())
 
