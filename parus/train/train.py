@@ -155,7 +155,7 @@ def evaluate(model, val_datagen, criterion, device):
         print("tn", tn)
         print("fp", fp)
         print("fn", fn)
-        print("f1", (2*tp)/(2*tp + fp + tn))
+        print("f1", (2*tp)/(2*tp + fp + fn))
         print("recall", tp/(tp + fn))
         print("precision", tp/(tp + fp))
         print("accuracy", (tp + tn)/(tp + tn + fp + fn))
