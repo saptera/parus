@@ -80,9 +80,11 @@ def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datag
         start_time = time.perf_counter()
         for step_i, (inputs, labels, _) in enumerate(train_datagen):
             model.train()
+            spk_model.eval()
             optimizer.zero_grad()
             inputs, labels = inputs.to(device), labels.to(device)
-            spk_output = spk_model(inputs)
+            with torch.no_grad():
+                spk_output = spk_model(inputs)
             output = model(spk_output)
             loss = criterion(output,
                              labels.float(),
@@ -155,9 +157,9 @@ def evaluate(model, val_datagen, criterion, device):
         print("tn", tn)
         print("fp", fp)
         print("fn", fn)
-        print("f1", (2*tp)/(2*tp + fp + tn))
-        print("recall", tp/(tp + fn))
-        print("precision", tp/(tp + fp))
+        print("f1", (2*tp)/(2*tp + fp + fn))
+        print("recall", tp/((tp + fn) + 1))
+        print("precision", tp/((tp + fp) + 1))
         print("accuracy", (tp + tn)/(tp + tn + fp + fn))
 
         val_losses.append(cur_val_loss.item())
