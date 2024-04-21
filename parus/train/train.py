@@ -158,8 +158,13 @@ def evaluate(model, val_datagen, criterion, device):
         print("fp", fp)
         print("fn", fn)
         print("f1", (2*tp)/(2*tp + fp + fn))
+<<<<<<< HEAD
         print("recall", tp/((tp + fn) + 1))
         print("precision", tp/((tp + fp) + 1))
+=======
+        print("recall", tp/(tp + fn))
+        print("precision", tp/(tp + fp))
+>>>>>>> 0336ce14520b10a291a265f89106a4fb16fb5c87
         print("accuracy", (tp + tn)/(tp + tn + fp + fn))
 
         val_losses.append(cur_val_loss.item())
