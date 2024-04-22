@@ -19,6 +19,9 @@ from scipy import signal as sig
     neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.
     sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
+# Feature process functions:
+    sig_peak_det(signal, lag, threshold, influence=0.0, pad=True): Robust signal peak detection using z-scores.
+    peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
 """
 
 
@@ -432,3 +435,72 @@ def sig_merge(src, overlap=10, trim=0):
     else:
         dst = np.asarray(src).flatten(order='C')
     return dst[:tot_len-trim]
+
+
+# Feature process functions ------------------------------------------------------------------------------------------ #
+
+def sig_peak_det(signal, lag, threshold, influence=0.0, pad=True):
+    """ Robust signal peak detection using z-scores.
+        Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
+
+    Args:
+        signal (list[int | float] | np.ndarray): Input signal
+        lag (int): The length of data will be smoothed, larger lags should be included for more stationary data
+        threshold (int | float): Threshold of standard deviations from the moving mean above to classify as peak
+        influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
+            - 0: Signals have no influence on the threshold, implicitly assume signal is stationary
+            - 1: Signals have full influence of normal data points
+        pad (bool): Flag to define if the input signal should be padded by mirroring left (default: True)
+
+    Returns:
+        np.ndarray: {1D-int} Detected peak indices. 1 = positive peak, -1 = negative peak, 0 = no peak
+    """
+    padded = np.concatenate((signal[:lag][::-1], signal)) if pad else np.array(signal)  # Pad input signal
+    filtered = padded.copy()  # Initialize filtered series
+    peak = np.zeros_like(padded, dtype=int)  # Initialize peak detection results
+    # Initialize average filter
+    avgfilt = np.zeros_like(padded, dtype=float)
+    avgfilt[:lag] = np.mean(padded[:lag])
+    # Initialize standard deviation filter
+    stdfilt = np.zeros_like(padded, dtype=float)
+    stdfilt[:lag] = np.std(padded[:lag])
+
+    for i in range(lag, len(padded)):
+        # Peak detection with influence
+        if abs(padded[i] - avgfilt[i - 1]) > threshold * stdfilt[i - 1]:
+            peak[i] = 1 if padded[i] > avgfilt[i - 1] else -1
+            filtered[i] = influence * padded[i] + (1 - influence) * filtered[i - 1]
+        # Update filter
+        avgfilt[i] = np.mean(filtered[(i - lag + 1):(i + 1)])
+        stdfilt[i] = np.std(filtered[(i - lag + 1):(i + 1)])
+
+    trim = lag if pad else 0
+    return peak[trim:]
+
+
+def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
+    """ Find the extremum point of peak detections.
+
+    Args:
+        signal (list[int | float] | np.ndarray): Input signal
+        peak (list[int] | np.ndarray): {1D-int} Detected peak (1 = positive peak, -1 = negative peak, 0 = no peak)
+        threshold (int | float): Limit for the extremum value
+        positive (bool): Flag to define the peak direction (default: True)
+        sampling (int | None): Number of flanking samples to extract around the extremum (default: None = No sampling)
+
+    Returns:
+        tuple[np.ndarray, np.ndarray | None]: {1D-int} Peak extremum indices; {2D-float | None} Signal samples
+    """
+    val = 1 if positive else -1
+    th = abs(threshold)
+    # Detect extremum position
+    det = np.where(peak == val)[0]
+    grp = np.split(det, np.where(np.diff(det) != 1)[0] + 1)
+    pos = [i[np.argmax(signal[i])] for i in grp if np.max(signal[i]) * val > th]
+    # Sampling signal and return
+    if sampling is None:
+        return np.array(pos, dtype=int), None
+    else:
+        rng = [range(i - sampling, i + sampling + 1) for i in pos]
+        smp = signal[rng]
+        return np.array(pos, dtype=int), smp
