@@ -502,5 +502,6 @@ def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
         return np.array(pos, dtype=int), None
     else:
         rng = [range(i - sampling, i + sampling + 1) for i in pos]
+        rng = np.clip(rng, a_min=0, a_max=len(signal) - 1)
         smp = signal[rng]
         return np.array(pos, dtype=int), smp
