@@ -129,9 +129,7 @@ def evaluate(model, val_datagen, criterion, device):
         outputs = model(inputs)
         cur_val_loss = criterion(
             outputs,
-            labels.float(),
-            alpha=0.95,
-            reduction="mean")
+            labels.float())
         cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
             outputs, labels.float())
         tp = cur_val_metrics_dct["tp"]
