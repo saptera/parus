@@ -8,6 +8,7 @@ import torchvision.ops as tv
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
+from parus.model.wavenet_future import WaveNet
 from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
@@ -87,14 +88,9 @@ if __name__ == '__main__':
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
     # initial training objects
-    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                               context_dim=model_hparams["d_context"],
-                               d_model=model_hparams["d_model"],
-                               nhead=model_hparams["n_head"],
-                               num_layers=model_hparams["n_layers"],
-                               dim_feedforward=model_hparams["d_feedforward"])
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    model = WaveNet(layer_size=5, stack_size=7, in_channels=1, res_channels=256)
+    #if torch.cuda.device_count() > 1:
+    #    model = nn.DataParallel(model)
 
     if args.load_model:
         spk_ckpt = model_hparams["checkpoint_file"]

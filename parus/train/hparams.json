@@ -20,10 +20,10 @@
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 2,
+    "total_epoch": 4,
     "batch_size": 64,
     "steps_per_eval": 1000,
-    "learning_rate": 0.0003,
+    "learning_rate": 0.0005,
     "lr_decay": 0.97,
     "model_param_clip": 0.5
   },
