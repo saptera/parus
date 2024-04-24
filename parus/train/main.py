@@ -4,11 +4,10 @@ import time
 import shutil
 import torch
 import torch.nn as nn
-import torchvision.ops as tv
+# import torchvision.ops as tv
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
-from parus.model.wavenet_future import WaveNet
 from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
@@ -88,25 +87,17 @@ if __name__ == '__main__':
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
     # initial training objects
-    model = WaveNet(layer_size=5, stack_size=7, in_channels=1, res_channels=256)
-    #if torch.cuda.device_count() > 1:
-    #    model = nn.DataParallel(model)
+    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                               context_dim=model_hparams["d_context"],
+                               d_model=model_hparams["d_model"],
+                               nhead=model_hparams["n_head"],
+                               num_layers=model_hparams["n_layers"],
+                               dim_feedforward=model_hparams["d_feedforward"])
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
 
     if args.load_model:
         spk_ckpt = model_hparams["checkpoint_file"]
-        # pos_ckpt = model_hparams["pos_checkpoint_file"]
-        # pos_hparams = load_hparams(os.path.join(
-        #     model_hparams["experiment_folder"], "transformer_encoder_2024-03-09_01:30/hparams.json"), args.debug)
-        # model_hparams = pos_hparams["model"]
-        # pos_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-        #                                context_dim=model_hparams["d_context"],
-        #                                d_model=model_hparams["d_model"],
-        #                                nhead=model_hparams["n_head"],
-        #                                num_layers=model_hparams["n_layers"],
-        #                                dim_feedforward=model_hparams["d_feedforward"])
-        # pos_model = nn.DataParallel(pos_model)
-        # pos_model = load_model(pos_ckpt, pos_model)
-
         spk_hparams = load_hparams(os.path.join(
             model_hparams["experiment_folder"], "transformer_encoder_2024-03-24_22:56/hparams.json"), args.debug)
         model_hparams = spk_hparams["model"]
@@ -122,9 +113,9 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        # criterion = nn.L1Loss(reduction='mean')
+        criterion = nn.L1Loss(reduction='mean')
         # criterion = nn.BCEWithLogitsLoss()
-        criterion = tv.sigmoid_focal_loss
+        # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
         scheduler = torch.optim.lr_scheduler.StepLR(
@@ -143,16 +134,14 @@ if __name__ == '__main__':
             tst_folder, "pos"))
 
         # run experiment with labelled data
-        cascade_train(model, spk_model, criterion, optimizer, scheduler,
-                      trn_datagen, val_datagen, cur_experiment_folder_path, train_hparams)
+        train(model, criterion, optimizer, scheduler, trn_datagen,
+              val_datagen, cur_experiment_folder_path, train_hparams)
 
         # make prediction folder
         tst_pred_folder = os.path.join(
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
-        # test(model, tst_datagen, tst_pred_folder)
-        pos_model = model
-        duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
+        test(model, tst_datagen, tst_pred_folder)
 
     if args.inference:
         inference_hparams = hparams["inference"]
@@ -175,5 +164,5 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            duo_inference(spk_model, pos_model, inference_datagen,
-                          filename, inference_pred_folder)
+            inference(model, inference_datagen,
+                      filename, inference_pred_folder)

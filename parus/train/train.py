@@ -26,13 +26,6 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             inputs, labels = inputs.to(device), labels.to(device)
             output = model(inputs)
             loss = criterion(output, labels.float())
-            # print("output shape: ", output.shape)
-            # print(output)
-            # print("labels shape: ", labels.shape)
-            # print(labels)
-            # print("loss: ", loss)
-            # print("criterion: ", criterion)
-
             loss.backward()
             optimizer.step()
             nn.utils.clip_grad_norm_(
@@ -90,13 +83,6 @@ def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datag
                              labels.float(),
                              alpha=0.95,
                              reduction="mean")
-            # print("output shape: ", output.shape)
-            # print(output)
-            # print("labels shape: ", labels.shape)
-            # print(labels)
-            # print("loss: ", loss)
-            # print("criterion: ", criterion)
-
             loss.backward()
             optimizer.step()
             nn.utils.clip_grad_norm_(
@@ -189,7 +175,6 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
 
 def load_model(ckpt_path, model):
     ckpt = torch.load(ckpt_path)
-    # print(ckpt['model_state_dict'])
     model.load_state_dict(ckpt['model_state_dict'])
     return model
 

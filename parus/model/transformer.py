@@ -121,8 +121,11 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        self.context_loader = ContextLoader(
-            emb_dim=context_dim, ant_samp=context_dim // 2)
+        # self.context_loader = ContextLoader(
+        #     emb_dim=context_dim, ant_samp=context_dim // 2)
+        self.context_loader = SparseContextLoader(
+            emb_dim=context_dim, ant_samp=context_dim // 2, n_samp=context_dim // 2, sel_meth='geo', gap=5
+        )
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(
             embedding_dim=context_dim, dropout=0.1, max_len=input_dim)

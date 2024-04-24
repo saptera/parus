@@ -9,21 +9,19 @@
   "model": {
     "model_name": "transformer_encoder",
     "experiment_folder": "/home/proj_wavemoto/experiments/",
-    "checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-03-24_22:56/epoch10.ckpt",
-    "pos_checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-03-09_01:30/epoch15.ckpt",
     "sequence_length": 300,
     "d_context": 24,
-    "d_model": 256,
-    "n_head": 16,
-    "n_layers": 1,
-    "d_feedforward": 128
+    "d_model": 128,
+    "n_head": 8,
+    "n_layers": 6,
+    "d_feedforward": 256
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 4,
+    "total_epoch": 10,
     "batch_size": 64,
     "steps_per_eval": 1000,
-    "learning_rate": 0.0005,
+    "learning_rate": 0.0003,
     "lr_decay": 0.97,
     "model_param_clip": 0.5
   },
