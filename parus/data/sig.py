@@ -20,7 +20,7 @@ from scipy import signal as sig
     sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
 # Feature process functions:
-    sig_peak_det(signal, lag, threshold, influence=0.0, pad=True): Robust signal peak detection using z-scores.
+    sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
 """
 
@@ -439,7 +439,7 @@ def sig_merge(src, overlap=10, trim=0):
 
 # Feature process functions ------------------------------------------------------------------------------------------ #
 
-def sig_peak_det(signal, lag, threshold, influence=0.0, pad=True):
+def sig_peak_det(signal, lag, threshold, influence=0.0):
     """ Robust signal peak detection using z-scores.
         Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
@@ -450,32 +450,30 @@ def sig_peak_det(signal, lag, threshold, influence=0.0, pad=True):
         influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
             - 0: Signals have no influence on the threshold, implicitly assume signal is stationary
             - 1: Signals have full influence of normal data points
-        pad (bool): Flag to define if the input signal should be padded by mirroring left (default: True)
 
     Returns:
         np.ndarray: {1D-int} Detected peak indices. 1 = positive peak, -1 = negative peak, 0 = no peak
     """
-    padded = np.concatenate((signal[:lag][::-1], signal)) if pad else np.array(signal)  # Pad input signal
-    filtered = padded.copy()  # Initialize filtered series
-    peak = np.zeros_like(padded, dtype=int)  # Initialize peak detection results
-    # Initialize average filter
-    avgfilt = np.zeros_like(padded, dtype=float)
-    avgfilt[:lag] = np.mean(padded[:lag])
-    # Initialize standard deviation filter
-    stdfilt = np.zeros_like(padded, dtype=float)
-    stdfilt[:lag] = np.std(padded[:lag])
+    # Initialize operational series
+    peak = np.zeros_like(signal, dtype=int)
+    filt = np.concatenate((signal[:lag][::-1], signal))
+    # Compute sliding window initial values
+    win_fac = 1 / lag
+    lin_sum = np.sum(filt[:lag], axis=None)
+    sqr_sum = np.sum(np.square(filt[:lag]), axis=None)
 
-    for i in range(lag, len(padded)):
-        # Peak detection with influence
-        if abs(padded[i] - avgfilt[i - 1]) > threshold * stdfilt[i - 1]:
-            peak[i] = 1 if padded[i] > avgfilt[i - 1] else -1
-            filtered[i] = influence * padded[i] + (1 - influence) * filtered[i - 1]
+    for i, s in enumerate(signal):
         # Update filter
-        avgfilt[i] = np.mean(filtered[(i - lag + 1):(i + 1)])
-        stdfilt[i] = np.std(filtered[(i - lag + 1):(i + 1)])
-
-    trim = lag if pad else 0
-    return peak[trim:]
+        avg = lin_sum * win_fac
+        std = np.sqrt(abs(sqr_sum * win_fac - avg * avg))  # abs() to avoid negative lavue caused by precision loss
+        # Peak detection with influence
+        if abs(s - avg) > threshold * std:
+            peak[i] = 1 if s > avg else -1
+            filt[i + lag] = influence * s + (1 - influence) * filt[i + lag - 1]
+        # Update sliding window sums
+        lin_sum = lin_sum + filt[i + lag] - filt[i]
+        sqr_sum = sqr_sum + (filt[i + lag] + filt[i]) * (filt[i + lag] - filt[i])
+    return peak
 
 
 def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
