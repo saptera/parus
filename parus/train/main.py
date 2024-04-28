@@ -8,7 +8,7 @@ import torch.nn as nn
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
-from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset
+from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset, MultipleLabelMultipleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
 
@@ -29,13 +29,13 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
 
 def get_lbl_datagen(sig_folder, lbl_folder, seq_len, batch_size, data_hparams, train_mode="trn", lbl2_folder=None):
     if train_mode == "trn":
-        dataset = LabelledMultipleFileDataset(
+        dataset = MultipleLabelMultipleFileDataset(
             sig_folder, lbl_folder, data_hparams["n_trn_samples"], seq_len)
     elif train_mode == "val":
-        dataset = LabelledMultipleFileDataset(
+        dataset = MultipleLabelMultipleFileDataset(
             sig_folder, lbl_folder, data_hparams["n_val_samples"], seq_len)
     elif train_mode == "tst":
-        dataset = LabelledMultipleFileDataset(
+        dataset = MultipleLabelMultipleFileDataset(
             sig_folder, lbl_folder, data_hparams["n_tst_samples"], seq_len)
     elif train_mode == "duo":
         dataset = DuoLabelMultipleFileDataset(
@@ -97,18 +97,18 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
 
     if args.load_model:
-        spk_ckpt = model_hparams["checkpoint_file"]
-        spk_hparams = load_hparams(os.path.join(
+        ckpt = model_hparams["checkpoint_file"]
+        ckpt_hparams = load_hparams(os.path.join(
             model_hparams["experiment_folder"], "transformer_encoder_2024-03-24_22:56/hparams.json"), args.debug)
-        model_hparams = spk_hparams["model"]
-        spk_model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                                       context_dim=model_hparams["d_context"],
-                                       d_model=model_hparams["d_model"],
-                                       nhead=model_hparams["n_head"],
-                                       num_layers=model_hparams["n_layers"],
-                                       dim_feedforward=model_hparams["d_feedforward"])
-        spk_model = nn.DataParallel(spk_model)
-        spk_model = load_model(spk_ckpt, spk_model)
+        model_hparams = ckpt_hparams["model"]
+        model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                                   context_dim=model_hparams["d_context"],
+                                   d_model=model_hparams["d_model"],
+                                   nhead=model_hparams["n_head"],
+                                   num_layers=model_hparams["n_layers"],
+                                   dim_feedforward=model_hparams["d_feedforward"])
+        model = nn.DataParallel(model)
+        model = load_model(ckpt, model)
 
     if args.train:
         train_hparams = hparams["train"]
