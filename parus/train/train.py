@@ -130,21 +130,21 @@ def evaluate(model, val_datagen, criterion, device):
         cur_val_loss = criterion(
             outputs,
             labels.float())
-        cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
-            outputs, labels.float())
-        tp = cur_val_metrics_dct["tp"]
-        tn = cur_val_metrics_dct["tn"]
-        fp = cur_val_metrics_dct["fp"]
-        fn = cur_val_metrics_dct["fn"]
-        print("batch on target accuracy: ", cur_val_ota)
-        print("tp", tp)
-        print("tn", tn)
-        print("fp", fp)
-        print("fn", fn)
-        print("f1", (2*tp)/(2*tp + fp + fn))
-        print("recall", tp/((tp + fn) + 1))
-        print("precision", tp/((tp + fp) + 1))
-        print("accuracy", (tp + tn)/(tp + tn + fp + fn))
+        #cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
+        #    outputs, labels.float())
+        #tp = cur_val_metrics_dct["tp"]
+        #tn = cur_val_metrics_dct["tn"]
+        #fp = cur_val_metrics_dct["fp"]
+        #fn = cur_val_metrics_dct["fn"]
+        #print("batch on target accuracy: ", cur_val_ota)
+        #print("tp", tp)
+        #print("tn", tn)
+        #print("fp", fp)
+        #print("fn", fn)
+        #print("f1", (2*tp)/(2*tp + fp + fn))
+        #print("recall", tp/((tp + fn) + 1))
+        #print("precision", tp/((tp + fp) + 1))
+        #print("accuracy", (tp + tn)/(tp + tn + fp + fn))
 
         val_losses.append(cur_val_loss.item())
 

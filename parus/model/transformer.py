@@ -124,7 +124,7 @@ class EncoderTransformer(nn.Module):
         # self.context_loader = ContextLoader(
         #     emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_loader = SparseContextLoader(
-            emb_dim=context_dim, ant_samp=context_dim // 2, n_samp=context_dim // 2, sel_meth='geo', gap=5
+            emb_dim=context_dim, ant_samp=context_dim // 2, n_samp=input_dim, sel_meth='geo', gap=5
         )
         self.context_linear = nn.Linear(context_dim, 1)
         self.positional_encoding = PositionalEncoding(
