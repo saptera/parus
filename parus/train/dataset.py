@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 from torch.utils import data
 from parus.data import sim_sig_read, sim_lbl_read, sim_pos_read
 
@@ -39,6 +40,48 @@ class LabelledMultipleFileDataset(data.Dataset):
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
         y = torch.from_numpy(lbl).view(1, self.seq_len)
+
+        # TODO: maybe we don't need to convert type
+        X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
+
+        return X, y, file_num_str
+
+
+class MultipleLabelMultipleFileDataset(data.Dataset):
+    # TODO: maybe we can remove seq_len as an input
+    def __init__(self, sig_folder, lbl_folder, n_samples, seq_len):
+        self.sig_folder = sig_folder
+        print(sig_folder)
+        self.lbl_folder = lbl_folder
+        print(lbl_folder)
+        sig_file_lst = sorted(os.listdir(sig_folder))
+        lbl_file_lst = sorted(os.listdir(lbl_folder))
+        print(len(sig_file_lst), len(lbl_file_lst))
+        assert len(sig_file_lst) == len(
+            lbl_file_lst), "number of sig and lbl does not match"
+        assert len(sig_file_lst) >= n_samples, "not enough samples in the dataset"
+        self.sig_file_lst = sig_file_lst[:n_samples]
+        self.lbl_file_lst = lbl_file_lst[:n_samples]
+        self.seq_len = seq_len
+
+    def __len__(self):
+        return len(self.sig_file_lst)
+
+    def __getitem__(self, index):
+        sig_filename = self.sig_file_lst[index]
+        lbl_filename = self.lbl_file_lst[index]
+        sig_file_path = os.path.join(
+            self.sig_folder, sig_filename)
+        lbl_file_path = os.path.join(
+            self.lbl_folder, lbl_filename)
+        file_num_str = sig_filename[sig_filename.index(
+            '_')+1:sig_filename.index('.')]  # e.g. sig_00202.sim -> 00202
+        sig = sim_sig_read(sig_file_path)
+        lbl = np.array(sim_pos_read(lbl_file_path)["signal"])
+
+        # TODO: maybe we don't need the view
+        X = torch.from_numpy(sig).view(1, self.seq_len)
+        y = torch.from_numpy(lbl).view(2, self.seq_len)
 
         # TODO: maybe we don't need to convert type
         X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
