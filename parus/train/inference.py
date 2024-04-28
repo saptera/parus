@@ -20,7 +20,7 @@ def test(model, tst_datagen, pred_save_folder):
     # prediction and saving
     with torch.no_grad():
         for inputs, labels, file_num_str in tst_datagen:
-            start_time = time.time()
+
             inputs = inputs.to(device)
             outputs = model(inputs)
 
@@ -31,9 +31,6 @@ def test(model, tst_datagen, pred_save_folder):
             filename = "pred_" + file_num_str[0] + ".sim"
             pklz_write(os.path.join(pred_save_folder, filename),
                        {"inp": inp,  "prd": pred, "lbl": labels})
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print(f"Elapsed time: {elapsed_time} seconds")
 
 
 def duo_test(spk_model, pos_model, tst_datagen, pred_save_folder):
@@ -71,6 +68,7 @@ def inference(model, inference_datagen, filename, pred_save_folder):
         inp_numpy_lst = []
         pred_numpy_lst = []
         for inputs in inference_datagen:
+            start_time = time.time()
             inputs = inputs.to(device)
             outputs = model(inputs)
 
@@ -78,6 +76,10 @@ def inference(model, inference_datagen, filename, pred_save_folder):
             pred = outputs.squeeze().cpu().numpy()
             inp_numpy_lst.append(inp)
             pred_numpy_lst.append(pred)
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Elapsed time: {elapsed_time} seconds")
 
         pred_filename = "pred_" + filename
         pklz_write(os.path.join(pred_save_folder, pred_filename),
