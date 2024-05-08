@@ -1,5 +1,6 @@
 import os
 import argparse
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from parus.fio import pklz_read
@@ -7,7 +8,7 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v2.5")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.0")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
 parser.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide all spike plots")
@@ -102,7 +103,7 @@ def lbl_prd_plt(dat, inp: np.ndarray, sft: float, spk_on: bool, pos_on: bool):
 def update_figure():
     global i, x_pos, s_flag
     # Read and process prediction data
-    data = pred[i] if s_flag else pklz_read(pred_flst[i])
+    data = copy.deepcopy(pred[i]) if s_flag else pklz_read(pred_flst[i])
     x = np.linspace(start=x_pos, stop=x_pos + len(data['inp']), num=len(data['inp']), endpoint=True, dtype=int)
     x_tk = np.linspace(start=min(x), stop=max(x), num=6, endpoint=True, dtype=int)
     if args.freq is not None:
@@ -138,29 +139,55 @@ def update_figure():
         data['prd'] = {'spk': None, 'pos': None}
     prd_spk, prd_pos = lbl_prd_plt(data['prd'], inp, sft=prd_pos_sft, spk_on=spk_pd, pos_on=pos_pd)
     # Plot initialization
-    for ax in axes:
+    for ax in axes.flat:
         ax.clear()
     fig.suptitle(title)
-    # Plot input data
-    args.inp and axes[ax_i].plot(x, inp, color=u'#ff7f0e', label="Input")
-    # Plot labels
-    if lbl_spk is not None:
-        axes[ax_l].plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
-    if lbl_pos is not None:
-        axes[ax_l].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
-    # Plot model predictions
-    if prd_spk is not None:
-        axes[ax_p].plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
-    if prd_pos is not None:
-        axes[ax_p].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
-    # Set Y axis limits
-    if (dn is not None) and (up is not None):
-        axes[0].set_ylim(dn, up)  # Y-axes are shared
-    # Set annotations
-    axes[-1].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
-    for ax in axes:
+    if ncol == 1:
+        # Plot input data
+        args.inp and axes[ax_i].plot(x, inp, color=u'#ff7f0e', label="Input")
+        # Plot labels
+        if lbl_spk is not None:
+            axes[ax_l].plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
+        if lbl_pos is not None:
+            axes[ax_l].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
+        # Plot model predictions
+        if prd_spk is not None:
+            axes[ax_p].plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
+        if prd_pos is not None:
+            axes[ax_p].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
+        # Set Y axis limits
+        if (dn is not None) and (up is not None):
+            axes[0].set_ylim(dn, up)  # Y-axes are shared
+        # Set annotations
+        axes[-1].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
+        for ax in axes:
+            ax.set_ylabel("Amplitude", size=10)
+    else:
+        for ic in range(ncol):
+            # Plot input data
+            args.inp and axes[ax_i, ic].plot(x, inp, color=u'#ff7f0e', label="Input")
+            # Plot labels
+            if lbl_spk is not None:
+                axes[ax_l, ic].plot(x, lbl_spk[ic], color=u'#2ca02c', label="Spike Reference")
+            if lbl_pos is not None:
+                axes[ax_l, ic].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
+            # Plot model predictions
+            if prd_spk is not None:
+                axes[ax_p, ic].plot(x, prd_spk[ic], color=u'#1f77b4', label="Spike Prediction")
+            if prd_pos is not None:
+                axes[ax_p, ic].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
+            # Set group annotations
+            axes[0, ic].set_title(grp_str[ic])
+            axes[-1, ic].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
+        # Set Y axis annotations
+        for ax in axes[:, 0]:
+            ax.set_ylabel("Amplitude", size=10)
+        # Set Y axis limits
+        if (dn is not None) and (up is not None):
+            axes[0, 0].set_ylim(dn, up)  # Y-axes are shared
+    # Set extra annotations
+    for ax in axes.flat:
         ax.set_xticks(x_tk, labels=None, minor=False)
-        ax.set_ylabel("Amplitude", size=10)
         ax.legend(loc='upper right')
     # Update figure
     fig.canvas.draw()
@@ -196,13 +223,8 @@ prd_flag = (args.spk and args.spkpd) or (args.pos and args.pospd)
 # Validate plot settings
 if not (args.inp or spk_flag or pos_flag):
     raise RuntimeError("Nothing to plot! Please check your settings.")
-# Set plot axis index
-if args.sub:
-    ax_i = 0 if args.inp else -1
-    ax_l = ax_i + 1 if ref_flag else ax_i
-    ax_p = ax_l + 1 if prd_flag else ax_l
-else:
-    ax_i = ax_l = ax_p = 0
+# Initialize plot column size
+ncol = 1
 # Get defined y-axis limit
 if args.inp or spk_flag:
     dn = args.ymin
@@ -215,54 +237,128 @@ else:
 # Read file data in defined path
 if os.path.isfile(args.path):
     raw = pklz_read(args.path)
-    pred = [{'inp': raw['inp'][s], 'prd': {k: raw['prd'][k][s] for k in raw['prd']}} for s in range(len(raw['inp']))]
-    n = len(pred) - 1  # Global variable
-    sec = len(pred[0]['inp']) - args.ovlp  # Global variable
-    s_flag = True  # Global variable
+    # Check data type
+    dic_typ = False
+    if 'prd' in raw:
+        if isinstance(raw['prd'], dict):
+            dic_typ = True
+            ncol = len(raw['prd'][next(iter(raw['prd']))].shape) - 1  # Global variable
+        else:
+            dic_typ = False
+            ncol = len(raw['prd'].shape) - 1  # Global variable
+    else:
+        prd_flag = False
+    if 'lbl' in raw:
+        if isinstance(raw['lbl'], dict):
+            dic_typ = True
+            ncol = len(raw['lbl'][next(iter(raw['lbl']))].shape) - 1  # Global variable
+        else:
+            dic_typ = False
+            ncol = len(raw['lbl'].shape) - 1  # Global variable
+    else:
+        ref_flag = False
+    # Arrange data
+    if dic_typ:
+        pred = [{t: raw[t][s] if t == 'inp' else {k: raw[t][k][s] for k in raw[t]} for t in raw}
+                for s in range(raw['inp'].shape[0])]
+    else:
+        pred = [{t: raw[t][s] for t in raw} for s in range(raw['inp'].shape[0])]
+    # Set global variables
+    grp_str = raw['grp'] if 'grp' in raw else ["Group %02d" % d for d in range(ncol)]
+    n = len(pred) - 1
+    sec = len(pred[0]['inp']) - args.ovlp
+    s_flag = True
     # Compute global y-axis limit
     if args.lims:
         lims = np.asarray([[max(s), min(s)] for s in raw['inp']])
-        dn = np.floor(lims.min(initial=None) / 10) * 10  # Global variable
-        up = np.ceil(lims.max(initial=None) / 10) * 10  # Global variable
+        # Set global variables
+        dn = np.floor(lims.min(initial=None) / 10) * 10
+        up = np.ceil(lims.max(initial=None) / 10) * 10
 elif os.path.isdir(args.path):
     pred_flst = [os.path.join(args.path, f)
                  for f in os.listdir(args.path) if (not f.startswith('.')) and f.endswith('.sim')]
-    n = len(pred_flst) - 1  # Global variable
-    sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp  # Global variable
-    s_flag = False  # Global variable
+    # Check data type for column size
+    raw = pklz_read(pred_flst[0])
+    if 'prd' in raw:
+        ncol = len(raw['prd'][next(iter(raw['prd']))].shape) if isinstance(raw['prd'], dict) else len(raw['prd'].shape)
+    else:
+        prd_flag = False
+    if 'lbl' in raw:
+        ncol = len(raw['lbl'][next(iter(raw['lbl']))].shape) if isinstance(raw['lbl'], dict) else len(raw['lbl'].shape)
+    else:
+        ref_flag = False
+    # Set global variables
+    grp_str = raw['grp'] if 'grp' in raw else ["Group %02d" % d for d in range(ncol)]
+    n = len(pred_flst) - 1
+    sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp
+    s_flag = False
 else:
-    s_flag = None  # Global variable
+    # Set global variables
+    s_flag = None
+    grp_str = []
+    # STOP
     raise RuntimeError("Invalid prediction results path!")
 
+# Set plot axis row index
+if args.sub:
+    ax_i = 0 if args.inp else -1
+    ax_l = ax_i + 1 if ref_flag else ax_i
+    ax_p = ax_l + 1 if prd_flag else ax_l
+else:
+    ax_i = ax_l = ax_p = 0
 # Initialize figure
 i = -1  # Global variable
 x_pos = 0  # Global variable
-fig, axes = plt.subplots(nrows=ax_p + 1, ncols=1, sharex='all', sharey='all')
-axes = axes if args.sub else [axes]
+fig, axes = plt.subplots(nrows=ax_p + 1, ncols=ncol, sharex='all', sharey='all')
+axes = np.asarray(axes) if args.sub else np.asarray([axes])
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
 fig.suptitle(r"$\bf{System\ Ready}$")
-if args.sub:
-    if args.inp:
-        axes[ax_i].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
-        axes[ax_i].legend(loc='upper right')
-    if ref_flag:
-        axes[ax_l].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
-        axes[ax_l].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
-        axes[ax_l].legend(loc='upper right')
-    if prd_flag:
-        axes[ax_p].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-        axes[ax_p].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-        axes[ax_p].legend(loc='upper right')
-    axes[0].set_ylim([-3, 3])  # Y-axes are shared
+if ncol == 1:
+    if args.sub:
+        if args.inp:
+            axes[ax_i].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
+            axes[ax_i].legend(loc='upper right')
+        if ref_flag:
+            axes[ax_l].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
+            axes[ax_l].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
+            axes[ax_l].legend(loc='upper right')
+        if prd_flag:
+            axes[ax_p].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+            axes[ax_p].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+            axes[ax_p].legend(loc='upper right')
+        axes[0].set_ylim([-3, 3])  # Y-axes are shared
+    else:
+        axes[0].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
+        axes[0].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
+        axes[0].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
+        axes[0].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+        axes[0].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+        axes[0].set_ylim([-3, 3])
+        axes[0].legend(loc='upper right')
 else:
-    axes[0].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
-    axes[0].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
-    axes[0].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
-    axes[0].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-    axes[0].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-    axes[0].set_ylim([-3, 3])
-    axes[0].legend(loc='upper right')
+    for c in range(ncol):
+        axes[0, c].set_title(grp_str[c])
+        if args.sub:
+            if args.inp:
+                axes[ax_i, c].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
+                axes[ax_i, c].legend(loc='upper right')
+            if ref_flag:
+                axes[ax_l, c].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
+                axes[ax_l, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
+                axes[ax_l, c].legend(loc='upper right')
+            if prd_flag:
+                axes[ax_p, c].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+                axes[ax_p, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+                axes[ax_p, c].legend(loc='upper right')
+        else:
+            axes[0, c].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
+            axes[0, c].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
+            axes[0, c].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
+            axes[0, c].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+            axes[0, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+            axes[0, c].legend(loc='upper right')
+    axes[0, 0].set_ylim([-3, 3])  # Y-axes are shared
 # Show plot
 plt.tight_layout()
 plt.show()
