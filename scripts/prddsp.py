@@ -8,7 +8,7 @@ from parus.fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.1")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
 parser.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide all spike plots")
@@ -54,6 +54,7 @@ def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float, fix: bool):
             sp = np.sign(grd[idx])
             # Set Y positions for marker
             py = spk[px] + sp * sft
+    px = px if args.freq is None else px / (args.freq / 1000)
     return {'x': px, 'y': py}
 
 
@@ -142,53 +143,38 @@ def update_figure():
     for ax in axes.flat:
         ax.clear()
     fig.suptitle(title)
-    if ncol == 1:
+    # Plot new data
+    for ic in range(ncol):
         # Plot input data
-        args.inp and axes[ax_i].plot(x, inp, color=u'#ff7f0e', label="Input")
+        args.inp and axes[ax_i, ic].plot(x, inp, color=u'#ff7f0e', label="Input")
         # Plot labels
         if lbl_spk is not None:
-            axes[ax_l].plot(x, lbl_spk, color=u'#2ca02c', label="Spike Reference")
+            ls = lbl_spk[ic] if sel_flag else lbl_spk
+            axes[ax_l, ic].plot(x, ls, color=u'#2ca02c', label="Spike Reference")
         if lbl_pos is not None:
-            axes[ax_l].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
+            lpx = lbl_pos['x'][ic] if sel_flag else lbl_pos['x']
+            lpy = lbl_pos['y'][ic] if sel_flag else lbl_pos['y']
+            axes[ax_l, ic].scatter(lpx, lpy, color=u'#006400', marker='^', label="Position Reference")
         # Plot model predictions
         if prd_spk is not None:
-            axes[ax_p].plot(x, prd_spk, color=u'#1f77b4', label="Spike Prediction")
+            ps = prd_spk[ic] if sel_flag else prd_spk
+            axes[ax_p, ic].plot(x, ps, color=u'#1f77b4', label="Spike Prediction")
         if prd_pos is not None:
-            axes[ax_p].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
-        # Set Y axis limits
-        if (dn is not None) and (up is not None):
-            axes[0].set_ylim(dn, up)  # Y-axes are shared
-        # Set annotations
-        axes[-1].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
-        for ax in axes:
-            ax.set_ylabel("Amplitude", size=10)
-    else:
-        for ic in range(ncol):
-            # Plot input data
-            args.inp and axes[ax_i, ic].plot(x, inp, color=u'#ff7f0e', label="Input")
-            # Plot labels
-            if lbl_spk is not None:
-                axes[ax_l, ic].plot(x, lbl_spk[ic], color=u'#2ca02c', label="Spike Reference")
-            if lbl_pos is not None:
-                axes[ax_l, ic].scatter(lbl_pos['x'], lbl_pos['y'], color=u'#006400', marker='^', label="Position Reference")
-            # Plot model predictions
-            if prd_spk is not None:
-                axes[ax_p, ic].plot(x, prd_spk[ic], color=u'#1f77b4', label="Spike Prediction")
-            if prd_pos is not None:
-                axes[ax_p, ic].scatter(prd_pos['x'], prd_pos['y'], color=u'#191970', marker='o', label="Position Prediction")
-            # Set group annotations
-            axes[0, ic].set_title(grp_str[ic])
-            axes[-1, ic].set_xlabel("Sample Unit", size=10) if args.freq is None else axes[-1].set_xlabel("Time (ms)", size=10)
-        # Set Y axis annotations
-        for ax in axes[:, 0]:
-            ax.set_ylabel("Amplitude", size=10)
-        # Set Y axis limits
-        if (dn is not None) and (up is not None):
-            axes[0, 0].set_ylim(dn, up)  # Y-axes are shared
-    # Set extra annotations
+            ppx = prd_pos['x'][ic] if sel_flag else prd_pos['x']
+            ppy = prd_pos['y'][ic] if sel_flag else prd_pos['y']
+            axes[ax_p, ic].scatter(ppx, ppy, color=u'#191970', marker='o', label="Position Prediction")
+        # Set group annotations
+        axes[0, ic].set_title(grp_str[ic]) if sel_flag else ...
+        axes[-1, ic].set_xlabel("Sample Unit" if args.freq is None else "Time (ms)", size=10)
+    # Set plot annotations
     for ax in axes.flat:
         ax.set_xticks(x_tk, labels=None, minor=False)
         ax.legend(loc='upper right')
+    for ax in axes[:, 0]:
+        ax.set_ylabel("Amplitude", size=10)
+    # Set Y axis limits
+    if (dn is not None) and (up is not None):
+        axes[0, 0].set_ylim(dn, up)  # Y-axes are shared
     # Update figure
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -266,7 +252,7 @@ if os.path.isfile(args.path):
     # Set global variables
     grp_str = raw['grp'] if 'grp' in raw else ["Group %02d" % d for d in range(ncol)]
     n = len(pred) - 1
-    sec = len(pred[0]['inp']) - args.ovlp
+    sec = pred[0]['inp'].shape[0] - args.ovlp
     s_flag = True
     # Compute global y-axis limit
     if args.lims:
@@ -290,7 +276,7 @@ elif os.path.isdir(args.path):
     # Set global variables
     grp_str = raw['grp'] if 'grp' in raw else ["Group %02d" % d for d in range(ncol)]
     n = len(pred_flst) - 1
-    sec = len(pklz_read(pred_flst[0])['inp']) - args.ovlp
+    sec = raw['inp'].shape[0] - args.ovlp
     s_flag = False
 else:
     # Set global variables
@@ -310,55 +296,39 @@ else:
 i = -1  # Global variable
 x_pos = 0  # Global variable
 fig, axes = plt.subplots(nrows=ax_p + 1, ncols=ncol, sharex='all', sharey='all')
-axes = np.asarray(axes) if args.sub else np.asarray([axes])
 fig.canvas.manager.set_window_title('Prediction Results')
 fig.canvas.mpl_connect('key_press_event', on_press)
 fig.suptitle(r"$\bf{System\ Ready}$")
+# Setup axes feature
 if ncol == 1:
+    axes = np.asarray([axes]).T if args.sub else np.asarray([[axes]])
+    sel_flag = False  # Global variable
+else:
+    axes = np.asarray(axes) if args.sub else np.asarray([axes])
+    sel_flag = True  # Global variable
+# Plot initial panel
+for c in range(ncol):
+    axes[0, c].set_title(grp_str[c]) if sel_flag else ...
     if args.sub:
         if args.inp:
-            axes[ax_i].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
-            axes[ax_i].legend(loc='upper right')
+            axes[ax_i, c].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
+            axes[ax_i, c].legend(loc='upper right')
         if ref_flag:
-            axes[ax_l].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
-            axes[ax_l].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
-            axes[ax_l].legend(loc='upper right')
+            axes[ax_l, c].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
+            axes[ax_l, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
+            axes[ax_l, c].legend(loc='upper right')
         if prd_flag:
-            axes[ax_p].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-            axes[ax_p].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-            axes[ax_p].legend(loc='upper right')
-        axes[0].set_ylim([-3, 3])  # Y-axes are shared
+            axes[ax_p, c].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+            axes[ax_p, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+            axes[ax_p, c].legend(loc='upper right')
     else:
-        axes[0].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
-        axes[0].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
-        axes[0].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
-        axes[0].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-        axes[0].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-        axes[0].set_ylim([-3, 3])
-        axes[0].legend(loc='upper right')
-else:
-    for c in range(ncol):
-        axes[0, c].set_title(grp_str[c])
-        if args.sub:
-            if args.inp:
-                axes[ax_i, c].hlines(0, 0, 100, color=u'#ff7f0e', label="Input")
-                axes[ax_i, c].legend(loc='upper right')
-            if ref_flag:
-                axes[ax_l, c].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
-                axes[ax_l, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
-                axes[ax_l, c].legend(loc='upper right')
-            if prd_flag:
-                axes[ax_p, c].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-                axes[ax_p, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-                axes[ax_p, c].legend(loc='upper right')
-        else:
-            axes[0, c].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
-            axes[0, c].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
-            axes[0, c].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
-            axes[0, c].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-            axes[0, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
-            axes[0, c].legend(loc='upper right')
-    axes[0, 0].set_ylim([-3, 3])  # Y-axes are shared
+        axes[0, c].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")
+        axes[0, c].hlines(0, 0, 100, color=u'#2ca02c', label="Spike Reference")
+        axes[0, c].scatter(range(0, 101, 10), [1] * 11, color=u'#006400', marker='^', label="Position Reference")
+        axes[0, c].hlines(-2, 0, 100, color=u'#1f77b4', label="Spike Prediction")
+        axes[0, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+        axes[0, c].legend(loc='upper right')
+axes[0, 0].set_ylim([-3, 3])  # Y-axes are shared
 # Show plot
 plt.tight_layout()
 plt.show()
