@@ -261,8 +261,8 @@ if os.path.isfile(args.path):
         dn = np.floor(lims.min(initial=None) / 10) * 10
         up = np.ceil(lims.max(initial=None) / 10) * 10
 elif os.path.isdir(args.path):
-    pred_flst = [os.path.join(args.path, f)
-                 for f in os.listdir(args.path) if (not f.startswith('.')) and f.endswith('.sim')]
+    pred_flst = [os.path.join(args.path, f) for f in sorted(os.listdir(args.path))
+                 if (not f.startswith('.')) and f.endswith('.sim')]
     # Check data type for column size
     raw = pklz_read(pred_flst[0])
     if 'prd' in raw:
