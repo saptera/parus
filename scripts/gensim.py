@@ -12,7 +12,7 @@ import warnings
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenSim", description="Generate simulated neural signals",
                                  epilog="Generated simulated neural signal data use for model training ONLY")
-parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.1")
+parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.2")
 # Sample source definition (positional)
 parser.add_argument('arc_dir', type=str, metavar="signalFolder",
                     help="[%(type)s] Directory containing archived signal data (*.arc)")
@@ -324,13 +324,20 @@ sim_fp = h5.File(os.path.join(args.out_dir, gen_time + '.sim'), 'w')
 # Save generation parameters
 print("Saving generation parameters")
 meta = sim_fp.create_group('args')
-for k, v in vars(args).items():
+for a, v in vars(args).items():
     if isinstance(v, str):
-        meta.create_dataset(name=k, data=v, dtype=h5.string_dtype(encoding='utf-8', length=None))
+        meta.create_dataset(name=a, data=v, dtype=h5.string_dtype(encoding='utf-8', length=None))
     elif isinstance(v, (int, float)):
-        meta.create_dataset(name=k, data=np.asarray(v))
+        meta.create_dataset(name=a, data=np.asarray(v))
+    elif isinstance(v, list):
+        if any(isinstance(s, str) for s in v):
+            meta.create_dataset(name=a, data=np.asarray(v, dtype='S'))
+        else:
+            meta.create_dataset(name=a, data=np.asarray(v))
     else:
-        meta.create_dataset(name=k, data='NULL', dtype=h5.string_dtype(encoding='utf-8', length=None))
+        meta.create_dataset(name=a, data='NULL', dtype=h5.string_dtype(encoding='utf-8', length=None))
+# Save group information
+meta.create_dataset(name='grp_str', data=np.asarray(list(grp_dic.keys()), dtype='S'))
 
 # Generate simulated signals
 print("Process generation:")
@@ -340,7 +347,7 @@ for n in range(args.num_sim):
     gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=curr_gen)
     # Save and report
     save_gen_h5(sims, str(n), 'sim', gen_sig, gen_lbl, gen_pos)
-    prog_print(n + 1, args.num_sim, "    Simulated data generation:", "created.")
+    prog_print(n, args.num_sim, "    Simulated data generation:", "created.")
 
 # Generate extra examples
 exeg = sim_fp.create_group('exeg')
@@ -353,7 +360,7 @@ if args.num_eg is not None:
         gen_sig, gen_lbl, gen_pos = gen_sim_dat()
         exeg_cnt += 1
         save_gen_h5(exeg, str(exeg_cnt), 'nrm', gen_sig, gen_lbl, gen_pos)
-        prog_print(n + 1, nrm_eg, "    Standard extra example generation:", "created.")
+        prog_print(n, nrm_eg, "    Standard extra example generation:", "created.")
     # Special examples, generate signal for each group (if has group) and noise only
     spc_eg = args.num_eg - nrm_eg
     if args.sig_grp is None:
@@ -373,7 +380,7 @@ if args.num_eg is not None:
         gen_sig, gen_lbl, gen_pos = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
         exeg_cnt += 1
         save_gen_h5(exeg, str(exeg_cnt), 'spc', gen_sig, gen_lbl, gen_pos)
-        prog_print(n + 1, spc_eg, "    Special extra example generation:", "created.")
+        prog_print(n, spc_eg, "    Special extra example generation:", "created.")
 
 # Close HDF5 file
 sim_fp.close()
