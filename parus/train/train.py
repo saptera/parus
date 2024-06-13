@@ -28,13 +28,14 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
             loss = criterion(output, labels.float())
             loss.backward()
             optimizer.step()
+            scheduler.step()
             nn.utils.clip_grad_norm_(
                 # clipping to avoid exploding gradient
                 model.parameters(), train_hparams["model_param_clip"])
 
             if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
                 val_loss = evaluate(model, val_datagen, criterion, device)
-                scheduler.step()  # learning rate updates everytime the loop prints
+                # scheduler.step()  # learning rate updates everytime the loop prints
                 if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
                     save(cur_experiment_folder_path,
                          model, optimizer, epoch_i)

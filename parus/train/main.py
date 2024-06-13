@@ -98,8 +98,9 @@ if __name__ == '__main__':
 
     if args.load_model:
         ckpt = model_hparams["checkpoint_file"]
+        print("found ckpt")
         ckpt_hparams = load_hparams(os.path.join(
-            model_hparams["experiment_folder"], "transformer_encoder_2024-03-24_22:56/hparams.json"), args.debug)
+            model_hparams["experiment_folder"], "transformer_encoder_2024-04-29_00:04/hparams.json"), args.debug)
         model_hparams = ckpt_hparams["model"]
         model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                    context_dim=model_hparams["d_context"],
@@ -109,17 +110,27 @@ if __name__ == '__main__':
                                    dim_feedforward=model_hparams["d_feedforward"])
         model = nn.DataParallel(model)
         model = load_model(ckpt, model)
-
+        print("loaded model")
     if args.train:
         train_hparams = hparams["train"]
 
+        # criterion = nn.MSELoss(reduction='mean')
         criterion = nn.L1Loss(reduction='mean')
         # criterion = nn.BCEWithLogitsLoss()
         # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, 1.0, gamma=train_hparams["lr_decay"])
+        
+        def rate(step, model_size, factor, warmup):
+            if step == 0:
+                step = 1
+            rate = factor * (model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5)))
+            if step % 1000 == 0:
+                print(step, rate)
+            return rate
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=lambda step: rate(step, 256, 1, 7000))
+        # scheduler = torch.optim.lr_scheduler.StepLR(
+        #    optimizer, 1.0, gamma=train_hparams["lr_decay"])
 
         # get datagen
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
@@ -151,6 +162,7 @@ if __name__ == '__main__':
         inference_pred_folder = os.path.join(
             cur_experiment_folder_path, "inference_pred")
         os.mkdir(inference_pred_folder)
+        print("made inference")
 
         for filename in filename_lst:
             file_path = os.path.join(inference_data_folder, filename)
