@@ -7,8 +7,8 @@ import zlib
 import pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
-from parus.util import arr_rand_samp
-from parus.fio import pklz_read
+from ..util import arr_rand_samp
+from ..fio import pklz_read
 
 """Function list:
 spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
