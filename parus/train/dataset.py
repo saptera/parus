@@ -78,10 +78,11 @@ class MultipleLabelMultipleFileDataset(data.Dataset):
             '_')+1:sig_filename.index('.')]  # e.g. sig_00202.sim -> 00202
         sig = sim_sig_read(sig_file_path)
         lbl = np.array(sim_sig_read(lbl_file_path)["signal"])
+        lbl = lbl[1]
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
-        y = torch.from_numpy(lbl).view(2, self.seq_len)
+        y = torch.from_numpy(lbl).view(1, self.seq_len)
 
         # TODO: maybe we don't need to convert type
         X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)

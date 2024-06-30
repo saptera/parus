@@ -13,13 +13,13 @@
     "sequence_length": 300,
     "d_context": 24,
     "d_model": 256,
-    "n_head": 32,
-    "n_layers": 8,
+    "n_head": 16,
+    "n_layers": 6,
     "d_feedforward": 256
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 12,
+    "total_epoch": 10,
     "batch_size": 64,
     "steps_per_eval": 1000,
     "learning_rate": 1,

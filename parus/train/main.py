@@ -114,8 +114,8 @@ if __name__ == '__main__':
     if args.train:
         train_hparams = hparams["train"]
 
-        # criterion = nn.MSELoss(reduction='mean')
-        criterion = nn.L1Loss(reduction='mean')
+        criterion = nn.MSELoss(reduction='mean')
+        # criterion = nn.L1Loss(reduction='mean')
         # criterion = nn.BCEWithLogitsLoss()
         # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
