@@ -8,7 +8,7 @@ import torch.nn as nn
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
-from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset, MultipleLabelMultipleFileDataset
+from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset, MultipleLabelMultipleFileDataset, LabelledSingleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
 
@@ -27,19 +27,13 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
     return hparams
 
 
-def get_lbl_datagen(sig_folder, lbl_folder, seq_len, batch_size, data_hparams, train_mode="trn", lbl2_folder=None):
+def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, train_mode="trn"):
     if train_mode == "trn":
-        dataset = MultipleLabelMultipleFileDataset(
-            sig_folder, lbl_folder, data_hparams["n_trn_samples"], seq_len)
+        dataset = LabelledSingleFileDataset(data_file_path, data_hparams["n_trn_samples"], seq_len)
     elif train_mode == "val":
-        dataset = MultipleLabelMultipleFileDataset(
-            sig_folder, lbl_folder, data_hparams["n_val_samples"], seq_len)
+        dataset = LabelledSingleFileDataset(data_file_path, data_hparams["n_val_samples"], seq_len)
     elif train_mode == "tst":
-        dataset = MultipleLabelMultipleFileDataset(
-            sig_folder, lbl_folder, data_hparams["n_tst_samples"], seq_len)
-    elif train_mode == "duo":
-        dataset = DuoLabelMultipleFileDataset(
-            sig_folder, lbl_folder, lbl2_folder, data_hparams["n_tst_samples"], seq_len)
+        dataset = LabelledSingleFileDataset(data_file_path, data_hparams["n_tst_samples"], seq_len)
     else:
         raise Exception("invalid training mode, must be trn, val, or tst")
 
@@ -134,14 +128,11 @@ if __name__ == '__main__':
 
         # get datagen
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
-        trn_datagen = get_lbl_datagen(os.path.join(trn_folder, "sig"), os.path.join(
-            trn_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
+        trn_datagen = get_file_datagen(os.path.join(trn_folder, "20240630_064841.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
         val_folder = os.path.join(data_hparams["data_folder"], "val")
-        val_datagen = get_lbl_datagen(os.path.join(val_folder, "sig"), os.path.join(
-            val_folder, "lbl"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
+        val_datagen = get_file_datagen(os.path.join(val_folder, "20240630_171849.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
-        tst_datagen = get_lbl_datagen(os.path.join(tst_folder, "sig"), os.path.join(
-            tst_folder, "lbl"), model_hparams["sequence_length"], 1, data_hparams, "tst")
+        tst_datagen = get_file_datagen(os.path.join(tst_folder, "20240630_172006.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
         # run experiment with labelled data
         train(model, criterion, optimizer, scheduler, trn_datagen,

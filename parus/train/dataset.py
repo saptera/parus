@@ -1,8 +1,37 @@
 import os
 import torch
 import numpy as np
+import h5py
 from torch.utils import data
 from parus.data import sim_sig_read, sim_lbl_read, sim_pos_read
+from parus.fio import sim_data_read
+
+
+class LabelledSingleFileDataset(data.Dataset):
+    # TODO: maybe we can remove seq_len as an input
+    def __init__(self, data_file_path, n_samples, seq_len):
+        self.n_samples = n_samples
+        self.data_file_path = data_file_path
+        print(data_file_path)
+        self.seq_len = seq_len
+
+    def __len__(self):
+        return self.n_samples
+
+    def __getitem__(self, index):
+        with h5py.File(self.data_file_path, "r") as file:
+            data = sim_data_read(file, index)
+        sig = data['sig']
+        lbl = data['lbl']['signal'][1] # only using simple spike
+
+        # TODO: maybe we don't need the view
+        X = torch.from_numpy(sig).view(1, self.seq_len)
+        y = torch.from_numpy(lbl).view(1, self.seq_len)
+
+        # TODO: maybe we don't need to convert type
+        X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
+
+        return X, y, str(index).zfill(6)
 
 
 class LabelledMultipleFileDataset(data.Dataset):
