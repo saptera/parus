@@ -31,17 +31,18 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
     for i in range(prd.shape[2]):
         # Sample tensors
         slc = prd[:, :, i]
+        flo = flt[:, :, i]
         fpr = flt[:, :, i + lag - 1]
         fcr = flt[:, :, i + lag]
         # Update filter
         avg = lin * fac
-        std = torch.sqrt(torch.abs(sqr * fac - avg * avg))  # abs() to avoid negative value caused by precision loss
+        std = torch.abs(sqr * fac - avg * avg).sqrt_()  # abs() to avoid negative value caused by precision loss
         # Peak detection with influence
         chk = torch.abs(slc - avg) > threshold * std
         sgn = torch.where(slc > avg, torch.tensor(1, dtype=torch.int), torch.tensor(-1, dtype=torch.int))
         det[:, :, i] = sgn * chk.int()
         flt[:, :, i + lag] = torch.where(chk, influence * slc + (1 - influence) * fpr, fcr)
         # Update sliding window sums
-        lin = lin + flt[:, :, i + lag] - flt[:, :, i]
-        sqr = sqr + (flt[:, :, i + lag] + flt[:, :, i]) * (flt[:, :, i + lag] - flt[:, :, i])
+        lin.add_(fcr - flo)
+        sqr.add_((fcr + flo) * (fcr - flo))
     return det
