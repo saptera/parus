@@ -3,6 +3,7 @@ import numpy
 import torch
 import time
 from parus.fio import pklz_write
+from parus.model.post_proc import peak_det_torch
 
 """
 need: 
@@ -87,8 +88,9 @@ def inference(model, inference_datagen, filename, pred_save_folder):
                     "prd": numpy.concatenate(pred_numpy_lst, axis=0)})
 
 
-def duo_inference(spk_model, pos_model, inference_datagen, filename, pred_save_folder):
+def duo_inference(model, inference_datagen, filename, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
     # prediction and saving
     with torch.no_grad():
@@ -96,11 +98,10 @@ def duo_inference(spk_model, pos_model, inference_datagen, filename, pred_save_f
         spk_pred_numpy_lst = []
         pos_pred_numpy_lst = []
         for inputs in inference_datagen:
+            start_time = time.time()
             inputs = inputs.to(device)
-            spk_model.to(device)
-            spk_outputs = spk_model(inputs)
-            pos_model.to(device)
-            pos_outputs = pos_model(spk_outputs)
+            spk_outputs = model(inputs)
+            pos_outputs = peak_det_torch(-1*spk_outputs, 100, 3, 0)
 
             inp = inputs.squeeze().cpu().numpy()
             spk_pred = spk_outputs.squeeze().cpu().numpy()
@@ -108,6 +109,10 @@ def duo_inference(spk_model, pos_model, inference_datagen, filename, pred_save_f
             inp_numpy_lst.append(inp)
             spk_pred_numpy_lst.append(spk_pred)
             pos_pred_numpy_lst.append(pos_pred)
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Elapsed time: {elapsed_time} seconds")
 
         pred_filename = "pred_" + filename
         inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0)
