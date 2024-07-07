@@ -9,7 +9,7 @@
   "model": {
     "model_name": "transformer_encoder",
     "experiment_folder": "/home/proj_wavemoto/experiments/",
-    "checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-04-29_00:04/epoch10.ckpt",
+    "checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-06-30_18:39/epoch10.ckpt",
     "sequence_length": 300,
     "d_context": 24,
     "d_model": 256,

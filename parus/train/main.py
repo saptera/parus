@@ -94,7 +94,7 @@ if __name__ == '__main__':
         ckpt = model_hparams["checkpoint_file"]
         print("found ckpt")
         ckpt_hparams = load_hparams(os.path.join(
-            model_hparams["experiment_folder"], "transformer_encoder_2024-04-29_00:04/hparams.json"), args.debug)
+            model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
         model_hparams = ckpt_hparams["model"]
         model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                    context_dim=model_hparams["d_context"],
