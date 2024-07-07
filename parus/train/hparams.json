@@ -1,6 +1,6 @@
 {
   "data": {
-    "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5_1m_pos",
+    "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5.1_1m_max_gap_100",
     "n_trn_samples": 500000,
     "n_val_samples": 1000,
     "n_tst_samples": 1000,
