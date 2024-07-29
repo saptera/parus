@@ -8,6 +8,7 @@ import torch.nn as nn
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
+from parus.model.peak_cnn import PeakCNN
 from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset, MultipleLabelMultipleFileDataset, LabelledSingleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
@@ -67,8 +68,6 @@ if __name__ == '__main__':
         "--train", help="run training", action="store_true")
     argParser.add_argument(
         "--inference", help="run inference", action="store_true")
-    argParser.add_argument(
-        "--load_model", help="load model from saved checkpoint", action="store_true")
     args = argParser.parse_args()
 
     # load hparams
@@ -90,41 +89,44 @@ if __name__ == '__main__':
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
 
-    if args.load_model:
-        ckpt = model_hparams["checkpoint_file"]
-        print("found ckpt")
-        ckpt_hparams = load_hparams(os.path.join(
-            model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
-        model_hparams = ckpt_hparams["model"]
-        model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                                   context_dim=model_hparams["d_context"],
-                                   d_model=model_hparams["d_model"],
-                                   nhead=model_hparams["n_head"],
-                                   num_layers=model_hparams["n_layers"],
-                                   dim_feedforward=model_hparams["d_feedforward"])
-        model = nn.DataParallel(model)
-        model = load_model(ckpt, model)
-        print("loaded model")
+    
+    spk_ckpt = model_hparams["spk_checkpoint_file"]
+    print("found spk_ckpt")
+    spk_ckpt_hparams = load_hparams(os.path.join(
+        model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
+    spk_model_hparams = spk_ckpt_hparams["model"]
+    spk_model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
+                                context_dim=spk_model_hparams["d_context"],
+                                d_model=spk_model_hparams["d_model"],
+                                nhead=spk_model_hparams["n_head"],
+                                num_layers=spk_model_hparams["n_layers"],
+                                dim_feedforward=spk_model_hparams["d_feedforward"])
+    spk_model = nn.DataParallel(spk_model)
+    spk_model = load_model(spk_ckpt, spk_model)
+    print("loaded spk model")
+
+    pos_model = PeakCNN()
+
     if args.train:
         train_hparams = hparams["train"]
 
-        criterion = nn.MSELoss(reduction='mean')
+        # criterion = nn.MSELoss(reduction='mean')
         # criterion = nn.L1Loss(reduction='mean')
-        # criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss()
         # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
             model.parameters(), lr=train_hparams["learning_rate"])
         
-        def rate(step, model_size, factor, warmup):
-            if step == 0:
-                step = 1
-            rate = factor * (model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5)))
-            if step % 1000 == 0:
-                print(step, rate)
-            return rate
-        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=lambda step: rate(step, 256, 1, 7000))
-        # scheduler = torch.optim.lr_scheduler.StepLR(
-        #    optimizer, 1.0, gamma=train_hparams["lr_decay"])
+        # def rate(step, model_size, factor, warmup):
+        #     if step == 0:
+        #         step = 1
+        #     rate = factor * (model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5)))
+        #     if step % 1000 == 0:
+        #         print(step, rate)
+        #     return rate
+        # scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer=optimizer, lr_lambda=lambda step: rate(step, 256, 1, 7000))
+        scheduler = torch.optim.lr_scheduler.StepLR(
+           optimizer, 1.0, gamma=train_hparams["lr_decay"])
 
         # get datagen
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
@@ -135,7 +137,7 @@ if __name__ == '__main__':
         tst_datagen = get_file_datagen(os.path.join(tst_folder, "20240630_172006.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
         # run experiment with labelled data
-        train(model, criterion, optimizer, scheduler, trn_datagen,
+        cascade_train(pos_model, spk_model, criterion, optimizer, scheduler, trn_datagen,
               val_datagen, cur_experiment_folder_path, train_hparams)
 
         # make prediction folder
