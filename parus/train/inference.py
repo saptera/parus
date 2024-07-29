@@ -88,9 +88,10 @@ def inference(model, inference_datagen, filename, pred_save_folder):
                     "prd": numpy.concatenate(pred_numpy_lst, axis=0)})
 
 
-def duo_inference(model, inference_datagen, filename, pred_save_folder):
+def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    pos_model.to(device)
+    spk_model.to(device)
 
     # prediction and saving
     with torch.no_grad():
@@ -100,8 +101,9 @@ def duo_inference(model, inference_datagen, filename, pred_save_folder):
         for inputs in inference_datagen:
             start_time = time.time()
             inputs = inputs.to(device)
-            spk_outputs = model(inputs)
-            pos_outputs = peak_det_torch(-1*spk_outputs, 100, 5, 0)
+            spk_outputs = spk_model(inputs)
+            pos_outputs = pos_model(spk_outputs)
+            # pos_outputs = peak_det_torch(-1*spk_outputs, 100, 3, 0)
 
             inp = inputs.squeeze().cpu().numpy()
             spk_pred = spk_outputs.squeeze().cpu().numpy()

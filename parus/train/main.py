@@ -80,14 +80,14 @@ if __name__ == '__main__':
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
     # initial training objects
-    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                               context_dim=model_hparams["d_context"],
-                               d_model=model_hparams["d_model"],
-                               nhead=model_hparams["n_head"],
-                               num_layers=model_hparams["n_layers"],
-                               dim_feedforward=model_hparams["d_feedforward"])
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    # model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+    #                            context_dim=model_hparams["d_context"],
+    #                            d_model=model_hparams["d_model"],
+    #                            nhead=model_hparams["n_head"],
+    #                            num_layers=model_hparams["n_layers"],
+    #                            dim_feedforward=model_hparams["d_feedforward"])
+    # if torch.cuda.device_count() > 1:
+    #     model = nn.DataParallel(model)
 
     
     spk_ckpt = model_hparams["spk_checkpoint_file"]
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         criterion = nn.BCEWithLogitsLoss()
         # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
-            model.parameters(), lr=train_hparams["learning_rate"])
+            pos_model.parameters(), lr=train_hparams["learning_rate"])
         
         # def rate(step, model_size, factor, warmup):
         #     if step == 0:
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         tst_pred_folder = os.path.join(
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
-        test(model, tst_datagen, tst_pred_folder)
+        duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 
     if args.inference:
         inference_hparams = hparams["inference"]
@@ -168,5 +168,5 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            duo_inference(model, inference_datagen,
+            duo_inference(pos_model, spk_model, inference_datagen,
                       filename, inference_pred_folder)
