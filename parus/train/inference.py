@@ -101,7 +101,7 @@ def duo_inference(model, inference_datagen, filename, pred_save_folder):
             start_time = time.time()
             inputs = inputs.to(device)
             spk_outputs = model(inputs)
-            pos_outputs = peak_det_torch(-1*spk_outputs, 100, 3, 0)
+            pos_outputs = peak_det_torch(-1*spk_outputs, 100, 5, 0)
 
             inp = inputs.squeeze().cpu().numpy()
             spk_pred = spk_outputs.squeeze().cpu().numpy()

@@ -166,5 +166,5 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            inference(model, inference_datagen,
+            duo_inference(model, inference_datagen,
                       filename, inference_pred_folder)

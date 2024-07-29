@@ -39,7 +39,8 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
         std = torch.abs(sqr * fac - avg * avg).sqrt_()  # abs() to avoid negative value caused by precision loss
         # Peak detection with influence
         chk = torch.abs(slc - avg) > threshold * std
-        sgn = torch.where(slc > avg, torch.tensor(1, dtype=torch.int), torch.tensor(-1, dtype=torch.int))
+        # sgn = torch.where(slc > avg, torch.tensor(1, dtype=torch.int).cuda(), torch.tensor(-1, dtype=torch.int).cuda())
+        sgn = torch.where(slc > avg, 1, -1)
         det[:, :, i] = sgn * chk.int()
         flt[:, :, i + lag] = torch.where(chk, influence * slc + (1 - influence) * fpr, fcr)
         # Update sliding window sums
