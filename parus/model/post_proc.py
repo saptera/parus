@@ -10,7 +10,7 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
         Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
     Args:
-        prd (torch.Tensor): Input prediction results
+        prd (torch.Tensor): {3D-float, (n-ch, n-feat, n-samp)} Input prediction results
         lag (int): The length of data will be smoothed, larger lags should be included for more stationary data
         threshold (int | float): Threshold of standard deviations from the moving mean above to classify as peak
         influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
@@ -18,7 +18,7 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
             - 1: Signals have full influence of normal data points
 
     Returns:
-        torch.Tensor: {int32} Detected peak indices. 1 = positive peak, -1 = negative peak, 0 = no peak
+        torch.Tensor: {int} Detected peak indices -- 1 = positive peak, -1 = negative peak, 0 = no peak
     """
     # Initialize operational series
     det = torch.zeros_like(prd, dtype=torch.int)
@@ -39,11 +39,27 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
         std = torch.abs(sqr * fac - avg * avg).sqrt_()  # abs() to avoid negative value caused by precision loss
         # Peak detection with influence
         chk = torch.abs(slc - avg) > threshold * std
-        # sgn = torch.where(slc > avg, torch.tensor(1, dtype=torch.int).cuda(), torch.tensor(-1, dtype=torch.int).cuda())
         sgn = torch.where(slc > avg, 1, -1)
         det[:, :, i] = sgn * chk.int()
         flt[:, :, i + lag] = torch.where(chk, influence * slc + (1 - influence) * fpr, fcr)
         # Update sliding window sums
         lin.add_(fcr - flo)
         sqr.add_((fcr + flo) * (fcr - flo))
+    return det
+
+
+def peak_det_diff(prd, th, neg=True):
+    """ Signal peak detection using forward difference.
+
+    Args:
+        prd (torch.Tensor): {3D-float, (n-ch, n-feat, n-samp)} Input prediction results
+        th (int | float): Peak detection threshold
+        neg (bool): Negative peak flag -- True = peak less than threshold, False = peak greater than threshold
+
+    Returns:
+        torch.Tensor: {int} Detected peak indices -- 1 = peak, 0 = no peak
+    """
+    diff = torch.diff(prd, n=1, dim=-1, append=prd[:, :, -1:]).sgn_()
+    diff[:, :, 1:] = diff[:, :, :-1] + diff[:, :, 1:]
+    det = torch.where((prd < th) & (diff == 0), 1, 0) if neg else torch.where((prd > th) & (diff == 0), 1, 0)
     return det
