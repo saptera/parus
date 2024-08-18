@@ -48,13 +48,14 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
     return det
 
 
-def peak_det_diff(prd, th, neg=True):
+def peak_det_diff(prd, th, neg=True, gap=None):
     """ Signal peak detection using forward difference.
 
     Args:
         prd (torch.Tensor): {3D-float, (n-ch, n-feat, n-samp)} Input prediction results
         th (int | float): Peak detection threshold
         neg (bool): Negative peak flag -- True = peak less than threshold, False = peak greater than threshold
+        gap (int | float| None): Maximum gap between peaks (default: None)
 
     Returns:
         torch.Tensor: {int} Detected peak indices -- 1 = peak, 0 = no peak
@@ -62,4 +63,19 @@ def peak_det_diff(prd, th, neg=True):
     diff = torch.diff(prd, n=1, dim=-1, append=prd[:, :, -1:]).sgn_()
     diff[:, :, 1:] = diff[:, :, :-1] + diff[:, :, 1:]
     det = torch.where((prd < th) & (diff == 0), 1, 0) if neg else torch.where((prd > th) & (diff == 0), 1, 0)
+    if gap is not None:
+        # Sample input tensors
+        smp = prd.unfold(-1, gap, 2)
+        prt = det.unfold(-1, gap, 2)
+        # Initial multiple detection check
+        chk = torch.where(prt.sum(-1) > 1)
+        while chk[0].size(0) != 0:
+            # Get actual peak location
+            pos = torch.argmin(smp[chk[0], chk[1], chk[2], :], dim=-1) if neg \
+                else torch.argmax(smp[chk[0], chk[1], chk[2], :], dim=-1)
+            # Assign values to the detection
+            prt[chk[0], chk[1], chk[2], :] = 0
+            prt[chk[0], chk[1], chk[2], pos] = 1
+            # Find multiple detection sections
+            chk = torch.where(prt.sum(-1) > 1)
     return det
