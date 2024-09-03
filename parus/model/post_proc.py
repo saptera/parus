@@ -2,6 +2,8 @@ import torch
 
 """Function list:
 peak_det_torch(prd, lag, threshold, influence=0.0): Robust signal peak detection using z-scores, PyTorch version.
+peak_det_diff(prd, th, neg=True, gap=None): Signal peak detection using forward difference.
+eval_pos(prd, lbl, tol=2): Evaluate spike position accuracy.
 """
 
 
@@ -79,3 +81,34 @@ def peak_det_diff(prd, th, neg=True, gap=None):
             # Find multiple detection sections
             chk = torch.where(prt.sum(-1) > 1)
     return det
+
+
+def eval_pos(prd, lbl, tol=2):
+    """ Evaluate spike position accuracy.
+
+    Args:
+        prd (torch.Tensor): Spike position predictions
+        lbl (torch.Tensor): Spike position reference
+        tol (int): Position index tolerance (default: 2)
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor]: Evaluation results (False-Negative, False-Positive)
+    """
+    # Check false negative
+    pos = prd.clone()
+    for _ in range(tol):
+        pos[:, :, :-1] = torch.bitwise_or(pos[:, :, :-1], pos[:, :, 1:])
+        pos[:, :, 1:] = torch.bitwise_or(pos[:, :, 1:], pos[:, :, :-1])
+    diff = torch.bitwise_and(lbl, pos.bitwise_not())
+    fn = torch.sum(diff, dim=-1)
+
+    # Check false positive
+    ref = lbl.clone()
+    for _ in range(tol):
+        ref[:, :, :-1] = torch.bitwise_or(ref[:, :, :-1], ref[:, :, 1:])
+        ref[:, :, 1:] = torch.bitwise_or(ref[:, :, 1:], ref[:, :, :-1])
+    diff = torch.bitwise_and(prd, ref.bitwise_not())
+    fp = torch.sum(diff, dim=-1)
+
+    return fn, fp
+
