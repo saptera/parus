@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy import signal as sig
+import warnings
 
 """Function list:
 # Neuronal signal filters:
@@ -22,6 +23,8 @@ from scipy import signal as sig
 # Feature process functions:
     sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
+    bin_spk_frq(spk, fs): Compute average firing frequency for binary (one-hot) spike event time series.
+    bin_spk_cv2(spk, fs): Compute squared coefficient of variation (CV2) for binary (one-hot) spike event time series.
 """
 
 
@@ -503,3 +506,40 @@ def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
         rng = np.clip(rng, a_min=0, a_max=len(signal) - 1)
         smp = signal[rng]
         return np.array(pos, dtype=int), smp
+
+
+def bin_spk_frq(spk, fs):
+    """ Compute average firing frequency for binary (one-hot) spike event time series.
+
+    Args:
+        spk (list[int | float] or np.ndarray[int or float]): One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+
+    Returns:
+        float: Average firing frequency (Hz) of spike data
+    """
+    if len(spk) < 2:
+        warnings.warn("Size too small to compute frequency, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        pos = np.where(spk > 0)[0]
+        return len(pos) / len(spk) * fs
+
+
+def bin_spk_cv2(spk, fs):
+    """ Compute squared coefficient of variation (CV2) for binary (one-hot) spike event time series.
+
+    Args:
+        spk (list[int | float] | np.ndarray[int | float]): One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+
+    Returns:
+        float: Squared coefficient of variation (CV2) of spike data
+    """
+    pos = np.where(spk > 0)[0]
+    if len(pos) < 3:
+        warnings.warn("Not enough spikes detected to compute CV2, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        gap = np.ediff1d(pos) / fs
+        return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
