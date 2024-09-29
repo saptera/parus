@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 import warnings
@@ -33,14 +32,11 @@ class ContextLoader(nn.Module):
 
     def forward(self, x):
         bs, nch, _ = x.shape
-        x_np = x.detach().cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw,
-                       mode='constant', constant_values=0.0)
-        x_win = np.lib.stride_tricks.sliding_window_view(
-            x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
-        x_trs = np.transpose(x_win, axes=(1, 2, 0))
-        x_context = np.flip(x_trs, axis=1).copy()
-        return torch.from_numpy(x_context).cuda()
+        x_pad = torch.nn.functional.pad(x, (self.pw[2][0], self.pw[2][1], 0, 0, 0, 0), mode='constant', value=0.0)
+        x_win = x_pad.unfold(2, self.emb_dim, 1)
+        x_trs = x_win.permute(2, 1, 0)
+        x_context = torch.flip(x_trs, [1]).clone()
+        return x_context
 
 
 class SparseContextLoader(nn.Module):
@@ -65,7 +61,7 @@ class SparseContextLoader(nn.Module):
         idx = self.get_idx(sel_meth, gap)
         # Get sampling features
         self.pw = ((0, 0), (0, 0), (-idx[-1], idx[0]))
-        self.tgt = np.add.outer(idx, range(-idx[-1], n_samp - idx[-1]))
+        self.tgt = torch.add(idx.unsqueeze(1), torch.arange(-idx[-1], n_samp - idx[-1]))
         # Super
         super().__init__()
 
@@ -80,35 +76,32 @@ class SparseContextLoader(nn.Module):
             gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for sampling (default: 1)
 
         Returns:
-            np.ndarray: {1D-int} Relative index for the target position
+            torch.Tensor: {1D-int} Relative index for the target position
         """
         # Get space based on method, minimum distance is forced to 1
         if meth == 'stp':
-            space = np.asarray([max(round(gap), 1)] * self.spc_num)
+            space = torch.full((self.spc_num,), max(round(gap), 1))
         elif meth == 'lin':
-            space = np.linspace(1, gap, self.spc_num, endpoint=True).round(0)
+            space = torch.linspace(1, gap, self.spc_num, dtype=torch.int64)
         elif meth == 'geo':
-            space = np.geomspace(1, gap, self.spc_num, endpoint=True).round(0)
+            space = torch.logspace(0, torch.log(torch.tensor(gap)), self.spc_num, base=torch.e).round().int()
         else:
             # Fallback method
             warnings.warn(
                 "Invalid sampling method, fallback to constant gap sampling.", SyntaxWarning, stacklevel=2)
-            space = np.asarray([max(round(gap), 1)] * self.spc_num)
+            space = torch.full((self.spc_num,), max(round(gap), 1))
         # Get accumulative distance
-        distance = np.add.accumulate(space).astype(int)
+        distance = torch.cumsum(space, dim=0)
         # Set origin on the posterior side
-        idx = np.concatenate(
-            (distance[self.ant - 1::-1] * -1, distance[:self.emb_dim - self.ant] - distance[0]))
-        return idx[::-1]  # Flip for transformer context loading order
+        idx = torch.cat((-distance[self.ant - 1::-1], distance[:self.emb_dim - self.ant] - distance[0]))
+        return idx.flip(0)  # Flip for transformer context loading order
 
     def forward(self, x):
         bs, ctx, _ = x.shape
-        x_np = x.cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw,
-                       mode='constant', constant_values=0.0)
+        x_pad = torch.nn.functional.pad(x, (self.pw[2][0], self.pw[2][1], 0, 0, 0, 0), mode='constant', value=0.0)
         x_context = x_pad[:, :, self.tgt]
         # TODO: Dimension reserved future contexts, currently removed for efficiency
-        return torch.from_numpy(x_context[:, 0, :, :]).cuda()
+        return x_context[:, 0, :, :]
 
 
 class EncoderTransformer(nn.Module):

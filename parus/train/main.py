@@ -80,32 +80,32 @@ if __name__ == '__main__':
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
     # initial training objects
-    # model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-    #                            context_dim=model_hparams["d_context"],
-    #                            d_model=model_hparams["d_model"],
-    #                            nhead=model_hparams["n_head"],
-    #                            num_layers=model_hparams["n_layers"],
-    #                            dim_feedforward=model_hparams["d_feedforward"])
-    # if torch.cuda.device_count() > 1:
-    #     model = nn.DataParallel(model)
+    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                               context_dim=model_hparams["d_context"],
+                               d_model=model_hparams["d_model"],
+                               nhead=model_hparams["n_head"],
+                               num_layers=model_hparams["n_layers"],
+                               dim_feedforward=model_hparams["d_feedforward"])
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
 
     
-    spk_ckpt = model_hparams["spk_checkpoint_file"]
-    print("found spk_ckpt")
-    spk_ckpt_hparams = load_hparams(os.path.join(
-        model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
-    spk_model_hparams = spk_ckpt_hparams["model"]
-    spk_model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
-                                context_dim=spk_model_hparams["d_context"],
-                                d_model=spk_model_hparams["d_model"],
-                                nhead=spk_model_hparams["n_head"],
-                                num_layers=spk_model_hparams["n_layers"],
-                                dim_feedforward=spk_model_hparams["d_feedforward"])
-    spk_model = nn.DataParallel(spk_model)
-    spk_model = load_model(spk_ckpt, spk_model)
-    print("loaded spk model")
+    # spk_ckpt = model_hparams["spk_checkpoint_file"]
+    # print("found spk_ckpt")
+    # spk_ckpt_hparams = load_hparams(os.path.join(
+    #     model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
+    # spk_model_hparams = spk_ckpt_hparams["model"]
+    # spk_model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
+    #                             context_dim=spk_model_hparams["d_context"],
+    #                             d_model=spk_model_hparams["d_model"],
+    #                             nhead=spk_model_hparams["n_head"],
+    #                             num_layers=spk_model_hparams["n_layers"],
+    #                             dim_feedforward=spk_model_hparams["d_feedforward"])
+    # spk_model = nn.DataParallel(spk_model)
+    # spk_model = load_model(spk_ckpt, spk_model)
+    # print("loaded spk model")
 
-    pos_model = PeakCNN()
+    # pos_model = PeakCNN()
 
     if args.train:
         train_hparams = hparams["train"]
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         criterion = nn.BCEWithLogitsLoss()
         # criterion = tv.sigmoid_focal_loss
         optimizer = torch.optim.AdamW(
-            pos_model.parameters(), lr=train_hparams["learning_rate"])
+            model.parameters(), lr=train_hparams["learning_rate"])
         
         # def rate(step, model_size, factor, warmup):
         #     if step == 0:
@@ -137,14 +137,17 @@ if __name__ == '__main__':
         tst_datagen = get_file_datagen(os.path.join(tst_folder, "20240630_172006.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
         # run experiment with labelled data
-        cascade_train(pos_model, spk_model, criterion, optimizer, scheduler, trn_datagen,
+        train(model, criterion, optimizer, scheduler, trn_datagen,
               val_datagen, cur_experiment_folder_path, train_hparams)
+        # cascade_train(pos_model, spk_model, criterion, optimizer, scheduler, trn_datagen,
+        #       val_datagen, cur_experiment_folder_path, train_hparams)
 
         # make prediction folder
         tst_pred_folder = os.path.join(
             cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
-        duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
+        test(model, tst_datagen, tst_pred_folder)
+        # duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 
     if args.inference:
         inference_hparams = hparams["inference"]
@@ -168,5 +171,7 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            duo_inference(pos_model, spk_model, inference_datagen,
+            inference(model, inference_datagen,
                       filename, inference_pred_folder)
+            # duo_inference(pos_model, spk_model, inference_datagen,
+            #           filename, inference_pred_folder)
