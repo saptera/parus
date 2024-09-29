@@ -81,9 +81,9 @@ def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datag
                 spk_output = spk_model(inputs)
             output = model(spk_output)
             loss = criterion(output,
-                             labels.float(),
-                             alpha=0.95,
-                             reduction="mean")
+                             labels.float())
+                             # alpha=0.95,
+                             #reduction="mean")
             loss.backward()
             optimizer.step()
             nn.utils.clip_grad_norm_(

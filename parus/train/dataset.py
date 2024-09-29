@@ -22,7 +22,8 @@ class LabelledSingleFileDataset(data.Dataset):
         with h5py.File(self.data_file_path, "r") as file:
             data = sim_data_read(file, index)
         sig = data['sig']
-        lbl = data['lbl']['signal'][1] # only using simple spike
+        lbl = data['pos']
+        #lbl = data['lbl']['signal'][1] # only using simple spike
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)

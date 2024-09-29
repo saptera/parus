@@ -3,7 +3,7 @@ import numpy
 import torch
 import time
 from parus.fio import pklz_write
-from parus.model.post_proc import peak_det_torch
+from parus.model.post_proc import peak_det_diff, eval_pos
 
 """
 need: 
@@ -38,26 +38,44 @@ def duo_test(spk_model, pos_model, tst_datagen, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # prediction and saving
+    count = 0
+    total_fn = 0
+    total_fp = 0
     with torch.no_grad():
-        for inputs, spk_labels, pos_labels, file_num_str in tst_datagen:
+        for inputs, labels, file_num_str in tst_datagen:
             inputs = inputs.to(device)
             spk_model.to(device)
             spk_outputs = spk_model(inputs)
-            pos_model.to(device)
-            pos_outputs = pos_model(spk_outputs)
+            print(spk_outputs.shape) 
+            pos_outputs = peak_det_diff(spk_outputs, th=-100, neg=True, gap=20)
+            #print("pos", pos_outputs.device)
+            #print(pos_outputs)
+            #print("label", labels.device)
+            #print(labels.to(torch.int32))
+            fn, fp = eval_pos(pos_outputs.cpu(), labels.to(torch.int32))
+            print("fn", fn)
+            print("fp", fp)
+            count += 1
+            total_fn += fn
+            total_fp += fp
+            #diff = torch.bitwise_xor(pos_outputs.cpu(), labels.to(torch.int32))
+            #miss = torch.sum(diff)
+            #print("Miss: ", miss)
+            #pos_model.to(device)
+            #pos_outputs = pos_model(spk_outputs)
 
             inp = inputs.squeeze().cpu().numpy()
             spk_pred = spk_outputs.squeeze().cpu().numpy()
             pos_pred = pos_outputs.squeeze().cpu().numpy()
-            spk_lbl = spk_labels.squeeze().cpu().numpy()
-            pos_lbl = pos_labels.squeeze().cpu().numpy()
+            pos_lbl = labels.squeeze().cpu().numpy()
 
             pred_dict = {"spk": spk_pred, "pos": pos_pred}
-            lbls_dict = {"spk": spk_lbl, "pos": pos_lbl}
 
             filename = "pred_" + file_num_str[0] + ".sim"
             pklz_write(os.path.join(pred_save_folder, filename),
-                       {"inp": inp,  "prd": pred_dict, "lbl": lbls_dict})
+                    {"inp": inp,  "prd": pred_dict, "lbl": labels})
+    print("average fn: ", total_fn / count)
+    print("average fp: ", total_fp / count)
 
 
 def inference(model, inference_datagen, filename, pred_save_folder):
@@ -91,30 +109,45 @@ def inference(model, inference_datagen, filename, pred_save_folder):
 def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_folder):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pos_model.to(device)
+    spk_model = spk_model.half()
     spk_model.to(device)
 
     # prediction and saving
     with torch.no_grad():
-        inp_numpy_lst = []
-        spk_pred_numpy_lst = []
-        pos_pred_numpy_lst = []
-        for inputs in inference_datagen:
-            start_time = time.time()
-            inputs = inputs.to(device)
-            spk_outputs = spk_model(inputs)
-            pos_outputs = pos_model(spk_outputs)
-            # pos_outputs = peak_det_torch(-1*spk_outputs, 100, 3, 0)
+        with torch.cuda.amp.autocast():
+            inp_numpy_lst = []  
+            spk_pred_numpy_lst = []
+            pos_pred_numpy_lst = []
+            for inputs in inference_datagen:
+                start_time = time.time()
+                inputs = inputs.to(device)
+                input_end_time = time.time()
+                input_elapsed_time = input_end_time - start_time
+                print(f"Load Input Time: {input_elapsed_time} seconds")
+                spk_outputs = spk_model(inputs)
+                pos_start_time = time.time()
+                model_time = pos_start_time - input_end_time
+                print(f"Spk Model Time: {model_time} seconds")
+                #pos_outputs = pos_model(spk_outputs)
+                pos_outputs = peak_det_diff(spk_outputs, th=-100, neg=True, gap=20)
+                pos_end_time = time.time()
+                pos_elapsed_time = pos_end_time - pos_start_time
+                pre_pos_time = pos_start_time - start_time
+                print(f"Pre Pos time: {pre_pos_time} seconds")
+                print(f"Pos Elapsed time: {pos_elapsed_time} seconds")
 
-            inp = inputs.squeeze().cpu().numpy()
-            spk_pred = spk_outputs.squeeze().cpu().numpy()
-            pos_pred = pos_outputs.squeeze().cpu().numpy()
-            inp_numpy_lst.append(inp)
-            spk_pred_numpy_lst.append(spk_pred)
-            pos_pred_numpy_lst.append(pos_pred)
+                inp = inputs.squeeze().cpu().numpy()
+                spk_pred = spk_outputs.squeeze().cpu().numpy()
+                pos_pred = pos_outputs.squeeze().cpu().numpy()
+                inp_numpy_lst.append(inp)
+                spk_pred_numpy_lst.append(spk_pred)
+                pos_pred_numpy_lst.append(pos_pred)
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print(f"Elapsed time: {elapsed_time} seconds")
+                end_time = time.time()
+                post_pos_time = end_time - pos_end_time
+                elapsed_time = end_time - start_time
+                print(f"Post Pos Time: {post_pos_time} seconds" )
+                print(f"Elapsed time: {elapsed_time} seconds\n")
 
         pred_filename = "pred_" + filename
         inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0)

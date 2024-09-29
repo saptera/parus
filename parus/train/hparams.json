@@ -1,7 +1,7 @@
 {
   "data": {
     "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5.1_1m_max_gap_100",
-    "n_trn_samples": 500000,
+    "n_trn_samples": 5000,
     "n_val_samples": 1000,
     "n_tst_samples": 1000,
     "n_worker": 10
@@ -19,16 +19,16 @@
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 10,
+    "total_epoch": 1,
     "batch_size": 64,
     "steps_per_eval": 1000,
-    "learning_rate": 1,
-    "lr_decay": 0.97,
+    "learning_rate": 0.01,
+    "lr_decay": 0.98,
     "model_param_clip": 0.5
   },
   "inference": {
-    "batch_size": 2048,
-    "inference_data_folder": "/home/proj_wavemoto/dataset/inference_data"
+    "batch_size": 1,
+    "inference_data_folder": "/home/proj_wavemoto/dataset/eplp_ptdt"
   },
   "debug": {
     "data": {
