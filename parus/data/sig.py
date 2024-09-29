@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy import signal as sig
+import warnings
 
 """Function list:
 # Neuronal signal filters:
@@ -22,6 +23,10 @@ from scipy import signal as sig
 # Feature process functions:
     sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
+    bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
+    tpt_spk_frq(spk, t=None, g=None, zero=True): Compute average firing frequency for timestamp spikes.
+    bin_spk_cv2(spk, fs, t=None, g=None): Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
+    tpt_spk_cv2(spk, t=None, g=None, zero=True): Compute squared coefficient of variation (CV2) for timestamp spikes.
 """
 
 
@@ -503,3 +508,132 @@ def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
         rng = np.clip(rng, a_min=0, a_max=len(signal) - 1)
         smp = signal[rng]
         return np.array(pos, dtype=int), smp
+
+
+def bin_spk_frq(spk, fs, t=None, g=None):
+    """ Compute average firing frequency for binary (one-hot) spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+        t (int | float | None): Time window to compute feature (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+
+    Returns:
+        float | list[float]: Average firing frequency (Hz) of spike data
+    """
+    if len(spk) < 2:
+        warnings.warn("Size too small to compute frequency, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        if t is None:
+            pos = np.where(spk > 0)[0]
+            return len(pos) / len(spk) * fs
+        else:
+            win = round(fs * t, ndigits=None)
+            stp = win if g is None else round(fs * g, ndigits=None)
+            smp = np.lib.stride_tricks.sliding_window_view(spk, win)[::stp]
+            return (np.sum(smp, axis=-1) / t).tolist()
+
+
+def tpt_spk_frq(spk, t=None, g=None, zero=True):
+    """ Compute average firing frequency for timestamp spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        t (int | float | None): Time window to compute feature (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        zero (bool): Zeroing the beginning of timestamps (default: True)
+
+    Returns:
+        float | list[float]: Average firing frequency (Hz) of spike data
+    """
+    if len(spk) < 2:
+        warnings.warn("Size too small to compute frequency, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    # Arrange data
+    tpt = np.sort(spk, kind='stable')
+    tpt = tpt - tpt[0] if zero else tpt
+    # Compute frequency
+    if t is None:
+        return tpt.size / tpt[-1].item()
+    else:
+        stp = t if g is None else g
+        wini = np.arange(0, tpt[-1], stp)
+        wstp = wini + t
+        cnt = [(np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]).size for i in range(len(wini))]
+        return np.divide(cnt, t).tolist()
+
+
+def bin_spk_cv2(spk, fs, t=None, g=None):
+    """ Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
+
+    Args:
+        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+        t (int | float | None): Time window to compute (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+
+    Returns:
+        float | list[float]: Squared coefficient of variation (CV2) of spike data
+    """
+    pos = np.nonzero(spk)[0]
+    if len(pos) < 3:
+        warnings.warn("Not enough spikes detected to compute CV2, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        if t is None:
+            gap = np.ediff1d(pos) / fs
+            return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
+        else:
+            # Sampling
+            win = round(fs * t, ndigits=None)
+            stp = win if g is None else round(fs * g, ndigits=None)
+            smp = np.lib.stride_tricks.sliding_window_view(spk, win)[::stp]
+            pos = [np.nonzero(smp[i])[0] for i in range(smp.shape[0])]
+            # Check and compute
+            res = []  # INIT VAR
+            for p in pos:
+                if len(p) < 3:
+                    res.append(float('nan'))
+                else:
+                    gap = np.ediff1d(p) / fs
+                    res.append(2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item())
+            return res
+
+
+def tpt_spk_cv2(spk, t=None, g=None, zero=True):
+    """ Compute squared coefficient of variation (CV2) for timestamp spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        t (int | float | None): Time window to compute feature (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        zero (bool): Zeroing the beginning of timestamps (default: True)
+
+    Returns:
+        float | list[float]: Squared coefficient of variation (CV2) of spike data
+    """
+    if len(spk) < 3:
+        warnings.warn("Not enough spikes detected to compute CV2, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    # Arrange data
+    tpt = np.sort(spk, kind='stable')
+    tpt = tpt - tpt[0] if zero else tpt
+    # Compute CV2
+    if t is None:
+        gap = np.ediff1d(tpt)
+        return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
+    else:
+        stp = t if g is None else g
+        wini = np.arange(0, tpt[-1], stp)
+        wstp = wini + t
+        pos = [tpt[np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]] for i in range(len(wini))]
+        res = []  # INIT VAR
+        for p in pos:
+            if len(p) < 3:
+                res.append(float('nan'))
+            else:
+                gap = np.ediff1d(p)
+                res.append(2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item())
+        return res
