@@ -2,8 +2,6 @@
 
 import sys
 import os
-import numpy as np
-from scipy.stats import norm, laplace
 
 """Function list:
 x64_sys(): Check if current system architecture is 64-bit based.
@@ -11,9 +9,6 @@ make_outdir(out_dir, err_msg="Invalid output directory!"): Recursive create an o
 altmk_outdirs(out_dir, alt_dir, err_msg="Inv..."): Recursive create an output leaf directory with alternative directory.
 search_files(base_dir, fpre=str(), fsuf=str()):  Find all files meets the search conditions.
 prog_print(iteration, total, prefix=str(), suffix=str()): Create a terminal progress bar for a loop.
-arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
-norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
-laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
 """
 
 
@@ -122,61 +117,3 @@ def prog_print(iteration, total, prefix=str(), suffix=str()):
     sys.stdout.flush()
     if iteration == total:  # Print a new line at 100%
         print('')
-
-
-def arr_rand_samp(arr, n_samp):
-    """ Random sampling of unique samples from a NumPy array.
-
-    Args:
-        arr (np.ndarray): Input array
-        n_samp (int): Number of samples
-
-    Returns:
-        np.ndarray: {1D} Samples from original array
-    """
-    mask = np.array([True] * n_samp + [False] * (arr.size - n_samp))
-    np.random.shuffle(mask)
-    mask = np.reshape(mask, arr.shape)
-    return arr[mask]
-
-
-def norm_lst_gen(peak, side, level=2):
-    """ Generate a list obeying normal distribution.
-
-    Args:
-        peak (float): Peak (centre) value of output
-        side (int): Number of samples around the peak
-        level (int): {1 | 2 | 3}: Level of three-sigma rule within the [size]. (default: 2)
-            - 1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
-            - 2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
-            - 3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
-
-    Returns:
-        list[float]: Output list of generated value
-    """
-    lvl_dic = {1: 1, 2: 2, 3: 3}
-    nd = norm(loc=0, scale=side / lvl_dic[level])  # Normal distribution sigma range
-    fac = peak / nd.pdf(0)  # Peak stretch factor
-    val = []  # INIT VAR
-    for i in range(-side, side + 1, 1):
-        val.append(nd.pdf(i).item() * fac)
-    return val
-
-
-def laplace_lst_gen(peak, side, scale=1):
-    """ Generate a list obeying laplace distribution.
-
-    Args:
-        peak (float): Peak (centre) value of output
-        side (int): Number of samples around the peak
-        scale (int | float): : Diversity of generated samples (default: 1)
-
-    Returns:
-        list[float]: Output list of generated value.
-    """
-    ld = laplace(loc=0, scale=scale)  # Laplace distribution with scale
-    fac = peak / ld.pdf(0)  # Peak stretch factor
-    val = []  # INIT VAR
-    for i in range(-side, side + 1, 1):
-        val.append(ld.pdf(i).item() * fac)
-    return val
