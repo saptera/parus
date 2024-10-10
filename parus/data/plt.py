@@ -1,11 +1,65 @@
+# Data plotting related functions
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import FancyBboxPatch, PathPatch
 
 """Function list:
+swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
 plot_probe(prb, ax): Plot neural recoding probe.
 """
+
+
+def swarm_cord(data, bins=None, centre=0, width=1):
+    """ Compute the coordinates for swarm plot.
+
+    Args:
+        data (tuple | list | np.ndarray): Input data
+        bins (int | None): Number of equal-width bins in the data range (default: None -> 6 bins)
+        centre (int | float): Centre of the swarm (default: 0)
+        width (int | float): Width of the swarm (default: 1)
+
+    Returns:
+        np.ndarray: Computed data swarm coordinates
+    """
+    # Adapt inputs
+    data = data.copy() if isinstance(data, np.ndarray) else np.asarray(data)
+    size = data.size
+    bins = np.ceil(size / 6).astype(int) if bins is None else round(bins)
+
+    # Get upper bounds of bins
+    lo, hi = np.min(data), np.max(data)
+    dy = (hi - lo) / bins
+    bs = np.linspace(lo + dy, hi - dy, bins - 1)
+
+    # Divide indices into bins
+    idx = np.arange(size)
+    ibs = [[]] * bins
+    ybs = [[]] * bins
+    for i, b in enumerate(bs):
+        # Assign current bin
+        f = data <= b
+        ibs[i], ybs[i] = idx[f], data[f]
+        # Trim data
+        f = ~f
+        idx, data = idx[f], data[f]
+    # Assign last bin and get maximum width
+    ibs[-1], ybs[-1] = idx, data
+    lim = max(len(_) for _ in ibs)
+
+    # Assign X-axis indices
+    cord = np.zeros(size)
+    dx = width / (lim // 2)
+    for i, y in zip(ibs, ybs):
+        if len(i) > 1:
+            j = len(i) % 2
+            i = i[np.argsort(y)]
+            a = i[j::2]
+            b = i[j + 1::2]
+            cord[a] = (0.5 + j / 3 + np.arange(len(b))) * dx
+            cord[b] = (0.5 + j / 3 + np.arange(len(b))) * -dx
+    return cord + centre
 
 
 def plot_prb(prb, ax):
