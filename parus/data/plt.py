@@ -7,7 +7,7 @@ from matplotlib.patches import FancyBboxPatch, PathPatch
 
 """Function list:
 swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
-stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None, text_feats=None): Stats significance bars.
+stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None): Stats significance bars.
 plot_probe(prb, ax): Plot neural recoding probe.
 """
 
@@ -51,7 +51,7 @@ def swarm_cord(data, bins=None, centre=0, width=1):
 
     # Assign X-axis indices
     cord = np.zeros(size)
-    dx = width / (lim // 2)
+    dx = width / 2 / (lim // 2)
     for i, y in zip(ibs, ybs):
         if len(i) > 1:
             j = len(i) % 2
@@ -63,7 +63,7 @@ def swarm_cord(data, bins=None, centre=0, width=1):
     return cord + centre
 
 
-def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None, text_feats=None):
+def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None):
     """ Plot statistical significance bars.
 
     Args:
@@ -75,8 +75,8 @@ def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None
         brk (int | float | tuple[int | float] | list[int | float] | np.ndarray): Height of the bar (default: 0.5)
         ast_lim (int | None): Maximum asterisks to generate, set None for unlimited (default: 3)
         vert (bool): Vertical bar flag, set False for horizontal bar (default: True)
-        line_feats (dict | None): Dictionary of bar feature kwargs (default: None)
-        text_feats (dict | None): Dictionary of text feature kwargs (default: None)
+        lineprops (dict | None): Dictionary of bar feature kwargs (default: None)
+        textprops (dict | None): Dictionary of text feature kwargs (default: None)
 
     Returns:
         tuple[list[plt.Line2D], list[plt.Text]]: Reference of plotted bars and texts
@@ -109,10 +109,10 @@ def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None
         xs = np.vstack((pos, cnl, cnl, pos))
         ys = np.vstack((lt, lt, rb, rb))
     # Get features and plot line
-    line_feats = {} if line_feats is None else line_feats
-    if not (('c' in line_feats) or ('color' in line_feats)):
-        line_feats['c'] = 'black'
-    line = ax.plot(xs, ys, **line_feats)
+    lineprops = {} if lineprops is None else lineprops
+    if not (('c' in lineprops) or ('color' in lineprops)):
+        lineprops['c'] = 'black'
+    line = ax.plot(xs, ys, **lineprops)
 
     # Get annotation texts
     if isinstance(p, (tuple, list, np.ndarray)):
@@ -123,17 +123,17 @@ def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None
     if vert:
         ctr = (lt + rb) / 2
         bsl = cnl + brk / 10
-        text_feats = {} if text_feats is None else text_feats
-        text_feats.update({'ha': 'center', 'va': 'bottom'})  # Override
+        textprops = {} if textprops is None else textprops
+        textprops.update({'ha': 'center', 'va': 'bottom'})  # Override
     else:
         ctr = cnl + brk / 10
         bsl = (lt + rb) / 2
-        text_feats = {} if text_feats is None else text_feats
-        text_feats.update({'ha': 'left', 'va': 'center', 'rotation': 'vertical'})  # Override
+        textprops = {} if textprops is None else textprops
+        textprops.update({'ha': 'left', 'va': 'center', 'rotation': 'vertical'})  # Override
     # Draw texts
     text = []  # INIT VAR
     for c, b, t in zip(ctr, bsl, txt):
-        tp = ax.text(c, b, t, **text_feats)
+        tp = ax.text(c, b, t, **textprops)
         text.append(tp)
     return line, text
 
