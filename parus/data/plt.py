@@ -7,6 +7,7 @@ from matplotlib.patches import FancyBboxPatch, PathPatch
 
 """Function list:
 swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
+stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None, text_feats=None): Stats significance bars.
 plot_probe(prb, ax): Plot neural recoding probe.
 """
 
@@ -60,6 +61,81 @@ def swarm_cord(data, bins=None, centre=0, width=1):
             cord[a] = (0.5 + j / 3 + np.arange(len(b))) * dx
             cord[b] = (0.5 + j / 3 + np.arange(len(b))) * -dx
     return cord + centre
+
+
+def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, line_feats=None, text_feats=None):
+    """ Plot statistical significance bars.
+
+    Args:
+        ax (plt.Axes): Matplotlib axis to plot on
+        p (float | tuple[float] | list[float] | np.ndarray): Statistical probability value
+        lt (int | float | tuple[int | float] | list[int | float] | np.ndarray): Left or top coordinates of the bar
+        rb (int | float | tuple[int | float] | list[int | float] | np.ndarray): Right or bottom coordinates of the bar
+        pos (int | float | tuple[int | float] | list[int | float] | np.ndarray): Starting coordinates of the bar
+        brk (int | float | tuple[int | float] | list[int | float] | np.ndarray): Height of the bar (default: 0.5)
+        ast_lim (int | None): Maximum asterisks to generate, set None for unlimited (default: 3)
+        vert (bool): Vertical bar flag, set False for horizontal bar (default: True)
+        line_feats (dict | None): Dictionary of bar feature kwargs (default: None)
+        text_feats (dict | None): Dictionary of text feature kwargs (default: None)
+
+    Returns:
+        tuple[list[plt.Line2D], list[plt.Text]]: Reference of plotted bars and texts
+    """
+
+    def __get_txt(v):
+        """ Compute the annotation string by the given p-value. """
+        # Compute number of asterisks for numeric p-value
+        if isinstance(v, (float, np.floating)):
+            lvl = np.ceil(np.log10(0.05 / v)).astype(int) if v > 0 else 0
+            if ast_lim is None:
+                return '*' * lvl if lvl > 0 else 'n.s.'
+            else:
+                return '*' * min(ast_lim, lvl) if lvl > 0 else 'n.s.'
+        # Try to convert to string for other types
+        else:
+            return str(v)
+
+    # Adapt inputs
+    lt = lt if isinstance(lt, np.ndarray) else np.asarray(lt if isinstance(lt, (tuple, list)) else [lt])
+    rb = rb if isinstance(rb, np.ndarray) else np.asarray(rb if isinstance(rb, (tuple, list)) else [rb])
+    pos = pos if isinstance(pos, np.ndarray) else np.asarray(pos if isinstance(pos, (tuple, list)) else [pos])
+    brk = brk if isinstance(brk, np.ndarray) else np.asarray(brk if isinstance(brk, (tuple, list)) else [brk])
+    # Compute lines coordinates
+    cnl = pos + brk
+    if vert:
+        xs = np.vstack((lt, lt, rb, rb))
+        ys = np.vstack((pos, cnl, cnl, pos))
+    else:
+        xs = np.vstack((pos, cnl, cnl, pos))
+        ys = np.vstack((lt, lt, rb, rb))
+    # Get features and plot line
+    line_feats = {} if line_feats is None else line_feats
+    if not (('c' in line_feats) or ('color' in line_feats)):
+        line_feats['c'] = 'black'
+    line = ax.plot(xs, ys, **line_feats)
+
+    # Get annotation texts
+    if isinstance(p, (tuple, list, np.ndarray)):
+        txt = [__get_txt(_) for _ in p]
+    else:
+        txt = [__get_txt(p)]
+    # Get text features
+    if vert:
+        ctr = (lt + rb) / 2
+        bsl = cnl + brk / 10
+        text_feats = {} if text_feats is None else text_feats
+        text_feats.update({'ha': 'center', 'va': 'bottom'})  # Override
+    else:
+        ctr = cnl + brk / 10
+        bsl = (lt + rb) / 2
+        text_feats = {} if text_feats is None else text_feats
+        text_feats.update({'ha': 'left', 'va': 'center', 'rotation': 'vertical'})  # Override
+    # Draw texts
+    text = []  # INIT VAR
+    for c, b, t in zip(ctr, bsl, txt):
+        tp = ax.text(c, b, t, **text_feats)
+        text.append(tp)
+    return line, text
 
 
 def plot_prb(prb, ax):

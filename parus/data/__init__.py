@@ -5,4 +5,4 @@ from .sig import (spk_lowpass, spk_highpass, spk_bandpass, spk_notch,
                   neuron_sig_slc, sig_split, sig_merge,
                   sig_peak_det, peak_extremum, bin_spk_frq, tpt_spk_frq, bin_spk_cv2, tpt_spk_cv2)
 from .clst import cls_pk_val
-from .plt import swarm_cord, plot_prb
+from .plt import swarm_cord, stat_plvl, plot_prb
