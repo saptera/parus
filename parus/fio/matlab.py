@@ -1,6 +1,5 @@
 # MATLAB file import functions
 
-from datetime import datetime
 import h5py as h5
 import numpy as np
 import scipy.io as sio
@@ -19,14 +18,14 @@ def mat_meta_read(file):
         file (str): MATLAB MAT file path
 
     Returns:
-        dict[str, float | str | bool | datetime]: MAT file header
+        dict[str, float | str | bool | str]: MAT file header
             - version (float): MAT file version
             - platform (str): MATLAB platform
             - hdf (bool): MAT file HDF standard flag
-            - date (datetime): MAT file creation time
+            - date (str): MAT file creation time (locale format)
     """
     # Read MAT file header
-    header = ''
+    header = ''  # INIT VAR
     with open(file, 'rb') as ts:
         b = ts.read(1)
         while b != b'\x00':
@@ -41,7 +40,7 @@ def mat_meta_read(file):
     meta['platform'] = part[1].split(': ')[-1]  # MATLAB platform
     meta['hdf'] = 'HDF' in header  # Check if the MAT file use HDF format
     ds = part[2].split(' HDF')[0] if meta['hdf'] else part[2]  # Get creation data string
-    meta['date'] = datetime.strptime(ds, 'Created on: %a %b %d %H:%M:%S %Y')
+    meta['date'] = ds.split(': ')[-1]
     return meta
 
 
