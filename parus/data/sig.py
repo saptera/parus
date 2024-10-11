@@ -24,9 +24,9 @@ import warnings
     sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
-    tpt_spk_frq(spk, t=None, g=None, zero=True): Compute average firing frequency for timestamp spikes.
+    tpt_spk_frq(spk, t=None, g=None, zero=True, end=None): Compute average firing frequency for timestamp spikes.
     bin_spk_cv2(spk, fs, t=None, g=None): Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
-    tpt_spk_cv2(spk, t=None, g=None, zero=True): Compute squared coefficient of variation (CV2) for timestamp spikes.
+    tpt_spk_cv2(spk, t=None, g=None, zero=True, end=None): Compute CV2 for timestamp spikes.
 """
 
 
@@ -536,7 +536,7 @@ def bin_spk_frq(spk, fs, t=None, g=None):
             return (np.sum(smp, axis=-1) / t).tolist()
 
 
-def tpt_spk_frq(spk, t=None, g=None, zero=True):
+def tpt_spk_frq(spk, t=None, g=None, zero=True, end=None):
     """ Compute average firing frequency for timestamp spikes.
 
     Args:
@@ -544,6 +544,7 @@ def tpt_spk_frq(spk, t=None, g=None, zero=True):
         t (int | float | None): Time window to compute feature (default: None = compute whole trace)
         g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
         zero (bool): Zeroing the beginning of timestamps (default: True)
+        end (int | float | None): The end time of timestamps (default: None = use last value of [spk])
 
     Returns:
         float | list[float]: Average firing frequency (Hz) of spike data
@@ -555,11 +556,12 @@ def tpt_spk_frq(spk, t=None, g=None, zero=True):
     tpt = np.sort(spk, kind='stable')
     tpt = tpt - tpt[0] if zero else tpt
     # Compute frequency
+    end = tpt[-1].item() if end is None else end
     if t is None:
-        return tpt.size / tpt[-1].item()
+        return tpt.size / end
     else:
         stp = t if g is None else g
-        wini = np.arange(0, tpt[-1], stp)
+        wini = np.arange(0, end, stp)
         wstp = wini + t
         cnt = [(np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]).size for i in range(len(wini))]
         return np.divide(cnt, t).tolist()
@@ -602,7 +604,7 @@ def bin_spk_cv2(spk, fs, t=None, g=None):
             return res
 
 
-def tpt_spk_cv2(spk, t=None, g=None, zero=True):
+def tpt_spk_cv2(spk, t=None, g=None, zero=True, end=None):
     """ Compute squared coefficient of variation (CV2) for timestamp spikes.
 
     Args:
@@ -610,6 +612,7 @@ def tpt_spk_cv2(spk, t=None, g=None, zero=True):
         t (int | float | None): Time window to compute feature (default: None = compute whole trace)
         g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
         zero (bool): Zeroing the beginning of timestamps (default: True)
+        end (int | float | None): The end time of timestamps (default: None = use last value of [spk])
 
     Returns:
         float | list[float]: Squared coefficient of variation (CV2) of spike data
@@ -625,8 +628,9 @@ def tpt_spk_cv2(spk, t=None, g=None, zero=True):
         gap = np.ediff1d(tpt)
         return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
     else:
+        end = tpt[-1].item() if end is None else end
         stp = t if g is None else g
-        wini = np.arange(0, tpt[-1], stp)
+        wini = np.arange(0, end, stp)
         wstp = wini + t
         pos = [tpt[np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]] for i in range(len(wini))]
         res = []  # INIT VAR
