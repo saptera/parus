@@ -28,6 +28,7 @@ import warnings
     tpt_spk_frq(spk, t=None, g=None, org=0, end=None): Compute average firing frequency for timestamp spikes.
     bin_spk_cv2(spk, fs, t=None, g=None): Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
     tpt_spk_cv2(spk, t=None, g=None, org=0, end=None): Compute squared coefficient of variation for timestamp spikes.
+    tpt_kde_frq(spk, bw=None, **kwargs): Estimate timestamp spike firing rate using Gaussian kernels.
 """
 
 
@@ -654,3 +655,38 @@ def tpt_spk_cv2(spk, t=None, g=None, org=0, end=None):
                 gap = np.ediff1d(p)
                 res.append(2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item())
         return res
+
+
+def tpt_kde_frq(spk, bw=None, **kwargs):
+    """ Estimate timestamp spike firing rate using Gaussian kernels.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        bw (int | float | str | function | None): The method used to calculate the estimator bandwidth (default: None)
+            - (int | float): Value will be used directly as bandwidth factor
+            - {'scott'}: Auto compute Scott's factor
+            - {'silverman'}: Auto compute Silverman's factor
+            - (function): Callable take a gaussian_kde instance as only parameter and return a scalar
+            - {None}: Using 'scott'
+
+   Keyword Args:
+       smp (list[int | float] or np.ndarray): {1D} Resample data by timestamp, ignore [org] [end] [num] if defined
+       org (int | float | None): Beginning of timestamps, use first value of [spk] if undefined
+       end (int | float | None): End of timestamps, use last value of [spk] if undefined
+       num (int): Number of samples to compute, 1000 if undefined
+
+    Returns:
+        np.ndarray: Firing rate estimations
+    """
+    tpt = np.sort(spk, kind='stable')
+    # Get sampling range
+    smp = kwargs.get('smp', None)
+    if smp is None:
+        org = kwargs.get('org', tpt[0])
+        end = kwargs.get('end', tpt[-1])
+        num = kwargs.get('num', 1000)
+        smp = np.linspace(org, end, num)
+    # Compute Gaussian kernel-density estimate
+    kde = stat.gaussian_kde(tpt, bw_method=bw, weights=None)
+    est = kde(smp) * tpt.size
+    return est
