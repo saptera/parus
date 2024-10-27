@@ -6,8 +6,23 @@ from torch.utils import data
 from parus.data import sim_sig_read, sim_lbl_read, sim_pos_read
 from parus.fio import sim_data_read
 
+"""Function list:
+LabelledSingleFileDataset: Dataset class for loading labelled data from a single HDF5 file.
+LabelledMultipleFileDataset: Dataset class for loading labelled data from multiple files.
+MultipleLabelMultipleFileDataset: Dataset class for loading multiple labels from multiple files.
+DuoLabelMultipleFileDataset: Dataset class for loading two types of labels from multiple files.
+NoLabelMultipleFileDataset: Dataset class for loading unlabelled data from multiple files.
+NoLabelSingleFileDataset: Dataset class for loading unlabelled data from a single file.
+"""
 
 class LabelledSingleFileDataset(data.Dataset):
+    """Dataset class for loading labelled data from a single HDF5 file.
+    
+    Args:
+        data_file_path (str): Path to the HDF5 data file
+        n_samples (int): Number of samples to load
+        seq_len (int): Length of each sequence
+    """
     # TODO: maybe we can remove seq_len as an input
     def __init__(self, data_file_path, n_samples, seq_len):
         self.n_samples = n_samples
@@ -36,6 +51,14 @@ class LabelledSingleFileDataset(data.Dataset):
 
 
 class LabelledMultipleFileDataset(data.Dataset):
+    """Dataset class for loading labelled data from multiple files.
+    
+    Args:
+        sig_folder (str): Path to folder containing signal files
+        lbl_folder (str): Path to folder containing label files
+        n_samples (int): Number of samples to load
+        seq_len (int): Length of each sequence
+    """
     # TODO: maybe we can remove seq_len as an input
     def __init__(self, sig_folder, lbl_folder, n_samples, seq_len):
         self.sig_folder = sig_folder
@@ -78,6 +101,14 @@ class LabelledMultipleFileDataset(data.Dataset):
 
 
 class MultipleLabelMultipleFileDataset(data.Dataset):
+    """Dataset class for loading multiple labels from multiple files.
+    
+    Args:
+        sig_folder (str): Path to folder containing signal files
+        lbl_folder (str): Path to folder containing label files
+        n_samples (int): Number of samples to load
+        seq_len (int): Length of each sequence
+    """
     # TODO: maybe we can remove seq_len as an input
     def __init__(self, sig_folder, lbl_folder, n_samples, seq_len):
         self.sig_folder = sig_folder
@@ -121,6 +152,15 @@ class MultipleLabelMultipleFileDataset(data.Dataset):
 
 
 class DuoLabelMultipleFileDataset(data.Dataset):
+    """Dataset class for loading two types of labels from multiple files.
+    
+    Args:
+        sig_folder (str): Path to folder containing signal files
+        spk_lbl_folder (str): Path to folder containing spike label files
+        pos_lbl_folder (str): Path to folder containing position label files
+        n_samples (int): Number of samples to load
+        seq_len (int): Length of each sequence
+    """
     # TODO: maybe we can remove seq_len as an input
     def __init__(self, sig_folder, spk_lbl_folder, pos_lbl_folder, n_samples, seq_len):
         self.sig_folder = sig_folder
@@ -177,6 +217,12 @@ class DuoLabelMultipleFileDataset(data.Dataset):
 
 
 class NoLabelMultipleFileDataset(data.Dataset):
+    """Dataset class for loading unlabelled data from multiple files.
+    
+    Args:
+        dataset_folder (str): Path to folder containing data files
+        seq_len (int): Length of each sequence
+    """
     def __init__(self, dataset_folder, seq_len):
         self.dataset_folder = dataset_folder
         self.list_name = os.listdir(dataset_folder)
@@ -195,6 +241,12 @@ class NoLabelMultipleFileDataset(data.Dataset):
 
 
 class NoLabelSingleFileDataset(data.Dataset):
+    """Dataset class for loading unlabelled data from a single file.
+    
+    Args:
+        dataset_file_path (str): Path to the data file
+        seq_len (int): Length of each sequence
+    """
     def __init__(self, dataset_file_path, seq_len):
         self.sig_lst_numpy = sim_sig_read(dataset_file_path)
         # sig_lst_tensor = torch.from_numpy(sig_lst_numpy)
