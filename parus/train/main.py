@@ -8,7 +8,6 @@ import torch.nn as nn
 import argparse
 from torch.utils import data
 from parus.model.transformer import EncoderTransformer
-from parus.model.peak_cnn import PeakCNN
 from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDataset, DuoLabelMultipleFileDataset, MultipleLabelMultipleFileDataset, LabelledSingleFileDataset
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
