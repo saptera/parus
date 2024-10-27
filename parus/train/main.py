@@ -12,8 +12,22 @@ from parus.train.dataset import LabelledMultipleFileDataset, NoLabelSingleFileDa
 from parus.train.train import train, cascade_train, load_model
 from parus.train.inference import duo_test, test, duo_inference, inference
 
+"""Function list:
+load_hparams(hparams_file_path, debug): Load hyperparameters from JSON file with optional debug mode
+get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, train_mode): Create data generator for training/validation/testing
+setup_experiment(model_name, experiment_folder_path): Create experiment directory and copy hyperparameters
+"""
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
+    """Load hyperparameters from JSON file with optional debug mode.
+
+    Args:
+        hparams_file_path (str): Path to hyperparameters JSON file (default: 'hparams.json')
+        debug (bool): Whether to use debug hyperparameters (default: False)
+
+    Returns:
+        dict: Loaded hyperparameters
+    """
     hparams_file = open(hparams_file_path)
     hparams = json.load(hparams_file)
 
@@ -28,6 +42,18 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
 
 
 def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, train_mode="trn"):
+    """Create data generator for training/validation/testing.
+
+    Args:
+        data_file_path (str): Path to data file
+        seq_len (int): Sequence length for model input
+        batch_size (int): Batch size for data loading
+        data_hparams (dict): Data hyperparameters
+        train_mode (str): Mode of operation - "trn", "val", or "tst" (default: "trn")
+
+    Returns:
+        DataLoader: PyTorch data loader object
+    """
     if train_mode == "trn":
         dataset = LabelledSingleFileDataset(data_file_path, data_hparams["n_trn_samples"], seq_len)
     elif train_mode == "val":
@@ -47,6 +73,15 @@ def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, train_mo
 
 
 def setup_experiment(model_name, experiment_folder_path):
+    """Create experiment directory and copy hyperparameters.
+
+    Args:
+        model_name (str): Name of the model
+        experiment_folder_path (str): Path to experiments folder
+
+    Returns:
+        str: Path to current experiment folder
+    """
     experiment_name = "_".join(
         [model_name, time.strftime("%Y-%m-%d_%H:%M")])
     cur_experiment_folder_path = os.path.join(
@@ -60,6 +95,7 @@ def setup_experiment(model_name, experiment_folder_path):
 
 
 if __name__ == '__main__':
+    # Parse command line arguments
     argParser = argparse.ArgumentParser()
     argParser.add_argument(
         "--debug", help="run training with debug hparams", action="store_true")
@@ -69,22 +105,24 @@ if __name__ == '__main__':
         "--inference", help="run inference", action="store_true")
     args = argParser.parse_args()
 
-    # load hparams
+    # Load hyperparameters from JSON file
     hparams = load_hparams("hparams.json", args.debug)
     model_hparams = hparams["model"]
     data_hparams = hparams["data"]
 
-    # setup experiment folder
+    # Create experiment folder and save hyperparameters
     cur_experiment_folder_path = setup_experiment(
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
-    # initial training objects
+    # Initialize transformer model
     model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                context_dim=model_hparams["d_context"],
                                d_model=model_hparams["d_model"],
                                nhead=model_hparams["n_head"],
                                num_layers=model_hparams["n_layers"],
                                dim_feedforward=model_hparams["d_feedforward"])
+    
+    # Enable multi-GPU training if available
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
 
@@ -127,38 +165,38 @@ if __name__ == '__main__':
         scheduler = torch.optim.lr_scheduler.StepLR(
            optimizer, 1.0, gamma=train_hparams["lr_decay"])
 
-        # get datagen
+        # Create data generators for training, validation and testing
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
-        trn_datagen = get_file_datagen(os.path.join(trn_folder, "20240630_064841.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "trn")
+        trn_datagen = get_file_datagen(os.path.join(trn_folder, "20240630_064841.sim"), 
+                                     model_hparams["sequence_length"], 
+                                     train_hparams["batch_size"], 
+                                     data_hparams, "trn")
         val_folder = os.path.join(data_hparams["data_folder"], "val")
         val_datagen = get_file_datagen(os.path.join(val_folder, "20240630_171849.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
         tst_datagen = get_file_datagen(os.path.join(tst_folder, "20240630_172006.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
-        # run experiment with labelled data
+        # Train model and save results
         train(model, criterion, optimizer, scheduler, trn_datagen,
               val_datagen, cur_experiment_folder_path, train_hparams)
-        # cascade_train(pos_model, spk_model, criterion, optimizer, scheduler, trn_datagen,
-        #       val_datagen, cur_experiment_folder_path, train_hparams)
 
-        # make prediction folder
-        tst_pred_folder = os.path.join(
-            cur_experiment_folder_path, "test_pred")
+        # Create test predictions directory and run testing
+        tst_pred_folder = os.path.join(cur_experiment_folder_path, "test_pred")
         os.mkdir(tst_pred_folder)
         test(model, tst_datagen, tst_pred_folder)
-        # duo_test(spk_model, pos_model, tst_datagen, tst_pred_folder)
 
     if args.inference:
+        # Run inference on new data
         inference_hparams = hparams["inference"]
         inference_data_folder = inference_hparams["inference_data_folder"]
         filename_lst = os.listdir(inference_data_folder)
 
-        # make prediction folder
+        # Create inference predictions directory
         inference_pred_folder = os.path.join(
             cur_experiment_folder_path, "inference_pred")
         os.mkdir(inference_pred_folder)
-        print("made inference")
 
+        # Process each file in the inference folder
         for filename in filename_lst:
             file_path = os.path.join(inference_data_folder, filename)
             print(file_path)
@@ -172,5 +210,3 @@ if __name__ == '__main__':
 
             inference(model, inference_datagen,
                       filename, inference_pred_folder)
-            # duo_inference(pos_model, spk_model, inference_datagen,
-            #           filename, inference_pred_folder)
