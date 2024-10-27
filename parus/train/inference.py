@@ -5,16 +5,26 @@ import time
 from parus.fio import pklz_write
 from parus.model.post_proc import peak_det_diff, eval_pos
 
-"""
-need: 
-- test data
-    - input and label
-- model
-- generate a file with input, prediciton, label.
+"""Function list:
+test(model, tst_datagen, pred_save_folder): Test a single model and save predictions
+duo_test(spk_model, pos_model, tst_datagen, pred_save_folder): Test spike and position models together
+inference(model, inference_datagen, filename, pred_save_folder): Run inference with a single model
+duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_folder): Run inference with spike and position models
+flt_pos(sig_inp, pos_prd, min_dst=5, th=0.5): Filter position predictions for multiple points in a window
 """
 
 
 def test(model, tst_datagen, pred_save_folder):
+    """ Test a single model and save predictions.
+
+    Args:
+        model (torch.nn.Module): Neural network model
+        tst_datagen (DataLoader): Test data generator
+        pred_save_folder (str): Folder path to save predictions
+
+    Returns:
+        None: Saves prediction files to specified folder
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -35,6 +45,17 @@ def test(model, tst_datagen, pred_save_folder):
 
 
 def duo_test(spk_model, pos_model, tst_datagen, pred_save_folder):
+    """ Test spike and position models together.
+
+    Args:
+        spk_model (torch.nn.Module): Spike detection model
+        pos_model (torch.nn.Module): Position detection model
+        tst_datagen (DataLoader): Test data generator
+        pred_save_folder (str): Folder path to save predictions
+
+    Returns:
+        None: Saves prediction files and prints average false negative/positive rates
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # prediction and saving
@@ -79,6 +100,17 @@ def duo_test(spk_model, pos_model, tst_datagen, pred_save_folder):
 
 
 def inference(model, inference_datagen, filename, pred_save_folder):
+    """ Run inference with a single model.
+
+    Args:
+        model (torch.nn.Module): Neural network model
+        inference_datagen (DataLoader): Inference data generator
+        filename (str): Name for output file
+        pred_save_folder (str): Folder path to save predictions
+
+    Returns:
+        None: Saves prediction files to specified folder
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -107,6 +139,18 @@ def inference(model, inference_datagen, filename, pred_save_folder):
 
 
 def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_folder):
+    """ Run inference with spike and position models.
+
+    Args:
+        pos_model (torch.nn.Module): Position detection model
+        spk_model (torch.nn.Module): Spike detection model
+        inference_datagen (DataLoader): Inference data generator
+        filename (str): Name for output file
+        pred_save_folder (str): Folder path to save predictions
+
+    Returns:
+        None: Saves prediction files to specified folder with timing information
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pos_model.to(device)
     spk_model = spk_model.half()
