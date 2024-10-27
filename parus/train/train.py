@@ -5,8 +5,38 @@ import torch
 import torch.nn as nn
 from parus.util import plt_mdl_perf
 
+"""Function list:
+train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Train a model with validation
+cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Train a model using outputs from another model
+log_and_print(log_file_path, status_str): Log status to file and print to console
+evaluate(model, val_datagen, criterion, device): Evaluate model on validation data
+save(experiment_folder_path, model, optimizer, cur_epoch): Save model checkpoint
+load_model(ckpt_path, model): Load a saved model checkpoint
+resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Resume training from checkpoint
+eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Evaluate binary classification metrics
+"""
+
 
 def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
+    """ Train a model with validation.
+
+    Args:
+        model: Neural network model to train
+        criterion: Loss function
+        optimizer: Optimization algorithm
+        scheduler: Learning rate scheduler
+        train_datagen: Training data generator
+        val_datagen: Validation data generator 
+        cur_experiment_folder_path (str): Path to save experiment outputs
+        train_hparams (dict): Training hyperparameters including:
+            - start_epoch (int): Starting epoch number
+            - total_epoch (int): Total number of epochs
+            - steps_per_eval (int): Steps between evaluations
+            - model_param_clip (float): Gradient clipping threshold
+
+    Returns:
+        None: Saves model checkpoints and logs to disk
+    """
     # load model onto gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -58,6 +88,26 @@ def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cu
 
 
 def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
+    """ Train a model using outputs from another model.
+
+    Args:
+        model: Primary neural network model to train
+        spk_model: Secondary model providing inputs
+        criterion: Loss function
+        optimizer: Optimization algorithm
+        scheduler: Learning rate scheduler
+        train_datagen: Training data generator
+        val_datagen: Validation data generator
+        cur_experiment_folder_path (str): Path to save experiment outputs
+        train_hparams (dict): Training hyperparameters including:
+            - start_epoch (int): Starting epoch number
+            - total_epoch (int): Total number of epochs
+            - steps_per_eval (int): Steps between evaluations
+            - model_param_clip (float): Gradient clipping threshold
+
+    Returns:
+        None: Saves model checkpoints and logs to disk
+    """
     # load model onto gpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -115,13 +165,33 @@ def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datag
 
 
 def log_and_print(log_file_path, status_str):
+    """Log status to file and print to console.
+    
+    Args:
+        log_file_path (str): Path to log file
+        status_str (str): Status string to log
+        
+    Returns:
+        None
+    """
     f = open(log_file_path, "a")
-    f.write(status_str+"\n")
+    f.write(status_str+"\n") 
     f.close()
     print(status_str)
 
 
 def evaluate(model, val_datagen, criterion, device):
+    """Evaluate model on validation data.
+    
+    Args:
+        model: Neural network model to evaluate
+        val_datagen: Validation data generator
+        criterion: Loss function
+        device: Device to run evaluation on (cuda/cpu)
+        
+    Returns:
+        float: Mean validation loss
+    """
     model.eval()
     val_losses = []
 
@@ -161,6 +231,17 @@ def evaluate(model, val_datagen, criterion, device):
 
 
 def save(experiment_folder_path, model, optimizer, cur_epoch):
+    """Save model checkpoint.
+    
+    Args:
+        experiment_folder_path (str): Path to save checkpoint
+        model: Model to save
+        optimizer: Optimizer to save
+        cur_epoch (int): Current epoch number
+        
+    Returns:
+        None: Saves checkpoint to disk
+    """
     ckpt = {
         "epoch": cur_epoch,
         "model_state_dict": model.state_dict(),
@@ -173,12 +254,37 @@ def save(experiment_folder_path, model, optimizer, cur_epoch):
 
 
 def load_model(ckpt_path, model):
+    """Load a saved model checkpoint.
+    
+    Args:
+        ckpt_path (str): Path to checkpoint file
+        model: Model to load weights into
+        
+    Returns:
+        model: Model with loaded weights
+    """
     ckpt = torch.load(ckpt_path)
     model.load_state_dict(ckpt['model_state_dict'])
     return model
 
 
 def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
+    """Resume training from checkpoint.
+    
+    Args:
+        ckpt_path (str): Path to checkpoint file
+        model: Neural network model to train
+        optimizer: Optimization algorithm  
+        criterion: Loss function
+        scheduler: Learning rate scheduler
+        train_datagen: Training data generator
+        val_datagen: Validation data generator
+        cur_experiment_folder_path (str): Path to save experiment outputs
+        train_hparams (dict): Training hyperparameters
+        
+    Returns:
+        None: Resumes training from checkpoint
+    """
     ckpt = torch.load(ckpt_path)
 
     model.load_state_dict(ckpt['model_state_dict'])
@@ -239,3 +345,4 @@ def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5
     fn = torch.sum(confusion == 0).item()
 
     return ota, {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn}
+
