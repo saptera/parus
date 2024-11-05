@@ -1,7 +1,7 @@
 {
   "data": {
     "data_folder": "/home/proj_wavemoto/dataset/generated_data/v5.1_1m_max_gap_100",
-    "n_trn_samples": 5000,
+    "n_trn_samples": 500000,
     "n_val_samples": 1000,
     "n_tst_samples": 1000,
     "n_worker": 10
@@ -12,17 +12,17 @@
     "spk_checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-06-30_18:39/epoch10.ckpt",
     "sequence_length": 300,
     "d_context": 24,
-    "d_model": 256,
+    "d_model": 128,
     "n_head": 16,
-    "n_layers": 6,
-    "d_feedforward": 256
+    "n_layers": 4,
+    "d_feedforward": 128
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 1,
+    "total_epoch": 8,
     "batch_size": 64,
     "steps_per_eval": 1000,
-    "learning_rate": 0.01,
+    "learning_rate": 1,
     "lr_decay": 0.98,
     "model_param_clip": 0.5
   },
