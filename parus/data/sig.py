@@ -402,12 +402,19 @@ def sig_split(src, size, overlap=10, endpad=0.0):
     """
     if not isinstance(src, np.ndarray):
         src = np.asarray(src)
+    tot = len(src)
     dst = []  # INIT VAR
-    for i in range(0, len(src), size - overlap):
-        dst.append(src[i:i+size])
+    pad = []  # INIT VAR
+    for c, i in enumerate(range(0, tot, size - overlap)):
+        ep = i + size
+        # Check if pad needed
+        if ep > tot:
+            pad.append(c)
+        # Slice data
+        dst.append(src[i:ep])
     # Check the end padding
-    if len(dst[-1]) != size:
-        dst[-1] = np.append(dst[-1], np.full(size - len(dst[-1]), endpad, dtype=dst[-1].dtype))
+    for c in pad:
+        dst[c] = np.append(dst[c], np.full(size - len(dst[c]), endpad, dtype=dst[c].dtype))
     return dst
 
 
