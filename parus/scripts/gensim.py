@@ -1,12 +1,16 @@
+# Parus simulated signal generation SCRIPT
+
 import os
 import argparse
 from datetime import datetime
 import h5py as h5
 import numpy as np
-from parus.util import prog_print
-from parus.fio import cjsh_write, arc_read, noi_read
-from parus.data import bsl_sft_lin, bsl_sft_sin
 import warnings
+
+__package__ = 'parus.scripts'
+from ..util import prog_print
+from ..fio import cjsh_write, arc_read, noi_read
+from ..data import bsl_sft_lin, bsl_sft_sin
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -386,7 +390,7 @@ if args.num_eg is not None:
 sim_fp.close()
 
 # Arrange and save generation statistics
-print("    Saving generation report file.")
+print("Saving generation report file.")
 rep_file = os.path.join(args.out_dir, gen_time + '.cjh')
 gen_rep['prop'] = {
     'arc_cnt': arc_stat, 'grp_cnt': grp_stat, 'sig_fac': sig_fac_stat, 'noi_fac': noi_fac_stat, 'bsl_cnt': noi_bls_stat
