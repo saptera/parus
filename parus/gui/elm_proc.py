@@ -9,19 +9,21 @@ class PyScriptExec(QtCore.QObject):
     started = QtCore.Signal()
     finished = QtCore.Signal()
 
-    def __init__(self, script, console, trigger, disp_time=True, clr_con=False, trig_txt=None, parent=None):
+    def __init__(self, script, console, trigger, name=None, disp_time=True, clr_con=False, trig_txt=None, parent=None):
         """ Execute Python script as a subprocess, with its console displayed.
 
         Args:
             script (str): Python script to execute
             console (QtWidgets.QTextEdit): Qt rich text widget to display Python script commandline prints
             trigger (QtWidgets.QPushButton): Qt push button to control script execution
+            name (str | None): Process name for this instance (default: None)
             disp_time (bool): Print timestamp of commandline (default: True)
             clr_con (bool): Clear console texts before start (default: False)
             trig_txt (tuple[str, str] | None): Start and stop texts to display on push button (default: Start | Stop)
             parent (QtCore.QObject | None): Parent Qt object
         """
         super().__init__(parent)
+        self.name = name if name else 'Process'
 
         # Subprocess definition
         self.__process = QtCore.QProcess(self)
@@ -107,7 +109,7 @@ class PyScriptExec(QtCore.QObject):
             # Prepare console
             self._console.clear() if self.cmd_rclr else None
             time = self._get_timestamp() if self.cmd_time else ''
-            message = time + "<span style=\"color:green;font-weight:bold;\">Process started...</span>"
+            message = time + "<span style=\"color:green;font-weight:bold;\">%s started...</span>" % self.name
             self._console.append(message)
             # Reset status flags
             self.man_stop = False
@@ -137,9 +139,10 @@ class PyScriptExec(QtCore.QObject):
         # Process standard output texts
         self.__newline_flag = text.endswith('\n')
         for l in text.rstrip().split('\n'):  # Avoid missing new lines in HTML format
-            message = time + "<span style=\"white-space:pre;\">%s</span>" % l
+            last = l.strip('\r').split('\r')[-1]  # Get last print when multiple '\r' exist
+            message = time + "<span style=\"white-space:pre;\">%s</span>" % last
             self._console.append(message)
-            self.last_line = l  # Record last print
+            self.last_line = last  # Record last print
 
     def __read_stderr(self):
         """ Read system standard error data. """
@@ -159,7 +162,7 @@ class PyScriptExec(QtCore.QObject):
         """ Process finalizing function. """
         # Notify in console
         time = self._get_timestamp() if self.cmd_time else ''
-        message = time + "<span style=\"color:green;font-weight:bold;\">Process finished!</span>"
+        message = time + "<span style=\"color:green;font-weight:bold;\">%s finished!</span>" % self.name
         self._console.append(message)
         self._console.append('')  # Extra blank line
         # Set trigger texts
