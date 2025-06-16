@@ -29,11 +29,11 @@ class PyScriptExec(QtCore.QObject):
         # Subprocess definition
         self.__process = QtCore.QProcess(self)
         self.__process.setProgram(sys.executable)  # Use the same Python interpreter
-        self.__process.setProcessChannelMode(QtCore.QProcess.SeparateChannels)
+        self.__process.setProcessChannelMode(QtCore.QProcess.ProcessChannelMode.SeparateChannels)
         # Script and command definition
         self.script = script
         self.command = [script]
-        self.__running = False  # Running status
+        self.__idle = True  # Instance idle status including post-finished tasks, different from ProcessState.NotRunning
         # Commandline monitoring variable
         self.last_line = ''  # Last commandline print of script
         self.man_stop = False  # Manually stop flag
@@ -107,18 +107,7 @@ class PyScriptExec(QtCore.QObject):
 
     def __proc_control(self):
         """ Trigger button process control function. """
-        if self.__running:
-            # Kill current process
-            self.__process.kill()
-            self.man_stop = True
-            # Notify in console
-            self.__newline_flag = True
-            time = self._get_timestamp() if self.cmd_time else ''
-            message = time + "<span style=\"color:purple;font-weight:bold;\">Process manually stopped!</span>"
-            self._console.append(message)
-            # Send process control signal
-            self.cancelled.emit()
-        else:
+        if self.__idle:
             # Prepare console
             self._console.clear() if self.cmd_rclr else None
             time = self._get_timestamp() if self.cmd_time else ''
@@ -133,9 +122,20 @@ class PyScriptExec(QtCore.QObject):
             # Start process
             self.__process.setArguments(self.command)
             self.__process.start()
-            self.__running = True  # Set process running status
+            self.__idle = False  # Set instance status
             # Send process control signal
             self.started.emit()
+        elif self.__process.state() != QtCore.QProcess.ProcessState.NotRunning:
+            # Kill current process
+            self.__process.kill()  # Preferred over terminate() for better cross-platform support
+            self.man_stop = True
+            # Notify in console
+            self.__newline_flag = True
+            time = self._get_timestamp() if self.cmd_time else ''
+            message = time + "<span style=\"color:purple;font-weight:bold;\">Process manually stopped!</span>"
+            self._console.append(message)
+            # Send process control signal
+            self.cancelled.emit()
 
     def __read_stdout(self):
         """ Read system standard output data. """
@@ -160,16 +160,33 @@ class PyScriptExec(QtCore.QObject):
         if 'warning' in text.lower():
             message = time + "<span style=\"color:olive;white-space:pre;\">%s</span>" % text.rstrip()
         else:
-            message = time + "<span style=\"color:red;font-weight:bold;white-space:pre;\">%s</span>" % text.rstrip()
+            message = time + "<span style=\"color:red;white-space:pre;\">%s</span>" % text.rstrip()
             self.err_stop = True
         self._console.append(message)
         self.last_line = text.rstrip()  # Record last print
 
-    def __proc_finish(self):
-        """ Process finalizing function. """
-        # Notify in console
+    def __proc_finish(self, ec, es):
+        """ Process finalizing function.
+
+        Args:
+            ec (int): Exit code of the process (only valid for normal exits)
+            es (QtCore.QProcess.ExitStatus): Exit status of the process
+        """
+        # Prepare console
         None if self.__newline_flag else self._console.undo()  # Cancel temporary prints
         self.__newline_flag = True  # Reset print line flag
+        # Check if errors exist in the stopped process
+        if not (ec == 0 or self.man_stop):
+            time = self._get_timestamp() if self.cmd_time else ''
+            # Get error type
+            if self.__process.error() == QtCore.QProcess.ProcessError.UnknownError:
+                em = "UnspecifiedError @ %s -> please refer to SystemStandardError" % str(es).split('.')[-1]
+            else:
+                em = "%s @ %s" % (str(self.__process.error()).split('.')[-1], str(es).split('.')[-1])
+            # Send to console
+            message = time + "<span style=\"color:red;font-weight:bold;\">Non-zero exit code: %d (%s)</span>" % (ec, em)
+            self._console.append(message)
+        # Notify in console
         time = self._get_timestamp() if self.cmd_time else ''
         message = time + "<span style=\"color:green;font-weight:bold;\">%s finished!</span>" % self.name
         self._console.append(message)
@@ -178,5 +195,5 @@ class PyScriptExec(QtCore.QObject):
         self._trigger.setText(self.trig_ti)
         # Finalizing stop
         self.fin_stop = not (self.man_stop or self.err_stop)
-        self.__running = False  # Reset process running status
+        self.__idle = True  # Reset instance status
         self.finished.emit()  # Send process control signal
