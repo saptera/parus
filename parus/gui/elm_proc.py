@@ -35,6 +35,7 @@ class PyScriptExec(QtCore.QObject):
         self.command = [script]
         self.__idle = True  # Instance idle status including post-finished tasks, different from ProcessState.NotRunning
         # Commandline monitoring variable
+        self.__auto_scr = True  # Auto scroll to vertical end control flag
         self.last_line = ''  # Last commandline print of script
         self.man_stop = False  # Manually stop flag
         self.err_stop = False  # Error stop flag
@@ -48,6 +49,7 @@ class PyScriptExec(QtCore.QObject):
         # Initialize console
         self._console = console
         self._console.setReadOnly(True)
+        self._console.setUndoRedoEnabled(True)
         self._console.setFont("Consolas")  # Monospaced font for console outputs
         self.cmd_time = disp_time
         self.cmd_rclr = clr_con
@@ -100,10 +102,45 @@ class PyScriptExec(QtCore.QObject):
         self.command = [self.script]
         return self.command
 
+    def set_auto_scroll(self, flag=True):
+        """ Set console to auto scroll to vertical end.
+
+        Args:
+            flag (bool): Vertical scroll mode to set
+
+        Returns:
+            bool: Current vertical auto scroll mode
+        """
+        self.__auto_scr = flag
+        if flag:
+            self._console.verticalScrollBar().setValue(self._console.verticalScrollBar().maximum())
+        return self.__auto_scr
+
     @staticmethod
     def _get_timestamp():
+        """ Get current timestamp. """
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         return "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time
+
+    def __append_message(self, message):
+        """ Append message to the console display.
+
+        Args:
+            message (str): Rich text message to append to console
+        """
+        pos = self._console.verticalScrollBar().value()  # Get current vertical scroll bar position
+        self._console.append(message)
+        # Set vertical scroll bar position
+        if self.__auto_scr:
+            self._console.verticalScrollBar().setValue(self._console.verticalScrollBar().maximum())
+        else:
+            self._console.verticalScrollBar().setValue(pos)
+
+    def __undo_message(self):
+        """ Undo last console display operation. """
+        pos = self._console.verticalScrollBar().value()  # Get current vertical scroll bar position
+        self._console.undo()
+        self._console.verticalScrollBar().setValue(pos)  # Set vertical scroll bar to previous position
 
     def __proc_control(self):
         """ Trigger button process control function. """
@@ -112,7 +149,7 @@ class PyScriptExec(QtCore.QObject):
             self._console.clear() if self.cmd_rclr else None
             time = self._get_timestamp() if self.cmd_time else ''
             message = time + "<span style=\"color:green;font-weight:bold;\">%s started...</span>" % self.name
-            self._console.append(message)
+            self.__append_message(message)
             # Set trigger texts
             self._trigger.setText(self.trig_ts)
             # Reset status flags
@@ -133,7 +170,7 @@ class PyScriptExec(QtCore.QObject):
             self.__newline_flag = True
             time = self._get_timestamp() if self.cmd_time else ''
             message = time + "<span style=\"color:purple;font-weight:bold;\">Process manually stopped!</span>"
-            self._console.append(message)
+            self.__append_message(message)
             # Send process control signal
             self.cancelled.emit()
 
@@ -142,13 +179,13 @@ class PyScriptExec(QtCore.QObject):
         time = self._get_timestamp() if self.cmd_time else ''
         text = self.__process.readAllStandardOutput().data().decode()
         # Overwrite texts to meet the same behaviour as command line
-        self._console.undo() if (not self.__newline_flag) and text.startswith('\r') else None
+        self.__undo_message() if (not self.__newline_flag) and text.startswith('\r') else None
         # Process standard output texts
         self.__newline_flag = text.endswith('\n')
         for l in text.rstrip().split('\n'):  # Avoid missing new lines in HTML format
             last = l.strip('\r').split('\r')[-1]  # Get last print when multiple '\r' exist
             message = time + "<span style=\"white-space:pre;\">%s</span>" % last
-            self._console.append(message)
+            self.__append_message(message)
             self.last_line = last  # Record last print
 
     def __read_stderr(self):
@@ -162,7 +199,7 @@ class PyScriptExec(QtCore.QObject):
         else:
             message = time + "<span style=\"color:red;white-space:pre;\">%s</span>" % text.rstrip()
             self.err_stop = True
-        self._console.append(message)
+        self.__append_message(message)
         self.last_line = text.rstrip()  # Record last print
 
     def __proc_finish(self, ec, es):
@@ -173,7 +210,7 @@ class PyScriptExec(QtCore.QObject):
             es (QtCore.QProcess.ExitStatus): Exit status of the process
         """
         # Prepare console
-        None if self.__newline_flag else self._console.undo()  # Cancel temporary prints
+        None if self.__newline_flag else self.__undo_message()  # Cancel temporary prints
         self.__newline_flag = True  # Reset print line flag
         # Check if errors exist in the stopped process
         if not (ec == 0 or self.man_stop):
@@ -185,12 +222,12 @@ class PyScriptExec(QtCore.QObject):
                 em = "%s @ %s" % (str(self.__process.error()).split('.')[-1], str(es).split('.')[-1])
             # Send to console
             message = time + "<span style=\"color:red;font-weight:bold;\">Non-zero exit code: %d (%s)</span>" % (ec, em)
-            self._console.append(message)
+            self.__append_message(message)
         # Notify in console
         time = self._get_timestamp() if self.cmd_time else ''
         message = time + "<span style=\"color:green;font-weight:bold;\">%s finished!</span>" % self.name
-        self._console.append(message)
-        self._console.append('')  # Extra blank line
+        self.__append_message(message)
+        self.__append_message('')  # Extra blank line
         # Set trigger texts
         self._trigger.setText(self.trig_ti)
         # Finalizing stop
