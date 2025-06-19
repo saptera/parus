@@ -116,6 +116,20 @@ class PyScriptExec(QtCore.QObject):
             self._console.verticalScrollBar().setValue(self._console.verticalScrollBar().maximum())
         return self.__auto_scr
 
+    def terminate(self):
+        """ Terminate current process.
+
+        Returns:
+            bool: If the process requires termination
+        """
+        if self.__process.state() != QtCore.QProcess.ProcessState.NotRunning:
+            self.__process.kill()
+            self.man_stop = True
+            self.cancelled.emit()
+            return True
+        else:
+            return False
+
     @staticmethod
     def _get_timestamp():
         """ Get current timestamp. """
@@ -138,9 +152,14 @@ class PyScriptExec(QtCore.QObject):
 
     def __undo_message(self):
         """ Undo last console display operation. """
-        pos = self._console.verticalScrollBar().value()  # Get current vertical scroll bar position
+        # Get current vertical scroll bar limit and position
+        max_pos = self._console.verticalScrollBar().maximum()
+        pos = self._console.verticalScrollBar().value()
+        # Undo message
         self._console.undo()
-        self._console.verticalScrollBar().setValue(pos)  # Set vertical scroll bar to previous position
+        # Set vertical scroll bar to previous limit and position
+        self._console.verticalScrollBar().setMaximum(max_pos)
+        self._console.verticalScrollBar().setValue(pos)
 
     def __proc_control(self):
         """ Trigger button process control function. """
