@@ -1,7 +1,18 @@
+# Parus GUI process related features
+
 import sys
+import os
 from datetime import datetime
 from PySide6 import QtCore, QtWidgets
 import warnings
+
+__all__ = ["PyScriptExec", "path_selector"]
+"""
+Class list:
+    PyScriptExec: Execute Python script as a subprocess, with its console displayed.
+Functon list:
+    path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialogue.
+"""
 
 
 class PyScriptExec(QtCore.QObject):
@@ -253,3 +264,62 @@ class PyScriptExec(QtCore.QObject):
         self.fin_stop = not (self.man_stop or self.err_stop)
         self.__idle = True  # Reset instance status
         self.finished.emit()  # Send process control signal
+
+
+def path_selector(line, mode=None, caption=None, flt=None, parent=None):
+    """ Select signal folder or file dialogue.
+
+    Args:
+        line (QtWidgets.QLineEdit): Text line edit for showing and editing the path
+        mode (str | None): {'path' | 'file' | 'list'} File dialog mode (default: None = open path)
+        caption (str | None): Window caption
+        flt (str | None): Selector filter (default: None)
+        parent (QtWidgets.QWidget | None): Parent Qt object
+
+    Returns:
+        str | list[str] | None: Selected path
+    """
+    mode = 'path' if mode is None else mode
+    caption = '' if caption is None else caption
+    btn_ok = QtWidgets.QMessageBox.StandardButton.Ok
+    btn_re = QtWidgets.QMessageBox.StandardButton.Retry
+
+    if mode == 'path':
+        path = QtWidgets.QFileDialog.getExistingDirectory(parent, caption)
+        if path and os.path.isdir(path):
+            line.setText(path)
+            return path
+        else:
+            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid directory!", btn_ok | btn_re, btn_ok)
+            if reply == btn_ok:
+                line.clear()
+                return None
+            else:
+                path_selector(line, mode, caption, flt, parent)  # Retry self
+    elif mode == 'file':
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(parent, caption, filter=flt)
+        if file and os.path.isfile(file):
+            line.setText(file)
+            return file
+        else:
+            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file!", btn_ok | btn_re, btn_ok)
+            if reply == btn_ok:
+                line.clear()
+                return None
+            else:
+                path_selector(line, mode, caption, flt, parent)  # Retry self
+    elif mode == 'list':
+        flst, _ = QtWidgets.QFileDialog.getOpenFileNames(parent, caption, filter=flt)
+        if flst and all([os.path.isfile(f) for f in flst]):
+            line.setText('; '.join(flst))
+            return flst
+        else:
+            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file in list!", btn_ok | btn_re, btn_ok)
+            if reply == btn_ok:
+                line.clear()
+                return None
+            else:
+                path_selector(line, mode, caption, flt, parent)  # Retry self
+    else:
+        QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid mode", btn_ok)
+        return None
