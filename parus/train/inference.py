@@ -111,6 +111,7 @@ def inference(model, inference_datagen, filename, pred_save_folder):
     Returns:
         None: Saves prediction files to specified folder
     """
+    #model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 

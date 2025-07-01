@@ -128,7 +128,7 @@ class EncoderTransformer(nn.Module):
         )
         self.extra_linear1 = nn.Linear(context_dim, 2*context_dim)
         self.extra_linear2 = nn.Linear(2*context_dim, context_dim)
-        self.context_linear = nn.Linear(context_dim, 1)
+        self.context_linear = nn.Linear(context_dim, 2)
         self.positional_encoding = PositionalEncoding(
             embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
         self.relu = nn.ReLU()
