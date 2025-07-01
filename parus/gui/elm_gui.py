@@ -1,0 +1,547 @@
+# Parus GUI main windows
+
+import os
+import re
+from datetime import datetime
+from PySide6 import QtWidgets
+
+__package__ = 'parus.gui'
+from ..scripts import gen_sim, gen_sta
+from .desg_genctrl import Ui_ParusGenWindow
+from .elm_proc import PyScriptExec, path_selector
+
+__all__ = ["ParusGen"]
+"""
+Class list:
+    ParusGen(parent=None): Parus simulated signal generation window.
+"""
+
+
+class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
+    def __init__(self, parent=None):
+        """ Parus simulated signal generation window.
+
+        Args:
+            parent: Parent window or widget
+        """
+        # Initialize main UI
+        super(ParusGen, self).__init__(parent)
+        self.setupUi(self)
+        self.genSimButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+        self.genStaButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+        self.__timer_val = -1  # Timer initialization
+        # Set control variable defaults
+        self.__auto_scr = True
+        self.__sim_run = False
+        self.__sta_run = False
+
+        # Set generation process
+        self._sim_proc = PyScriptExec(script=gen_sim, console=self.procConsole, trigger=self.genSimButton,
+                                      name="Parus [Simulated Signal Generation]", disp_time=True, clr_con=False,
+                                      trig_txt=("Start Generation", "Stop Process"))
+        self._sim_proc.set_auto_scroll(self.__auto_scr)
+        self._sim_proc.started.connect(self.__gen_sim_start)
+        self._sim_proc.finished.connect(self.__gen_sim_finish)
+        # Set view statistics process
+        self._sta_proc = PyScriptExec(script=gen_sta, console=self.procConsole, trigger=self.genStaButton,
+                                      name="Parus [View Generation Statistics]", disp_time=True, clr_con=False,
+                                      trig_txt=("View Statistics", "Close View"))
+        self._sta_proc.set_auto_scroll(self.__auto_scr)
+        self._sta_proc.started.connect(self.__gen_sta_start)
+        self._sta_proc.finished.connect(self.__gen_sta_finish)
+        # Process control button extra settings
+        self.genSimButton.clicked.connect(self.__switch_gen_sim)
+        self.genStaButton.clicked.connect(self.__switch_gen_sta)
+
+        # Set data variable defaults
+        self.arc_dir = None
+        self.noi_dir = None
+        self.out_dir = None
+        self.num_sim = self.__set_num_sim()
+        self.tot_len = self.__set_tot_len()
+        self.freq = self.__set_freq()
+        self.min_gap = self.__set_min_gap()
+        self.max_gap = self.__set_max_gap()
+        self.sig_grp = self.__set_sig_grp()
+        self.grp_rat = self.__set_grp_rat()
+        self.no_rat = self.__set_no_rat()
+        self.sig_fac = self.__set_sig_fac()
+        self.noi_fac = self.__set_noi_fac()
+        self.bsl_meth, self.bsl_comp = self.__set_bsl_aug()
+        self.bsl_amps = self.__set_bsl_amps()
+        self.bsl_freq = self.__set_bsl_freq()
+        self.num_eg = self.__set_num_eg()
+        self.__set_stat_path()  # None return statistic file check function
+
+        # IO path control
+        self.sigSelect.clicked.connect(self.__sel_sig_dir)
+        self.noiSelect.clicked.connect(self.__sel_noi_dir)
+        self.outSelect.clicked.connect(self.__sel_out_dir)
+        # Basic sample feature control
+        self.sampCnt.valueChanged.connect(self.__set_num_sim)
+        self.sampFreq.valueChanged.connect(self.__set_freq)
+        self.sampLen.valueChanged.connect(self.__set_tot_len)
+        self.sampFreq.valueChanged.connect(self.__set_tot_len)
+        # Spike gap control
+        self.minSpkFreq.valueChanged.connect(self.__set_min_gap)
+        self.sampFreq.valueChanged.connect(self.__set_min_gap)
+        self.chnCellCnt.valueChanged.connect(self.__set_min_gap)
+        self.maxSpkFreq.valueChanged.connect(self.__set_max_gap)
+        self.sampFreq.valueChanged.connect(self.__set_max_gap)
+        # Grouping control
+        self.spkGrpMthd.currentIndexChanged.connect(self.__set_sig_grp)
+        self.spkGrpRate.textChanged.connect(self.__set_grp_rat)
+        # Noise only ratio control
+        self.noiOnlyRate.valueChanged.connect(self.__set_no_rat)
+        # Inputs multiplication control
+        self.sigMultMin.valueChanged.connect(self.__set_sig_fac)
+        self.sigMultMax.valueChanged.connect(self.__set_sig_fac)
+        self.noiMultMin.valueChanged.connect(self.__set_noi_fac)
+        self.noiMultMax.valueChanged.connect(self.__set_noi_fac)
+        # Baseline augmentation control
+        self.bslCst.valueChanged.connect(self.__set_bsl_aug)
+        self.bslLin.valueChanged.connect(self.__set_bsl_aug)
+        self.bslSin.valueChanged.connect(self.__set_bsl_aug)
+        self.bslNos.valueChanged.connect(self.__set_bsl_aug)
+        self.bslAmpMin.valueChanged.connect(self.__set_bsl_amps)
+        self.bslAmpMax.valueChanged.connect(self.__set_bsl_amps)
+        self.bslFrqMin.valueChanged.connect(self.__set_bsl_freq)
+        self.bslFrqMax.valueChanged.connect(self.__set_bsl_freq)
+        # Extra example control
+        self.exEg.valueChanged.connect(self.__set_num_eg)
+        # Generation statistics control
+        self.statFileSelect.clicked.connect(self.__sel_stat_path)
+        self.statFilePath.textChanged.connect(self.__set_stat_path)
+        # Reset controls
+        self.clrSetButton.clicked.connect(self.reset_all)
+
+        # Initialize console
+        self.console_init()
+        self.set_auto_scroll(self.__auto_scr)
+        # Console easy access function control connection
+        self.procConClear.clicked.connect(self.console_init)
+        self.procConCopy.clicked.connect(self.console_copy)
+        # Console auto scroll to end features control connection
+        self.procConScroll.clicked.connect(self.__switch_auto_scroll)
+        self.procConsole.verticalScrollBar().sliderPressed.connect(self.__manual_slider_press)
+        self.procConsole.verticalScrollBar().sliderReleased.connect(self.__manual_slider_release)
+
+        # System standby
+        self.statBar.showMessage("Ready!")
+
+    def timerEvent(self, event):
+        """ Timer event for controls with delayed updating. """
+        self.killTimer(self.__timer_val)
+        self.__timer_val = -1
+        self.spkGrpRate.setText(' '.join(self.grp_rat[1:]))
+
+    def closeEvent(self, event):
+        """ Clean-ups upon close. """
+        self._sim_proc.terminate()
+        self._sta_proc.terminate()
+
+    def gen_ctrl_enable(self, enable=True):
+        """ Set enable status of all generation related controls.
+
+        Args:
+            enable (bool): Enable status of controls (default: True)
+        """
+        # Reset argument button
+        self.clrSetButton.setEnabled(enable)
+        # Generation path controls
+        self.sigPath.setEnabled(enable)
+        self.sigSelect.setEnabled(enable)
+        self.noiPath.setEnabled(enable)
+        self.noiSelect.setEnabled(enable)
+        self.outPath.setEnabled(enable)
+        self.outSelect.setEnabled(enable)
+        # Generation basic controls
+        self.sampCnt.setEnabled(enable)
+        self.sampLen.setEnabled(enable)
+        self.sampFreq.setEnabled(enable)
+        self.exEg.setEnabled(enable)
+        # Generation grouping controls
+        self.spkGrpMthd.setEnabled(enable)
+        self.spkGrpRate.setEnabled(enable)
+        self.noiOnlyRate.setEnabled(enable)
+        # Generation spike occurrence controls
+        self.minSpkFreq.setEnabled(enable)
+        self.maxSpkFreq.setEnabled(enable)
+        self.chnCellCnt.setEnabled(enable)
+        # Generation sample multiplication controls
+        self.sigMultMin.setEnabled(enable)
+        self.sigMultMax.setEnabled(enable)
+        self.noiMultMin.setEnabled(enable)
+        self.noiMultMax.setEnabled(enable)
+        # Generation baseline augmentation controls
+        self.bslNos.setEnabled(enable)
+        self.bslCst.setEnabled(enable)
+        self.bslLin.setEnabled(enable)
+        self.bslSin.setEnabled(enable)
+        self.bslAmpMin.setEnabled(enable)
+        self.bslAmpMax.setEnabled(enable)
+        self.bslFrqMin.setEnabled(enable)
+        self.bslFrqMax.setEnabled(enable)
+
+    # Process related functions -------------------------------------------------------------------------------------- #
+    def set_gensim_args(self):
+        """ Set arguments for simulated signal generation. """
+        if (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0):
+            self._sim_proc.reset_arguments()
+        else:
+            # Check signal grouping
+            grouping = [] if self.sig_grp is None else self.sig_grp + self.grp_rat
+            # Check baseline methods
+            if self.bsl_meth is None:
+                baseline = []
+            else:
+                baseline = self.bsl_meth + self.bsl_comp
+                if any([i in self.bsl_meth for i in ['cst', 'lin', 'sin']]):
+                    baseline += self.bsl_amps
+                if 'sin' in self.bsl_meth:
+                    baseline += self.bsl_freq
+            # Finalize argument list
+            args = (self.arc_dir + self.noi_dir + self.out_dir + self.num_sim + self.tot_len + self.freq +
+                    self.min_gap + self.max_gap + grouping + self.no_rat + self.sig_fac + self.noi_fac +
+                    baseline + self.num_eg)
+            self._sim_proc.set_arguments(args)
+
+    def __switch_gen_sim(self):
+        """ ParusGenSim button connected function. """
+        if self.__sim_run:
+            self.genSimButton.setStyleSheet('QPushButton {color: red}')
+        else:
+            self.genSimButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+
+    def __gen_sim_start(self):
+        """ ParusGenSim process STARTED connected function. """
+        self.__sim_run = True
+        self.__switch_gen_sim()
+        self.gen_ctrl_enable(False)
+        self.statBar.showMessage("Simulated signal generation started")
+
+    def __gen_sim_finish(self):
+        """ ParusGenSim process FINISHED connected function. """
+        # Reset button
+        self.__sim_run = False
+        self.gen_ctrl_enable(True)
+        self.__switch_gen_sim()
+        # Finalizing
+        if self._sim_proc.fin_stop:
+            # Set generation statistics file path
+            stat_line = re.search(r'(?<=\[)[^\]]+(?=\])', self._sim_proc.last_line).group()
+            stat_path = ' '.join(stat_line.split(' ')[2:])
+            self.statFilePath.setText(stat_path)
+            # Show status bar message
+            self.statBar.showMessage("Simulated signal generation successfully finished")
+        else:
+            self.statBar.showMessage("Simulated signal generation terminated")
+
+    def __switch_gen_sta(self):
+        """ ParusGenSta button connected function. """
+        if self.__sta_run:
+            self.genStaButton.setStyleSheet('QPushButton {color: red}')
+        else:
+            self.genStaButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+
+    def __gen_sta_start(self):
+        """ ParusGenSta process STARTED connected function. """
+        self.__sta_run = True
+        self.__switch_gen_sta()
+        self.statBar.showMessage("Viewing generation statistics")
+
+    def __gen_sta_finish(self):
+        """ ParusGenSta process FINISHED connected function. """
+        self.__sta_run = False
+        self.__switch_gen_sta()
+        self.statBar.showMessage("Generation statistics file closed")
+
+    # Control element related functions ------------------------------------------------------------------------------ #
+    def reset_all(self):
+        """ Reset all controls to defaults. """
+        self.arc_dir = self.sigPath.clear()
+        self.noi_dir = self.noiPath.clear()
+        self.out_dir = self.outPath.clear()
+        self.sampCnt.setValue(100000)
+        self.sampLen.setValue(15.0)
+        self.sampFreq.setValue(20000)
+        self.exEg.setValue(100)
+        self.spkGrpMthd.setCurrentIndex(0)
+        self.spkGrpRate.clear()
+        self.noiOnlyRate.setValue(5.0)
+        self.minSpkFreq.setValue(50)
+        self.maxSpkFreq.setValue(100)
+        self.chnCellCnt.setValue(5)
+        self.sigMultMin.setValue(0.8)
+        self.sigMultMax.setValue(1.5)
+        self.noiMultMin.setValue(1.0)
+        self.noiMultMax.setValue(2.5)
+        self.bslNos.setValue(2.0)
+        self.bslCst.setValue(1.0)
+        self.bslLin.setValue(1.0)
+        self.bslSin.setValue(1.0)
+        self.bslAmpMin.setValue(-20.0)
+        self.bslAmpMax.setValue(20.0)
+        self.bslFrqMin.setValue(2.0)
+        self.bslFrqMax.setValue(50.0)
+        self.statFilePath.clear()
+        # Reset argument
+        self.set_gensim_args()
+        self._sta_proc.reset_arguments()
+        # Inform console
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        text = "<span style=\"color:black;font-weight:bold;\">All parameters reset to defaults!</span>"
+        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
+        self.procConsole.append(message)
+        # Inform status bar
+        self.statBar.showMessage("All parameters reset")
+
+    def __sel_sig_dir(self):
+        """ Select archived signal file (*.arc) folder button connection. """
+        path = path_selector(self.sigPath, mode='path', caption="Select Archived Signal Folder", parent=self)
+        self.arc_dir = None if path is None else [path]
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+
+    def __sel_noi_dir(self):
+        """ Select archived noise file (*.noi) folder button connection. """
+        path = path_selector(self.noiPath, mode='path', caption="Select Archived Noise Folder", parent=self)
+        self.noi_dir = None if path is None else [path]
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+
+    def __sel_out_dir(self):
+        """ Select generation output folder button connection. """
+        path = path_selector(self.outPath, mode='path', caption="Select Output Folder", parent=self)
+        self.out_dir = None if path is None else [path]
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+
+    def __set_num_sim(self):
+        """ Set number of simulated data to be generated. """
+        self.num_sim = [str(self.sampCnt.value())]
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+        return self.num_sim
+
+    def __set_freq(self):
+        """" Set sampling frequency of the system. """
+        self.freq = ['-f', str(self.sampFreq.value())]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.freq
+
+    def __set_tot_len(self):
+        """ Set total length of final signal sample. """
+        self.tot_len = ['-l', str(round(self.sampLen.value() * self.sampFreq.value() / 1000))]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.tot_len
+
+    def __set_min_gap(self):
+        """ Set minimum index gap of signal events. """
+        self.min_gap = ['-ig', str(round(self.sampFreq.value() / self.minSpkFreq.value() / self.chnCellCnt.value()))]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.min_gap
+
+    def __set_max_gap(self):
+        """ Set minimum index gap of signal events. """
+        self.max_gap = ['-xg', str(round(self.sampFreq.value() / self.maxSpkFreq.value()))]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.max_gap
+
+    def __set_sig_grp(self):
+        """ Set signal grouping method. """
+        if self.spkGrpMthd.currentIndex() == 0:
+            self.sig_grp = None
+        else:
+            self.sig_grp = ['-gp', [None, 'typ', 'spk'][self.spkGrpMthd.currentIndex()]]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.sig_grp
+
+    def __set_grp_rat(self):
+        """ Set occurrence ratio of groups. """
+        text = self.spkGrpRate.text()
+        clr = re.sub(r'[^\d.\s\-]', "", text)
+        num = re.findall(r'-?\d+(?:\.\d+)?', clr)
+        self.grp_rat = ['-gr'] + [str(round(float(n))) for n in num] if num else []
+        # Update process arguments
+        self.set_gensim_args()
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(500)
+        return self.grp_rat
+
+    def __set_no_rat(self):
+        """ Set occurrence ratio of noise only data. """
+        self.no_rat = ['-no', str(self.noiOnlyRate.value() / 100)]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.no_rat
+
+    def __set_sig_fac(self):
+        """ Set signal amplitude multiplication factor. """
+        self.sig_fac = ['-sf', str(self.sigMultMin.value()), str(self.sigMultMax.value())]
+        self.sigMultMin.setMaximum(self.sigMultMax.value() - 0.1)
+        self.sigMultMax.setMinimum(self.sigMultMin.value() + 0.1)
+        # Update process arguments
+        self.set_gensim_args()
+        return self.sig_fac
+
+    def __set_noi_fac(self):
+        """ Set noise amplitude multiplication factor. """
+        self.noi_fac = ['-nf', str(self.noiMultMin.value()), str(self.noiMultMax.value())]
+        self.noiMultMin.setMaximum(self.noiMultMax.value() - 0.1)
+        self.noiMultMax.setMinimum(self.noiMultMin.value() + 0.1)
+        # Update process arguments
+        self.set_gensim_args()
+        return self.noi_fac
+
+    def __set_bsl_aug(self):
+        """ Set baseline augmentation. """
+        # Initialize temporary variables
+        meth = []
+        comp = []
+        # Check constant shift
+        if self.bslCst.value() > 0:
+            meth.append('cst')
+            comp.append(str(round(self.bslCst.value())))
+        # Check linear shift
+        if self.bslLin.value() > 0:
+            meth.append('lin')
+            comp.append(str(round(self.bslLin.value())))
+        # Check sinusoid shift
+        if self.bslSin.value() > 0:
+            meth.append('sin')
+            comp.append(str(round(self.bslSin.value())))
+        # Finish with zero shift check
+        if meth and (self.bslNos.value() > 0):
+            meth.append('nos')
+            comp.append(str(round(self.bslNos.value())))
+        # Set to main variables
+        if meth and comp:
+            self.bsl_meth = ['-bs'] + meth
+            self.bsl_comp = ['-bp'] + comp
+        else:
+            self.bsl_meth = None
+            self.bsl_comp = []
+        # Update process arguments
+        self.set_gensim_args()
+        return self.bsl_meth, self.bsl_comp
+
+    def __set_bsl_amps(self):
+        """ Set baseline shift amplitude. """
+        self.bsl_amps = ['-ba', str(self.bslAmpMin.value()), str(self.bslAmpMax.value())]
+        self.bslAmpMin.setMaximum(self.bslAmpMax.value() - 1)
+        self.bslAmpMax.setMinimum(self.bslAmpMin.value() + 1)
+        # Update process arguments
+        self.set_gensim_args()
+        return self.bsl_amps
+
+    def __set_bsl_freq(self):
+        """ Set baseline shift frequency. """
+        self.bsl_freq = ['-bf', str(self.bslFrqMin.value()), str(self.bslFrqMax.value())]
+        self.bslFrqMin.setMaximum(self.bslFrqMax.value() - 5)
+        self.bslFrqMax.setMinimum(self.bslFrqMin.value() + 5)
+        # Update process arguments
+        self.set_gensim_args()
+        return self.bsl_freq
+
+    def __set_num_eg(self):
+        """ Number of extra examples to be generated. """
+        self.num_eg = ['-eg', str(self.exEg.value())] if self.exEg.value() > 0 else []
+        # Update process arguments
+        self.set_gensim_args()
+        return self.num_eg
+
+    def __sel_stat_path(self):
+        """ Select archived noise file (*.noi) folder button connection. """
+        path = path_selector(self.statFilePath, mode='file', caption="Select Generation Statistic File",
+                             flt="Generation Statistic File (*.cjh)", parent=self)
+        self.noi_dir = None if path is None else [path]
+
+    def __set_stat_path(self):
+        """ Set defined generation statistics file. """
+        stat_path = self.statFilePath.text()
+        chk_path = os.path.isfile(stat_path)
+        chk_type = stat_path.endswith('.cjh')
+        if chk_path and chk_type:
+            self._sta_proc.set_arguments([stat_path])
+            self.genStaButton.setEnabled(True)
+        else:
+            self._sta_proc.reset_arguments()
+            self.genStaButton.setEnabled(False)
+
+    # Console related functions -------------------------------------------------------------------------------------- #
+    def console_init(self):
+        """ Initialize process system console. """
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        text = "<span style=\"color:black;font-weight:bold;\">Parus Signal Generation GUI ready!</span>"
+        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
+        self.procConsole.clear()
+        self.procConsole.append(message)
+        self.procConsole.append('')  # Extra blank line
+        # Show status bar message
+        self.statBar.showMessage("Console cleared")
+
+    def console_copy(self):
+        """ Copy all texts in console to clipboard. """
+        pos = self.procConsole.verticalScrollBar().value()
+        # Copy all available messages
+        self.procConsole.selectAll()
+        self.procConsole.copy()
+        # Clear selection
+        tc = self.procConsole.textCursor()
+        tc.clearSelection()
+        self.procConsole.setTextCursor(tc)
+        self.procConsole.verticalScrollBar().setValue(pos)
+        # Show status bar message
+        self.statBar.showMessage("Console information successfully copied")
+
+    def set_auto_scroll(self, mode):
+        """ Set console auto scroll to end status.
+
+        Args:
+            mode (bool): Auto scroll to end status
+        """
+        self.__auto_scr = mode
+        # Set auto scroll button features
+        self.procConScroll.setChecked(mode)
+        if mode:
+            self.procConScroll.setStyleSheet('QPushButton{color:green;}')
+            self.procConScroll.setText("Auto Scroll\nON")
+        else:
+            self.procConScroll.setStyleSheet('QPushButton{color:red;}')
+            self.procConScroll.setText("Auto Scroll\nOFF")
+        # Set connected process auto scroll functions
+        self._sim_proc.set_auto_scroll(mode)
+        self._sta_proc.set_auto_scroll(mode)
+
+    def __switch_auto_scroll(self):
+        """ Auto scroll button connected function. """
+        self.set_auto_scroll(not self.__auto_scr)
+
+    def __manual_slider_press(self):
+        """ Console vertical slider user PRESSED connected function. """
+        self.set_auto_scroll(False)
+
+    def __manual_slider_release(self):
+        """ Console vertical slider user RELEASED connected function. """
+        if self.procConsole.verticalScrollBar().value() == self.procConsole.verticalScrollBar().maximum():
+            self.set_auto_scroll(True)

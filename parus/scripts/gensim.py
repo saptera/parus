@@ -1,12 +1,16 @@
+# Parus simulated signal generation SCRIPT
+
 import os
 import argparse
 from datetime import datetime
 import h5py as h5
 import numpy as np
-from parus.util import prog_print
-from parus.fio import cjsh_write, arc_read, noi_read
-from parus.data import bsl_sft_lin, bsl_sft_sin
 import warnings
+
+__package__ = 'parus.scripts'
+from ..util import prog_print
+from ..fio import cjsh_write, arc_read, noi_read
+from ..data import bsl_sft_lin, bsl_sft_sin
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -97,7 +101,7 @@ arc_sig = []  # INIT VAR
 arc_typ = []  # INIT VAR
 arc_pos_a = []  # INIT VAR, _a = anterior, same for all variables ends with [_a] below
 arc_pos_p = []  # INIT VAR, _p = posterior, same for all variables ends with [_p] below
-print("    Reading archived neural signal data.")
+print("    Reading archived neural signal data")
 for f in arc_file:
     arc_data = arc_read(f)
     # Get samples
@@ -112,7 +116,7 @@ for f in arc_file:
 # Read noise data
 noi_file = [os.path.join(args.noi_dir, f) for f in os.listdir(args.noi_dir) if f.endswith('.noi')]
 noise = []  # INIT VAR
-print("    Reading archived recoding noise data.")
+print("    Reading archived recoding noise data")
 for f in noi_file:
     noise.append(np.array(noi_read(f)['data']['noi']))
     # Save input file information to reporting dictionary
@@ -212,12 +216,12 @@ def sig_asgn_lst(low, high, max_pos, sig_lst, grp_pas=None):
     return sel_lst, pos_lst
 
 
-def gen_sim_dat(has_spk=True, grp_pas=args.grp_rat):
+def gen_sim_dat(has_spk=True, grp_pas=None):
     """ Generate single simulated signal with its label.
 
     Args:
         has_spk (bool): Defines if the simulated data has neuronal spikes (default: True)
-        grp_pas (list[float] | None): Probabilities associations of each group (default: args.grp_rat)
+        grp_pas (list[float] | None): Probabilities associations of each group (default: None)
 
     Returns:
         tuple[np.ndarray, dict[str, np.ndarray, str, list[np.ndarray]], np.ndarray]: Generated signal and label
@@ -344,10 +348,10 @@ print("Process generation:")
 sims = sim_fp.create_group('sims')
 for n in range(args.num_sim):
     curr_gen = np.random.choice([True, False], size=None, replace=True, p=[1 - args.no_rat, args.no_rat])
-    gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=curr_gen)
+    gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=curr_gen, grp_pas=args.grp_rat)
     # Save and report
     save_gen_h5(sims, str(n), 'sim', gen_sig, gen_lbl, gen_pos)
-    prog_print(n, args.num_sim, "    Simulated data generation:", "created.")
+    prog_print(n, args.num_sim, "    Simulated data generation:", "created")
 
 # Generate extra examples
 exeg = sim_fp.create_group('exeg')
@@ -357,10 +361,10 @@ if args.num_eg is not None:
     # Standard examples, generated that same way as data generation (without noise only data)
     nrm_eg = args.num_eg // 4 + 1
     for n in range(nrm_eg):
-        gen_sig, gen_lbl, gen_pos = gen_sim_dat()
+        gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=True, grp_pas=args.grp_rat)
         exeg_cnt += 1
         save_gen_h5(exeg, str(exeg_cnt), 'nrm', gen_sig, gen_lbl, gen_pos)
-        prog_print(n, nrm_eg, "    Standard extra example generation:", "created.")
+        prog_print(n, nrm_eg, "    Standard extra example generation:", "created")
     # Special examples, generate signal for each group (if has group) and noise only
     spc_eg = args.num_eg - nrm_eg
     if args.sig_grp is None:
@@ -377,20 +381,20 @@ if args.num_eg is not None:
     spc_eg_noi = [[False, None]] * (spc_eg - len(spc_eg_spk))  # Set noise only examples
     spc_eg_lst = spc_eg_spk + spc_eg_noi  # Set final list
     for n in range(spc_eg):
-        gen_sig, gen_lbl, gen_pos = gen_sim_dat(spc_eg_lst[n][0], spc_eg_lst[n][1])
+        gen_sig, gen_lbl, gen_pos = gen_sim_dat(has_spk=spc_eg_lst[n][0], grp_pas=spc_eg_lst[n][1])
         exeg_cnt += 1
         save_gen_h5(exeg, str(exeg_cnt), 'spc', gen_sig, gen_lbl, gen_pos)
-        prog_print(n, spc_eg, "    Special extra example generation:", "created.")
+        prog_print(n, spc_eg, "    Special extra example generation:", "created")
 
 # Close HDF5 file
 sim_fp.close()
 
 # Arrange and save generation statistics
-print("    Saving generation report file.")
+print("Saving generation report file")
 rep_file = os.path.join(args.out_dir, gen_time + '.cjh')
 gen_rep['prop'] = {
     'arc_cnt': arc_stat, 'grp_cnt': grp_stat, 'sig_fac': sig_fac_stat, 'noi_fac': noi_fac_stat, 'bsl_cnt': noi_bls_stat
 }
 cjsh_write(rep_file, gen_rep, level=9)
 
-print("Process done, call [python gensta.py %s] to visualize generation statistics." % rep_file)
+print("Process done, call [python gensta.py %s] to visualize generation statistics" % rep_file.replace('\\', '/'))

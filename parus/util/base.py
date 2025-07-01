@@ -108,12 +108,15 @@ def prog_print(iteration, total, prefix=str(), suffix=str()):
     length = 50  # Character length of bar
     fill = '>'  # Bar fill character
     iteration += 1  # Convert to 1-based count
-    # Create percentage bar
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / total))
-    filled = int(length * iteration // total)
-    bar = fill * filled + '-' * (length - filled)
-    # Print session
-    sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
-    sys.stdout.flush()
-    if iteration == total:  # Print a new line at 100%
-        print('')
+    # Printing operation
+    if iteration == total:
+        # Print at 100%
+        print('\r%s |%s| %s%% %s' % (prefix, fill * length, ("{0:." + str(decimals) + "f}").format(100), suffix))
+    else:
+        # Create percentage bar
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / total))
+        filled = int(length * iteration // total)
+        bar = fill * filled + '-' * (length - filled)
+        # Print session
+        sys.stdout.write('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix))
+        sys.stdout.flush()

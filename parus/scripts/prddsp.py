@@ -1,9 +1,13 @@
+# Parus inference results visualization SCRIPT
+
 import os
 import argparse
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
-from parus.fio import pklz_read
+
+__package__ = 'parus.scripts'
+from ..fio import pklz_read
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #

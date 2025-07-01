@@ -1,9 +1,12 @@
+# Parus simulated signal statistics visualization SCRIPT
+
 import argparse
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from parus.fio import cjsh_read
 
+__package__ = 'parus.scripts'
+from ..fio import cjsh_read
 mpl.use('TkAgg')  # Use TkAgg backend
 
 
