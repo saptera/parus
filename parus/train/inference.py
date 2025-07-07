@@ -168,18 +168,18 @@ def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_f
                 inputs = inputs.to(device)
                 input_end_time = time.time()
                 input_elapsed_time = input_end_time - start_time
-                print(f"Load Input Time: {input_elapsed_time} seconds")
+                #print(f"Load Input Time: {input_elapsed_time} seconds")
                 spk_outputs = spk_model(inputs)
                 pos_start_time = time.time()
                 model_time = pos_start_time - input_end_time
-                print(f"Spk Model Time: {model_time} seconds")
+                #print(f"Spk Model Time: {model_time} seconds")
                 pos_outputs = pos_model(spk_outputs)
                 #pos_outputs = peak_det_diff(spk_outputs, th=-100, neg=True, gap=20)
                 pos_end_time = time.time()
                 pos_elapsed_time = pos_end_time - pos_start_time
                 pre_pos_time = pos_start_time - start_time
-                print(f"Pre Pos time: {pre_pos_time} seconds")
-                print(f"Pos Elapsed time: {pos_elapsed_time} seconds")
+                #print(f"Pre Pos time: {pre_pos_time} seconds")
+                #print(f"Pos Elapsed time: {pos_elapsed_time} seconds")
 
                 inp = inputs.squeeze().cpu().numpy()
                 spk_pred = spk_outputs.squeeze().cpu().numpy()
@@ -191,8 +191,8 @@ def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_f
                 end_time = time.time()
                 post_pos_time = end_time - pos_end_time
                 elapsed_time = end_time - start_time
-                print(f"Post Pos Time: {post_pos_time} seconds" )
-                print(f"Elapsed time: {elapsed_time} seconds\n")
+                #print(f"Post Pos Time: {post_pos_time} seconds" )
+                #print(f"Elapsed time: {elapsed_time} seconds\n")
 
         pred_filename = "pred_" + filename
         inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0)
