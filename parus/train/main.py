@@ -138,7 +138,7 @@ if __name__ == '__main__':
                                 nhead=spk_model_hparams["n_head"],
                                 num_layers=spk_model_hparams["n_layers"],
                                 dim_feedforward=spk_model_hparams["d_feedforward"],
-                                output_channels=2)
+                                output_channels=1)
     spk_model = nn.DataParallel(spk_model)
     spk_model = load_model(spk_ckpt, spk_model)
     print("loaded spk model")
