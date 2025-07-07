@@ -115,16 +115,16 @@ if __name__ == '__main__':
         model_hparams["model_name"], model_hparams["experiment_folder"])
 
     # Initialize transformer model
-    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                               context_dim=model_hparams["d_context"],
-                               d_model=model_hparams["d_model"],
-                               nhead=model_hparams["n_head"],
-                               num_layers=model_hparams["n_layers"],
-                               dim_feedforward=model_hparams["d_feedforward"])
+    # model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+    #                            context_dim=model_hparams["d_context"],
+    #                            d_model=model_hparams["d_model"],
+    #                            nhead=model_hparams["n_head"],
+    #                            num_layers=model_hparams["n_layers"],
+    #                            dim_feedforward=model_hparams["d_feedforward"])
     
-    # Enable multi-GPU training if available
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    # # Enable multi-GPU training if available
+    # if torch.cuda.device_count() > 1:
+    #     model = nn.DataParallel(model)
 
     
     spk_ckpt = model_hparams["spk_checkpoint_file"]
