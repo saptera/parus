@@ -158,7 +158,7 @@ if __name__ == '__main__':
     pos_model = nn.DataParallel(pos_model)
     pos_model = load_model(pos_ckpt, pos_model)
     print("loaded pos model")
-
+    spk_model = pos_model
     # pos_model = PeakCNN()
 
     if args.train:

@@ -29,7 +29,7 @@
   },
   "inference": {
     "batch_size": 1064,
-    "inference_data_folder": "/home/proj_wavemoto/dataset/monkey_data/mk_all"
+    "inference_data_folder": "/home/proj_wavemoto/dataset/monkey_data/mk_test"
   },
   "debug": {
     "data": {
