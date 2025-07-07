@@ -7,9 +7,10 @@
     "n_worker": 1
   },
   "model": {
-    "model_name": "transformer_encoder",
+    "model_name": "duo_mk_test",
     "experiment_folder": "/home/proj_wavemoto/experiments/",
     "spk_checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-06-30_18:39/epoch10.ckpt",
+    "pos_checkpoint_file": "/home/proj_wavemoto/experiments/transformer_encoder_2024-10-06_17:56/epoch8.ckpt",
     "sequence_length": 300,
     "d_context": 24,
     "d_model": 128,
@@ -28,7 +29,7 @@
   },
   "inference": {
     "batch_size": 1,
-    "inference_data_folder": "/home/proj_wavemoto/dataset/eplp_ptdt"
+    "inference_data_folder": "/home/proj_wavemoto/dataset/monkey_data/mk_all"
   },
   "debug": {
     "data": {

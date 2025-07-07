@@ -154,7 +154,7 @@ def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_f
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pos_model.to(device)
-    spk_model = spk_model.half()
+    #spk_model = spk_model.half()
     spk_model.to(device)
 
     # prediction and saving
@@ -173,8 +173,8 @@ def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_f
                 pos_start_time = time.time()
                 model_time = pos_start_time - input_end_time
                 print(f"Spk Model Time: {model_time} seconds")
-                #pos_outputs = pos_model(spk_outputs)
-                pos_outputs = peak_det_diff(spk_outputs, th=-100, neg=True, gap=20)
+                pos_outputs = pos_model(spk_outputs)
+                #pos_outputs = peak_det_diff(spk_outputs, th=-100, neg=True, gap=20)
                 pos_end_time = time.time()
                 pos_elapsed_time = pos_end_time - pos_start_time
                 pre_pos_time = pos_start_time - start_time

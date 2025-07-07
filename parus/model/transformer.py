@@ -112,7 +112,7 @@ class SparseContextLoader(nn.Module):
 
 
 class EncoderTransformer(nn.Module):
-    def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward):
+    def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward, output_channels):
         super(EncoderTransformer, self).__init__()
         self.input_linear = nn.Linear(context_dim, d_model)
         self.transformer_encoder_layer = nn.TransformerEncoderLayer(
@@ -128,7 +128,7 @@ class EncoderTransformer(nn.Module):
         )
         self.extra_linear1 = nn.Linear(context_dim, 2*context_dim)
         self.extra_linear2 = nn.Linear(2*context_dim, context_dim)
-        self.context_linear = nn.Linear(context_dim, 2)
+        self.context_linear = nn.Linear(context_dim, output_channels)
         self.positional_encoding = PositionalEncoding(
             embedding_dim=context_dim, dropout=0.1, max_len=input_dim)
         self.relu = nn.ReLU()

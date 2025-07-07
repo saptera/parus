@@ -127,20 +127,37 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
 
     
-    # spk_ckpt = model_hparams["spk_checkpoint_file"]
-    # print("found spk_ckpt")
-    # spk_ckpt_hparams = load_hparams(os.path.join(
-    #     model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
-    # spk_model_hparams = spk_ckpt_hparams["model"]
-    # spk_model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
-    #                             context_dim=spk_model_hparams["d_context"],
-    #                             d_model=spk_model_hparams["d_model"],
-    #                             nhead=spk_model_hparams["n_head"],
-    #                             num_layers=spk_model_hparams["n_layers"],
-    #                             dim_feedforward=spk_model_hparams["d_feedforward"])
-    # spk_model = nn.DataParallel(spk_model)
-    # spk_model = load_model(spk_ckpt, spk_model)
-    # print("loaded spk model")
+    spk_ckpt = model_hparams["spk_checkpoint_file"]
+    print("found spk_ckpt")
+    spk_ckpt_hparams = load_hparams(os.path.join(
+        model_hparams["experiment_folder"], "transformer_encoder_2024-06-30_18:39/hparams.json"), args.debug)
+    spk_model_hparams = spk_ckpt_hparams["model"]
+    spk_model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
+                                context_dim=spk_model_hparams["d_context"],
+                                d_model=spk_model_hparams["d_model"],
+                                nhead=spk_model_hparams["n_head"],
+                                num_layers=spk_model_hparams["n_layers"],
+                                dim_feedforward=spk_model_hparams["d_feedforward"],
+                                output_channels=2)
+    spk_model = nn.DataParallel(spk_model)
+    spk_model = load_model(spk_ckpt, spk_model)
+    print("loaded spk model")
+
+    pos_ckpt = model_hparams["pos_checkpoint_file"]
+    print("found pos_ckpt")
+    pos_ckpt_hparams = load_hparams(os.path.join(
+        model_hparams["experiment_folder"], "transformer_encoder_2024-10-06_17:56/hparams.json"), args.debug)
+    pos_model_hparams = pos_ckpt_hparams["model"]
+    pos_model = EncoderTransformer(input_dim=pos_model_hparams["sequence_length"],
+                                context_dim=pos_model_hparams["d_context"],
+                                d_model=pos_model_hparams["d_model"],
+                                nhead=pos_model_hparams["n_head"],
+                                num_layers=pos_model_hparams["n_layers"],
+                                dim_feedforward=pos_model_hparams["d_feedforward"],
+                                output_channels=1)
+    pos_model = nn.DataParallel(pos_model)
+    pos_model = load_model(pos_ckpt, pos_model)
+    print("loaded pos model")
 
     # pos_model = PeakCNN()
 
@@ -208,5 +225,5 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=data_hparams["n_worker"])
 
-            inference(model, inference_datagen,
+            duo_inference(pos_model, spk_model, inference_datagen,
                       filename, inference_pred_folder)
