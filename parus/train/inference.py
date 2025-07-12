@@ -172,7 +172,7 @@ def duo_inference(pos_model, spk_model, inference_datagen, filename, pred_save_f
             model_time = pos_start_time - input_end_time
             #print(f"Spk Model Time: {model_time} seconds")
             #pos_outputs = pos_model(spk_outputs)
-            pos_outputs = peak_det_diff(spk_outputs, th=-20, neg=True, gap=20)
+            pos_outputs = peak_det_diff(spk_outputs, th=-50, neg=True, gap=20)
             pos_end_time = time.time()
             pos_elapsed_time = pos_end_time - pos_start_time
             pre_pos_time = pos_start_time - start_time
