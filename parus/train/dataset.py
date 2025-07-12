@@ -38,7 +38,7 @@ class LabelledSingleFileDataset(data.Dataset):
             data = sim_data_read(file, index)
         sig = data['sig']
         #lbl = data['pos']
-        lbl = data['lbl']['signal'] # using both simple and complex spike
+        lbl = data['lbl']['signal'][1] # using only simple spike
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
