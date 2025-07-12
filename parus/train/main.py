@@ -120,7 +120,8 @@ if __name__ == '__main__':
                                d_model=model_hparams["d_model"],
                                nhead=model_hparams["n_head"],
                                num_layers=model_hparams["n_layers"],
-                               dim_feedforward=model_hparams["d_feedforward"])
+                               dim_feedforward=model_hparams["d_feedforward"],
+                               output_channels=1)
     
     # Enable multi-GPU training if available
     if torch.cuda.device_count() > 1:
