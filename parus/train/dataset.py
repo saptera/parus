@@ -42,7 +42,7 @@ class LabelledSingleFileDataset(data.Dataset):
 
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
-        y = torch.from_numpy(lbl).view(2, self.seq_len)
+        y = torch.from_numpy(lbl).view(1, self.seq_len)
 
         # TODO: maybe we don't need to convert type
         X, y = X.type(torch.FloatTensor), y.type(torch.FloatTensor)
