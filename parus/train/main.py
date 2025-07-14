@@ -183,14 +183,14 @@ if __name__ == '__main__':
 
         # Create data generators for training, validation and testing
         trn_folder = os.path.join(data_hparams["data_folder"], "trn")
-        trn_datagen = get_file_datagen(os.path.join(trn_folder, "20250712_104016.sim"), 
+        trn_datagen = get_file_datagen(os.path.join(trn_folder, "20250713_053018.sim"), 
                                      model_hparams["sequence_length"], 
                                      train_hparams["batch_size"], 
                                      data_hparams, "trn")
         val_folder = os.path.join(data_hparams["data_folder"], "val")
-        val_datagen = get_file_datagen(os.path.join(val_folder, "20250712_162927.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
+        val_datagen = get_file_datagen(os.path.join(val_folder, "20250713_052445.sim"), model_hparams["sequence_length"], train_hparams["batch_size"], data_hparams, "val")
         tst_folder = os.path.join(data_hparams["data_folder"], "tst")
-        tst_datagen = get_file_datagen(os.path.join(tst_folder, "20250712_163008.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
+        tst_datagen = get_file_datagen(os.path.join(tst_folder, "20250713_052813.sim"), model_hparams["sequence_length"], 1, data_hparams, "tst")
 
         # Train model and save results
         train(model, criterion, optimizer, scheduler, trn_datagen,

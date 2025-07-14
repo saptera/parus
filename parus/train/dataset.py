@@ -38,8 +38,7 @@ class LabelledSingleFileDataset(data.Dataset):
             data = sim_data_read(file, index)
         sig = data['sig']
         #lbl = data['pos']
-        lbl = data['lbl']['signal'][1] # using only simple spike
-
+        lbl = np.sum(data['lbl']['signal'], axis=0) # using only simple spike
         # TODO: maybe we don't need the view
         X = torch.from_numpy(sig).view(1, self.seq_len)
         y = torch.from_numpy(lbl).view(1, self.seq_len)
