@@ -109,25 +109,13 @@ if __name__ == '__main__':
     hparams = load_hparams("hparams.json", args.debug)
     model_hparams = hparams["model"]
     data_hparams = hparams["data"]
+    inference_hparams = hparams["inference"]
 
     # Create experiment folder and save hyperparameters
     cur_experiment_folder_path = setup_experiment(
         model_hparams["model_name"], model_hparams["experiment_folder"])
-
-    # Initialize transformer model
-    model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
-                               context_dim=model_hparams["d_context"],
-                               d_model=model_hparams["d_model"],
-                               nhead=model_hparams["n_head"],
-                               num_layers=model_hparams["n_layers"],
-                               dim_feedforward=model_hparams["d_feedforward"],
-                               output_channels=1)
     
-    # Enable multi-GPU training if available
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-
-    
+    model = None
     # spk_ckpt = model_hparams["spk_checkpoint_file"]
     # print("found spk_ckpt")
     # spk_ckpt_hparams = load_hparams(os.path.join(
@@ -161,6 +149,14 @@ if __name__ == '__main__':
     # print("loaded pos model")
 
     if args.train:
+        model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
+                                context_dim=model_hparams["d_context"],
+                                d_model=model_hparams["d_model"],
+                                nhead=model_hparams["n_head"],
+                                num_layers=model_hparams["n_layers"],
+                                dim_feedforward=model_hparams["d_feedforward"],
+                                output_channels=1)
+
         train_hparams = hparams["train"]
 
         # criterion = nn.MSELoss(reduction='mean')
@@ -202,8 +198,24 @@ if __name__ == '__main__':
         test(model, tst_datagen, tst_pred_folder)
 
     if args.inference:
+        spk_ckpt = inference_hparams["spk_ckpt"]
+        print("found spk_ckpt")
+        spk_ckpt_hparams = load_hparams(os.path.join(inference_hparams["spk_ckpt_folder"], "hparams.json"), args.debug)
+        spk_model_hparams = spk_ckpt_hparams["model"]
+        model = EncoderTransformer(input_dim=spk_model_hparams["sequence_length"],
+                                    context_dim=spk_model_hparams["d_context"],
+                                    d_model=spk_model_hparams["d_model"],
+                                    nhead=spk_model_hparams["n_head"],
+                                    num_layers=spk_model_hparams["n_layers"],
+                                    dim_feedforward=spk_model_hparams["d_feedforward"],
+                                    output_channels=1)
+        model = load_model(spk_ckpt, model)
+        print("loaded spk model")
+        # Enable multi-GPU training if available
+        if torch.cuda.device_count() > 1:
+            model = nn.DataParallel(model)
+
         # Run inference on new data
-        inference_hparams = hparams["inference"]
         inference_data_folder = inference_hparams["inference_data_folder"]
         filename_lst = os.listdir(inference_data_folder)
 

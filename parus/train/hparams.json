@@ -27,7 +27,9 @@
   },
   "inference": {
     "batch_size": 2048,
-    "inference_data_folder": "/home/proj_wavemoto/dataset/monkey_data/mk_test"
+    "spk_ckpt_folder": "/home/proj_wavemoto/experiments/mk_transformer_encoder_2025-07-13_13:31",
+    "spk_ckpt": "/home/proj_wavemoto/experiments/mk_transformer_encoder_2025-07-13_13:31/epoch3.ckpt",
+    "inference_data_folder": "/home/proj_wavemoto/dataset/monkey_data/mk_all"
   },
   "debug": {
     "data": {
