@@ -209,11 +209,9 @@ if __name__ == '__main__':
                                     num_layers=spk_model_hparams["n_layers"],
                                     dim_feedforward=spk_model_hparams["d_feedforward"],
                                     output_channels=1)
+        model = nn.DataParallel(model)
         model = load_model(spk_ckpt, model)
         print("loaded spk model")
-        # Enable multi-GPU training if available
-        if torch.cuda.device_count() > 1:
-            model = nn.DataParallel(model)
 
         # Run inference on new data
         inference_data_folder = inference_hparams["inference_data_folder"]
