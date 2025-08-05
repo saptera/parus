@@ -181,6 +181,32 @@ def log_and_print(log_file_path, status_str):
     print(status_str)
 
 
+def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')):
+    """ Write model training log to a text file.
+
+    Args:
+        fp (typing.TextIO): File pointer, with mode 'w+', 'r+' or 'a+'
+        ep (int): Current epoch number
+        stp (int): Current step
+        lr (float): Active learning rate
+        tls (float): Model training loss
+        vls (float): Model validation loss
+        t (int | float): Elapsed time
+        tot_ep (int): Total number of epoch
+        curr_loss (float): Current minimum validation loss value (default: float('inf'))
+    """
+    if '+' in fp.mode:
+        if vls < curr_loss:
+            extra = "Validation loss decreased (%.6f --> %.6f).  Saving model ...\n" % (curr_loss, vls)
+            fp.write(extra)
+        stat = "Epoch: %d/%d - Step: %d - Learning Rate: %.6f - Trn Loss: %.6f - Val Loss: %.6f - Time: %.4f\n" % (
+            ep, tot_ep, stp, lr, tls, vls, t)
+        fp.write(stat)
+        fp.flush()  # Update immediately
+    else:
+        print("Invalid file mode!")
+
+
 def write_train_history(fp, ep, stp, lr, tls, vls, t):
     """ Write model training history to a JSON formatted file.
 
