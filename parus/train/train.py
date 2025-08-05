@@ -197,7 +197,7 @@ def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')
     """
     if '+' in fp.mode:
         if vls < curr_loss:
-            extra = "Validation loss decreased (%.6f --> %.6f).  Saving model ...\n" % (curr_loss, vls)
+            extra = "\nValidation loss decreased (%.6f --> %.6f).  Saving model ...\n\n" % (curr_loss, vls)
             fp.write(extra)
         stat = "Epoch: %d/%d - Step: %d - Learning Rate: %.6f - Trn Loss: %.6f - Val Loss: %.6f - Time: %.4f\n" % (
             ep, tot_ep, stp, lr, tls, vls, t)
@@ -226,16 +226,16 @@ def write_train_history(fp, ep, stp, lr, tls, vls, t):
         fp.seek(0, os.SEEK_END)
         pos = fp.tell()
         # Seek end ']' mark
-        while pos > 0 and fp.read(1) != ']':
+        while pos > 0 and fp.read(1) != '}':
             pos -= 1
             fp.seek(pos, os.SEEK_SET)
         # Write new data
         if pos == 0:
             fp.write('[\n')
         else:
-            fp.seek(pos - 2, os.SEEK_SET)
+            fp.seek(pos, os.SEEK_SET)
             fp.truncate()
-            fp.write(',\n')
+            fp.write('},\n')
         fp.write(jstr)
         fp.flush()  # Update immediately
     else:
