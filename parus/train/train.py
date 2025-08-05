@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from parus.util import plt_mdl_perf
+import typing
 
 """Function list:
 train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Train a model with validation
@@ -178,6 +179,41 @@ def log_and_print(log_file_path, status_str):
     f.write(status_str+"\n") 
     f.close()
     print(status_str)
+
+
+def write_train_history(fp, ep, stp, lr, tls, vls, t):
+    """ Write model training history to a JSON formatted file.
+
+    Args:
+        fp (typing.TextIO): File pointer, with mode 'w+', 'r+' or 'a+'
+        ep (int): Current epoch number
+        stp (int): Current step
+        lr (float): Active learning rate
+        tls (float): Model training loss
+        vls (float): Model validation loss
+        t (int | float): Elapsed time
+    """
+    if '+' in fp.mode:
+        rec = {'epoch': ep, 'step': stp, 'learning_rate': lr, 'loss_training': tls, 'loss_validation': vls, 'time': t}
+        jstr = '    ' + str(rec).replace("'", '"') + '\n]\n'
+        # Initialize seek position
+        fp.seek(0, os.SEEK_END)
+        pos = fp.tell()
+        # Seek end ']' mark
+        while pos > 0 and fp.read(1) != ']':
+            pos -= 1
+            fp.seek(pos, os.SEEK_SET)
+        # Write new data
+        if pos == 0:
+            fp.write('[\n')
+        else:
+            fp.seek(pos - 2, os.SEEK_SET)
+            fp.truncate()
+            fp.write(',\n')
+        fp.write(jstr)
+        fp.flush()  # Update immediately
+    else:
+        print("Invalid file mode!")
 
 
 def evaluate(model, val_datagen, criterion, device):
