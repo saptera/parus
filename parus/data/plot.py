@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import FancyBboxPatch, PathPatch
 
-"""Function list:
-swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
-stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None): Stats significance bars.
-plot_probe(prb, ax): Plot neural recoding probe.
+__all__ = ['swarm_cord', 'stat_plvl', 'plot_prb']
+"""
+Function list:
+  swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
+  stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None): Stats significance bars.
+  plot_prb(prb, ax): Plot neural recoding probe.
 """
 
 

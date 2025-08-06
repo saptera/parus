@@ -5,23 +5,30 @@ from scipy import signal as sig
 import scipy.stats as stat
 import warnings
 
-"""Function list:
-# Neuronal signal filters:
+__all__ = [
+    'spk_lowpass', 'spk_highpass', 'spk_bandpass', 'spk_notch',
+    'noise_white', 'noise_freq_decr', 'noise_freq_incr', 'bsl_sft_lin', 'bsl_sft_sin',
+    'neuron_sig_slc', 'sig_split', 'sig_merge',
+    'sig_peak_det', 'peak_extremum', 'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
+]
+"""
+Function list:
+  # Neuronal signal filters:
     spk_lowpass(x, fpass, fs): Digital lowpass Butterworth filter for neurological signals.
     spk_highpass(x, fpass, fs): Digital highpass Butterworth filter for neurological signals.
     spk_bandpass(x, fpass, fs): Digital bandpass Butterworth filter for neurological signals.
     spk_notch(x, fnotch, fs): Digital notch filter for neurological signals.
-# Noise generators:
+  # Noise generators:
     noise_white(size, mode=0, amp=1.0, seed=None): White noise generator.
     noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown (red) noise generator.
     noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue (azure) and violet (purple) noise generator.
     bsl_sft_lin(size, amp_rng): Linear baseline shifting generator.
     bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.
-# Neuronal signal operations:
+  # Neuronal signal operations:
     neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.
     sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
-# Feature process functions:
+  # Feature process functions:
     sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.

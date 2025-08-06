@@ -3,8 +3,10 @@
 import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
-"""Function list:
-cls_pk_val(sig, pos, bw=None): Clustering spikes with peak height only.
+__all__ = ['cls_pk_val']
+"""
+Function list:
+  cls_pk_val(sig, pos, bw=None): Clustering spikes with peak height only.
 """
 
 

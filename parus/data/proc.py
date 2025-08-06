@@ -10,17 +10,22 @@ from scipy.stats import norm, laplace
 import matplotlib.pyplot as plt
 from ..fio import pklz_read
 
-"""Function list:
-arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
-norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
-laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
-spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
-neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal data for training models.
-neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
-neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
-trn_plot(file, overlay=True): Plot model training related files.
-pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
-nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
+__all__ = [
+    'sim_sig_read', 'sim_lbl_read', 'sim_pos_read', 'arr_rand_samp', 'norm_lst_gen', 'laplace_lst_gen',
+    'spk_merge', 'neuron_rnd_samp', 'neuron_sig_samp', 'neuron_sig_mean', 'trn_plot', 'pred_mae', 'nsd_asgnv'
+]
+"""
+Function list:
+  arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
+  norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
+  laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
+  spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
+  neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal for training models.
+  neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
+  neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
+  trn_plot(file, overlay=True): Plot model training related files.
+  pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
+  nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
 """
 
 

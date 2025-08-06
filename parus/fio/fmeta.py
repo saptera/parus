@@ -6,10 +6,12 @@ import json
 import copy
 import numpy as np
 
-"""Function list:
-conv_lin_prb(prb_file): Convert linear probe definition file to standard probe data structure.
-read_spk_info(spk_info_csv, cell_mode, trim_negat, trim_noise): Import spike timing data form JRClust output.
-read_cell_type(cell_type_csv): Read cell type definition CSV file.
+__all__ = ['conv_lin_prb', 'read_spk_info', 'read_cell_type']
+"""
+Function list:
+  conv_lin_prb(prb_file): Convert linear probe definition file to standard probe data structure.
+  read_spk_info(spk_info_csv, cell_mode, trim_negat, trim_noise): Import spike timing data form JRClust output.
+  read_cell_type(cell_type_csv): Read cell type definition CSV file.
 """
 
 

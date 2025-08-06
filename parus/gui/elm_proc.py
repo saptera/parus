@@ -9,9 +9,9 @@ import warnings
 __all__ = ["PyScriptExec", "path_selector"]
 """
 Class list:
-    PyScriptExec: Execute Python script as a subprocess, with its console displayed.
+  PyScriptExec: Execute Python script as a subprocess, with its console displayed.
 Functon list:
-    path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialogue.
+  path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialogue.
 """
 
 

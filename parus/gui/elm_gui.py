@@ -13,7 +13,7 @@ from .elm_proc import PyScriptExec, path_selector
 __all__ = ["ParusGen"]
 """
 Class list:
-    ParusGen(parent=None): Parus simulated signal generation window.
+  ParusGen(parent=None): Parus simulated signal generation window.
 """
 
 

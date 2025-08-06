@@ -3,29 +3,37 @@
 import os
 import numpy as np
 
-"""Function list:
-# General data files
+__all__ = [
+    'intan_time_read',
+    'intan_typ_amp_read', 'intan_typ_aux_read', 'intan_typ_vdd_read', 'intan_typ_adc_read', 'intan_typ_dio_read',
+    'intan_ch_amp_read', 'intan_ch_aux_read', 'intan_ch_vdd_read', 'intan_ch_adc_read', 'intan_ch_dio_read',
+    'intan_port_amp_read', 'intan_port_aux_read', 'intan_port_vdd_read',
+    'intan_board_adc_read', 'intan_board_din_read', 'intan_board_dout_read'
+]
+"""
+Function list:
+  # General data files
     intan_time_read(time_file, freq): Import RHD2000 [timestamp] data.
-# Datatype [One File Per Signal Type] files:
+  # Datatype [One File Per Signal Type] files:
     intan_typ_amp_read(amp_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [amplifier] data.
     intan_typ_aux_read(aux_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [auxiliary input] data.
     intan_typ_vdd_read(vdd_file, n): Import IntanTech RHD2000 "One File Per Signal Type" [supply voltage] data.
     intan_typ_adc_read(adc_file, n, irc=False): Import IntanTech RHD2000 "One File Per Signal Type" [BOARD ADC in] data.
     intan_typ_dio_read(dio_file): Import IntanTech RHD2000 "One File Per Signal Type" [BOARD digital I/O] data.
-# Datatype [One File Per Channel] files:
-  # Single channel files:
-    intan_ch_amp_read(amp_file): Import IntanTech RHD2000 "One File Per Channel" [amplifier] data.
-    intan_ch_aux_read(aux_file): Import IntanTech RHD2000 "One File Per Channel" [auxiliary input] data.
-    intan_ch_vdd_read(vdd_file): Import IntanTech RHD2000 "One File Per Channel" [supply voltage] data.
-    intan_ch_adc_read(adc_file, irc=False): Import IntanTech RHD2000 "One File Per Channel" [BOARD ADC input] data.
-    intan_ch_dio_read(dio_file): Import IntanTech RHD2000 "One File Per Channel" [BOARD digital I/O] data.
-  # Batch files:
-    intan_port_amp_read(amp_path, port, n): Import IntanTech RHD2000 [amplifier] data in one recording PORT.
-    intan_port_aux_read(aux_path, port, n): Import IntanTech RHD2000 [auxiliary input] data in one recording PORT.
-    intan_port_vdd_read(vdd_path, port, n): Import IntanTech RHD2000 [supply voltage] data in one recording PORT.
-    intan_board_adc_read(adc_path, n, irc=False): Import IntanTech RHD2000 [BOARD ADC input] data in one BOARD.
-    intan_board_din_read(din_path, n): Import IntanTech RHD2000 [BOARD digital input] data in one recording BOARD.
-    intan_board_dout_read(din_path, n): Import IntanTech RHD2000 [BOARD digital output] data in one recording BOARD.
+  # Datatype [One File Per Channel] files:
+    # Single channel files:
+      intan_ch_amp_read(amp_file): Import IntanTech RHD2000 "One File Per Channel" [amplifier] data.
+      intan_ch_aux_read(aux_file): Import IntanTech RHD2000 "One File Per Channel" [auxiliary input] data.
+      intan_ch_vdd_read(vdd_file): Import IntanTech RHD2000 "One File Per Channel" [supply voltage] data.
+      intan_ch_adc_read(adc_file, irc=False): Import IntanTech RHD2000 "One File Per Channel" [BOARD ADC input] data.
+      intan_ch_dio_read(dio_file): Import IntanTech RHD2000 "One File Per Channel" [BOARD digital I/O] data.
+    # Batch files:
+      intan_port_amp_read(amp_path, port, n): Import IntanTech RHD2000 [amplifier] data in one recording PORT.
+      intan_port_aux_read(aux_path, port, n): Import IntanTech RHD2000 [auxiliary input] data in one recording PORT.
+      intan_port_vdd_read(vdd_path, port, n): Import IntanTech RHD2000 [supply voltage] data in one recording PORT.
+      intan_board_adc_read(adc_path, n, irc=False): Import IntanTech RHD2000 [BOARD ADC input] data in one BOARD.
+      intan_board_din_read(din_path, n): Import IntanTech RHD2000 [BOARD digital input] data in one recording BOARD.
+      intan_board_dout_read(din_path, n): Import IntanTech RHD2000 [BOARD digital output] data in one recording BOARD.
 """
 
 
