@@ -10,23 +10,29 @@ import pickle as pkl
 import h5py as h5
 import matplotlib.pyplot as plt
 
-"""Function list:
-# Basic file IO functions:
+__all__ = [
+    'pklz_read', 'pklz_write', 'cjsh_read', 'cjsh_write',
+    'arc_read', 'arc_write', 'arc_plot', 'noi_read', 'noi_write',
+    'sim_args_read', 'sim_data_read'
+]
+"""
+Function list:
+  # Basic file IO functions:
     pklz_read(file): Read compressed pickled data from a file.
     pklz_write(file, data, level=-1): Write compressed pickled data to a file.
     cjsh_read(file): Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
     cjsh_write(file, data, level=-1): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
-# Neural data file IO functions:
-  -> ARC data structure definition
-    arc_read(arc_file): Read archival neural signal data file.
-    arc_write(arc_file, arc_data): Write archival neural signal data file.
-    arc_plot(arc_file, save=False): Plot archival neural signal data.
-  -> NOI data structure definition
-    noi_read(noi_file): Read recording noise sample file.
-    noi_write(noi_file, noi_data): Write recording noise sample file.
-# Simulated data reading functions:
- sim_args_read(sim_fp): Read simulated signal generation parameters.
- sim_data_read(sim_fp, idx, ex=False): Read simulated signal data.
+  # Neural data file IO functions:
+    -> ARC data structure definition
+      arc_read(arc_file): Read archival neural signal data file.
+      arc_write(arc_file, arc_data): Write archival neural signal data file.
+      arc_plot(arc_file, save=False): Plot archival neural signal data.
+    -> NOI data structure definition
+      noi_read(noi_file): Read recording noise sample file.
+      noi_write(noi_file, noi_data): Write recording noise sample file.
+  # Simulated data reading functions:
+   sim_args_read(sim_fp): Read simulated signal generation parameters.
+   sim_data_read(sim_fp, idx, ex=False): Read simulated signal data.
 """
 
 

@@ -3,22 +3,14 @@
 import sys
 import os
 
-"""Function list:
-x64_sys(): Check if current system architecture is 64-bit based.
-make_outdir(out_dir, err_msg="Invalid output directory!"): Recursive create an output leaf directory for data.
-altmk_outdirs(out_dir, alt_dir, err_msg="Inv..."): Recursive create an output leaf directory with alternative directory.
-search_files(base_dir, fpre=str(), fsuf=str()):  Find all files meets the search conditions.
-prog_print(iteration, total, prefix=str(), suffix=str()): Create a terminal progress bar for a loop.
+__all__ = ['make_outdir', 'altmk_outdirs', 'search_files', 'prog_print']
 """
-
-
-def x64_sys():
-    """ Check if current system architecture is 64-bit based.
-
-    Returns:
-        bool: True (if system is x64); False (if system is x32)
-    """
-    return sys.maxsize > 4294967296  # Max size for 32-bit system: 2**32 = 4294967296
+Function list:
+  make_outdir(out_dir, err_msg="Invalid output directory!"): Recursive create an output leaf directory for data.
+  altmk_outdirs(out_dir, alt_dir, err_msg="I..."): Recursive create an output leaf directory with alternative directory.
+  search_files(base_dir, fpre=str(), fsuf=str()):  Find all files meets the search conditions.
+  prog_print(iteration, total, prefix=str(), suffix=str()): Create a terminal progress bar for a loop.
+"""
 
 
 def make_outdir(out_dir, err_msg="Invalid output directory!"):

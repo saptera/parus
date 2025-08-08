@@ -2,9 +2,11 @@
 
 import h5py as h5
 
-"""Function list:
-    h5_load_dat(pnt): Load HDF5 data.
-    h5_load_ref(ref, pnt): Load HDF5 data by reference.
+__all__ = ['h5_load_dat', 'h5_load_ref']
+"""
+Function list:
+  h5_load_dat(pnt): Load HDF5 data.
+  h5_load_ref(ref, pnt): Load HDF5 data by reference.
 """
 
 

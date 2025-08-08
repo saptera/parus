@@ -5,9 +5,11 @@ import scipy.optimize as spopt
 import plotext as ptx
 import warnings
 
-"""Function list:
-plt_mdl_perf(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
-fit_exp_loss(trn_loss, vld_loss): Estimate future loss with exponential model.
+__all__ = ['plt_mdl_perf', 'fit_exp_loss']
+"""
+Function list:
+  plt_mdl_perf(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
+  fit_exp_loss(trn_loss, vld_loss): Estimate future loss with exponential model.
 """
 
 

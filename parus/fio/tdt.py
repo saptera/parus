@@ -3,14 +3,16 @@
 import copy
 import numpy as np
 
-"""Function list:
-    tdt_tsq_read(tsq_file): Import Tucker-Davis Technologies data storage event headers.
-    tdt_tev_read(tev_file, tsq, name=None): Import Tucker-Davis Technologies data storage raw voltage traces.
-    tdt_chs_arng(ch_dat): Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
-# Private constants:
-    __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
-    __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
-    __tev_dt {dict[str, list[int | str]]}: TDT raw voltage traces datatype definition.
+__all__ = ['tdt_tsq_read', 'tdt_tev_read', 'tdt_chs_arng']
+"""
+Function list:
+  tdt_tsq_read(tsq_file): Import Tucker-Davis Technologies data storage event headers.
+  tdt_tev_read(tev_file, tsq, name=None): Import Tucker-Davis Technologies data storage raw voltage traces.
+  tdt_chs_arng(ch_dat): Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
+Private constants:
+  __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
+  __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
+  __tev_dt {dict[str, list[int | str]]}: TDT raw voltage traces datatype definition.
 """
 
 

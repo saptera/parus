@@ -5,9 +5,11 @@ import numpy as np
 import scipy.io as sio
 from .hdf import h5_load_dat, h5_load_ref
 
-"""Function list:
-    mat_meta_read(file): Read MATLAB MAT file header metadata.
-    mat_data_read(file, meta): Read MATLAB MAT file data.
+__all__ = ['mat_meta_read', 'mat_data_read']
+"""
+Function list:
+  mat_meta_read(file): Read MATLAB MAT file header metadata.
+  mat_data_read(file, meta): Read MATLAB MAT file data.
 """
 
 

@@ -1,3 +1,5 @@
+# PARUS GUI module
+
 import sys
 import os
 from PySide6 import QtCore, QtWidgets
