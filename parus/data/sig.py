@@ -9,7 +9,8 @@ __all__ = [
     'spk_lowpass', 'spk_highpass', 'spk_bandpass', 'spk_notch',
     'noise_white', 'noise_freq_decr', 'noise_freq_incr', 'bsl_sft_lin', 'bsl_sft_sin',
     'neuron_sig_slc', 'sig_split', 'sig_merge',
-    'sig_peak_det', 'peak_extremum', 'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
+    'loc_ext_1d', 'sig_peak_det', 'peak_extremum',
+    'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
 ]
 """
 Function list:
@@ -29,6 +30,7 @@ Function list:
     sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
   # Feature process functions:
+    loc_ext_1d(arr, allow_plateau=True): Detect local extrema of given 1D list or array.
     sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
@@ -459,6 +461,31 @@ def sig_merge(src, overlap=10, trim=0):
 
 
 # Feature process functions ------------------------------------------------------------------------------------------ #
+
+def loc_ext_1d(arr, allow_plateau=True):
+    """ Detect local extrema of given 1D list or array.
+
+    Args:
+        arr (list[int | float] | np.ndarray): Input array
+        allow_plateau (bool): Allow to detect first index of extrema with plateau (default: True)
+
+    Returns:
+        dict[str, np.ndarray]: Detected local extrema
+            - max (np.ndarray): Local maxima
+            - min (np.ndarray): Local minima
+    """
+    if allow_plateau:
+        dif = np.ediff1d(arr, to_begin=1)  # Padding 1 to the beginning, forcing keep first value
+        idx = np.nonzero(dif)[0]  # Mask consecutive repeat values, allowing plateau
+        cmp = arr[idx]
+    else:
+        idx = np.arange(len(arr))
+        cmp = arr
+    # Check local maximum (peaks) and minimum (dips)
+    mx = np.pad((cmp[1:-1] > cmp[0:-2]) * (cmp[1:-1] > cmp[2:]), pad_width=1, mode='edge')
+    mi = np.pad((cmp[1:-1] < cmp[0:-2]) * (cmp[1:-1] < cmp[2:]), pad_width=1, mode='edge')
+    return {'max': idx[mx], 'min': idx[mi]}
+
 
 def sig_peak_det(signal, lag, threshold, influence=0.0):
     """ Robust signal peak detection using z-scores.
