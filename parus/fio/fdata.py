@@ -391,11 +391,11 @@ def sim_args_read(sim_fp):
             dc = v.decode('utf-8')
             if dc != 'NULL':
                 arg[k] = dc
-        elif v.size == 1:
-            arg[k] = v.item()
+        elif v.dtype.kind == 'S':
+            arg[k] = [i.decode() for i in v]
         else:
-            if v.dtype.kind == 'S':
-                arg[k] = [i.decode() for i in v]
+            if v.size == 1:
+                arg[k] = v.item()
             else:
                 arg[k] = v.tolist()
     return arg
