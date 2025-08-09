@@ -1,18 +1,12 @@
 # Basic data process functions
 
-import os
-import warnings
 import copy
-import zlib
-import pickle as pkl
 import numpy as np
 from scipy.stats import norm, laplace
-import matplotlib.pyplot as plt
-from ..fio import pklz_read
 
 __all__ = [
-    'sim_sig_read', 'sim_lbl_read', 'sim_pos_read', 'arr_rand_samp', 'norm_lst_gen', 'laplace_lst_gen',
-    'spk_merge', 'neuron_rnd_samp', 'neuron_sig_samp', 'neuron_sig_mean', 'trn_plot', 'pred_mae', 'nsd_asgnv'
+    'arr_rand_samp', 'norm_lst_gen', 'laplace_lst_gen',
+    'spk_merge', 'neuron_rnd_samp', 'neuron_sig_samp', 'neuron_sig_mean', 'pred_mae', 'nsd_asgnv'
 ]
 """
 Function list:
@@ -23,7 +17,6 @@ Function list:
   neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal for training models.
   neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
   neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
-  trn_plot(file, overlay=True): Plot model training related files.
   pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
   nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
 """
@@ -231,100 +224,6 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
         # Assign value
         sig_samp[s, :] = sig[idx]
     return np.mean(sig_samp, axis=0), pos
-
-
-def sim_sig_read(sim_sig_file):
-    # Read-in file data
-    with open(sim_sig_file, 'rb') as infile:
-        comp = pkl.load(infile)
-        sig = pkl.loads(zlib.decompress(comp))
-    return sig
-
-
-def sim_lbl_read(sim_lbl_file):
-    # Read-in file data
-    with open(sim_lbl_file, 'rb') as infile:
-        comp = pkl.load(infile)
-    lbl_dict = pkl.loads(zlib.decompress(comp))
-
-    lbl_len = len(lbl_dict["noise"])
-    lbl = np.zeros(lbl_len, dtype=np.float64)
-    for sig in lbl_dict['signal']:
-        lbl = np.add(lbl, sig)
-    return lbl
-
-def sim_pos_read(sim_pos_file):
-    # Read-in file data
-    with open(sim_pos_file, 'rb') as infile:
-        comp = pkl.load(infile)
-        pos_lst = pkl.loads(zlib.decompress(comp))
-        lbl = [0] * 300
-        for pos in pos_lst:
-            lbl[pos] = 1
-
-    return np.array(lbl)
-
-def trn_plot(file, overlay=True):
-    """ Plot model training related files.
-
-    Args:
-        file (str): File containing data generated for training or predicted by model (*.sim, *.tst)
-        overlay (bool): Set [True] to plot data in one plot, [False] to plot in subplots (default: True)
-    """
-    # Read file
-    file_ext = os.path.splitext(file)[1].lstrip('.')
-    data = pklz_read(file)
-    # Plot type of simulated data
-    if file_ext == 'sim':
-        plt.figure("Plot of simulated data [%s]" % os.path.split(file)[1].lstrip('.sim'))
-        if overlay:
-            plt.xlabel('Data Point')
-            plt.ylabel('Amplitude')
-            plt.plot(data['sig'], c='r', alpha=0.5, label="Signal")
-            plt.plot(data['lbl'], c='b', alpha=0.5, label="Label")
-            plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left', ncol=2, mode="expand", borderaxespad=0.)
-        else:
-            # Plot signal
-            plt.subplot(2, 1, 1)
-            plt.title("Signal")
-            plt.ylabel('Amplitude')
-            plt.plot(data['sig'], c='r')
-            # Plot label
-            plt.subplot(2, 1, 2)
-            plt.title("Label")
-            plt.xlabel('Data Point')
-            plt.ylabel('Amplitude')
-            plt.plot(data['lbl'], c='b')
-    # Plot type of testing data
-    elif file_ext == 'tst':
-        plt.figure("Plot of testing data [%s]" % os.path.split(file)[1].lstrip('.tst'))
-        if overlay:
-            plt.xlabel('Data Point')
-            plt.ylabel('Amplitude')
-            plt.plot(data['sig'], c='r', alpha=0.5, label="Signal")
-            plt.plot(data['lbl'], c='b', alpha=0.5, label="Label")
-            plt.plot(data['prd'], c='g', alpha=0.5, label="Prediction")
-            plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left', ncol=3, mode="expand", borderaxespad=0.)
-        else:
-            # Plot signal
-            plt.subplot(3, 1, 1)
-            plt.title("Signal")
-            plt.ylabel('Amplitude')
-            plt.plot(data['sig'], c='b')
-            # Plot label
-            plt.subplot(3, 1, 2)
-            plt.title("Label")
-            plt.ylabel('Amplitude')
-            plt.plot(data['lbl'], c='r')
-            # plot prediction
-            plt.subplot(3, 1, 2)
-            plt.title("Prediction")
-            plt.xlabel('Data Point')
-            plt.ylabel('Amplitude')
-            plt.plot(data['prd'], c='g')
-    else:
-        warnings.warn("Invalid extension [%s] for this function, plot aborted!" % file_ext, Warning, stacklevel=2)
-        return
 
 
 def pred_mae(data, th=35):
