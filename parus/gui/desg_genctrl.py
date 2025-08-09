@@ -1029,6 +1029,9 @@ class Ui_ParusGenWindow(object):
 
         self.retranslateUi(ParusGenWindow)
 
+        self.spkGrpMthd.setCurrentIndex(2)
+
+
         QMetaObject.connectSlotsByName(ParusGenWindow)
     # setupUi
 

@@ -190,7 +190,7 @@ else:
     occ_avg = np.mean(occ_dat, axis=1)
     occ_std = np.std(occ_dat, axis=1)
     occ_lbl = ["%s (%.2f±%.2f)" % (k.upper(), m, s) for k, m, s in zip(gen_feat['prop']['grp_cnt'], occ_avg, occ_std)]
-    occ_color = [mpl.colormaps['cividis'](i * 0.6 / (len(occ_lbl) - 1) + 0.2) for i in range(len(occ_lbl))]
+    occ_color = [mpl.colormaps['cividis'](i * 0.6 / max(len(occ_lbl) - 1, 1) + 0.2) for i in range(len(occ_lbl))]
 # Set data for noise only signals
 if noi_only:
     occ_plt = np.r_[occ_plt, [np.zeros_like(occ_plt[0])]]

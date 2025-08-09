@@ -849,6 +849,9 @@
                    <bold>false</bold>
                   </font>
                  </property>
+                 <property name="currentIndex">
+                  <number>2</number>
+                 </property>
                  <item>
                   <property name="text">
                    <string>No Grouping</string>
