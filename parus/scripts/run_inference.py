@@ -84,7 +84,7 @@ if __name__ == '__main__':
                 dataset=inf_dataset,
                 batch_size=args.bat_sz,
                 shuffle=False,
-                num_workers=model_hparams["n_worker"])
+                num_workers=hparams["data"]["n_worker"])
 
             pklz_dct = inference(model, inf_datagen, device)
             pklz_dct['grp'] = spk_grp
