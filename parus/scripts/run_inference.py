@@ -42,6 +42,7 @@ if __name__ == '__main__':
         print(f"Hyperparameters loaded from {hparam_file}")
         model_hparams = hparams["model"]
         print(f"Current model hyperparameters: {model_hparams}")
+        spk_grp = hparams["data"]["spike_groups"]
     else:
         raise FileNotFoundError("Model hyperparameter missing!\n"
                                 "[hparams.json] file must be located in the same folder as defined model checkpoint.")
@@ -78,4 +79,5 @@ if __name__ == '__main__':
                 num_workers=model_hparams["n_worker"])
 
             pklz_dct = inference(model, inf_datagen, device)
+            pklz_dct['grp'] = spk_grp
             pklz_write(os.path.join(inf_pred_folder, filename), pklz_dct)

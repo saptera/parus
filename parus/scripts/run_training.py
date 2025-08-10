@@ -5,7 +5,7 @@ import argparse
 
 __package__ = 'parus.scripts'
 from ..model.transformer import EncoderTransformer
-from ..train.experiment import load_hparams, setup_experiment, get_all_training_datagen
+from ..train.experiment import load_hparams, update_hparams, setup_experiment, get_all_training_datagen
 from ..train.train import train
 from ..train.eval import inference
 from ..fio import pklz_write
@@ -55,6 +55,8 @@ if __name__ == '__main__':
         data_hparams=data_hparams,
     )
     spk_grp = trn_datagen.dataset.meta['grp_str']
+    hparams["data"]["spike_groups"] = spk_grp
+    update_hparams(hparams, args.hparam)
 
     # Train model and save results
     train(model, model_hparams["d_model"], trn_datagen, val_datagen, cur_art_dir_path, train_hparams, device)
@@ -63,4 +65,5 @@ if __name__ == '__main__':
     model.eval()
     with torch.no_grad():
         pklz_dct = inference(model, tst_datagen, device, test=True)
+        pklz_dct['grp'] = spk_grp
         pklz_write(os.path.join(tst_pred_folder, "test_pred.pklz"), pklz_dct)

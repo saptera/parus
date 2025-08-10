@@ -21,6 +21,12 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
     return hparams
 
 
+def update_hparams(hparams, hparams_file_path='hparams.json'):
+    with open(hparams_file_path, 'w') as fp:
+        json.dump(hparams, fp)
+    return True
+
+
 def setup_experiment(model_name, dataset_name, experiment_folder_path, mode="trn"):
     experiment_name = "__".join(
         [model_name, dataset_name, time.strftime("%Y-%m-%d_%H:%M")])
