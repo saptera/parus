@@ -7,7 +7,7 @@ import argparse
 __package__ = 'parus.scripts'
 from ..model.transformer import EncoderTransformer
 from ..train.dataset import InferenceDataset
-from ..train.experiment import setup_experiment, load_hparams, load_model
+from ..train.experiment import setup_workdir, load_hparams, load_model
 from ..train.eval import inference
 from ..fio import pklz_write
 
@@ -28,7 +28,7 @@ args = parser.parse_args()
 if __name__ == '__main__':
     # Create experiment folder and save hyperparameters
     dataset_name = os.path.basename(args.inf_dat)
-    cur_out_dir_path, inf_pred_folder = setup_experiment("inf", dataset_name, args.out_dir, mode="inf")
+    cur_out_dir_path, inf_pred_folder = setup_workdir("inf", dataset_name, args.out_dir, train=False)
     
     # Locate pre-trained model for inference
     if os.path.isfile(args.ckpt):
@@ -42,7 +42,9 @@ if __name__ == '__main__':
         print(f"Hyperparameters loaded from {hparam_file}")
         model_hparams = hparams["model"]
         print(f"Current model hyperparameters: {model_hparams}")
+        # Load data information
         spk_grp = hparams["data"]["spike_groups"]
+        rec_frq = hparams["data"]["sampling_frequency"]
     else:
         raise FileNotFoundError("Model hyperparameter missing!\n"
                                 "[hparams.json] file must be located in the same folder as defined model checkpoint.")
@@ -80,4 +82,5 @@ if __name__ == '__main__':
 
             pklz_dct = inference(model, inf_datagen, device)
             pklz_dct['grp'] = spk_grp
+            pklz_dct['frq'] = rec_frq
             pklz_write(os.path.join(inf_pred_folder, filename), pklz_dct)

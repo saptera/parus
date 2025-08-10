@@ -249,7 +249,8 @@ if os.path.isfile(args.path):
         ref_flag = False
     # Arrange data
     if dic_typ:
-        pred = [{t: raw[t][s] if t == 'inp' else {k: raw[t][k][s] for k in raw[t]} for t in raw if t != 'grp'}
+        pred = [{t: raw[t][s] if t == 'inp' else {k: raw[t][k][s] for k in raw[t]}
+                 for t in raw if t in ['inp', 'prd', 'lbl']}
                 for s in range(raw['inp'].shape[0])]
     else:
         pred = [{t: raw[t][s] for t in raw} for s in range(raw['inp'].shape[0])]

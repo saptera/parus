@@ -1,10 +1,10 @@
 import json
 import os
-import shutil
 import time
 import torch
 from torch.utils import data
 from parus.train.dataset import TrainingDataset
+from parus.util import make_outdir
 
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
@@ -27,28 +27,15 @@ def update_hparams(hparams, hparams_file_path='hparams.json'):
     return True
 
 
-def setup_experiment(model_name, dataset_name, experiment_folder_path, mode="trn"):
-    experiment_name = "__".join(
-        [model_name, dataset_name, time.strftime("%Y-%m-%d_%H:%M")])
-    cur_exp_folder_path = os.path.join(
-        experiment_folder_path, experiment_name)
-    os.mkdir(cur_exp_folder_path)
-    print("Directory '% s' created" % cur_exp_folder_path)
-    shutil.copy2('hparams.json', cur_exp_folder_path)
-    print("Copied hparams.json to '% s' " % cur_exp_folder_path)
-    
-    if mode == "trn":
-        tst_pred_folder = os.path.join(cur_exp_folder_path, "test_pred")
-        os.mkdir(tst_pred_folder)
-        print("Test Predictions Folder '% s' created" % tst_pred_folder)
-        return cur_exp_folder_path, tst_pred_folder
-    elif mode == "inf":
-        inference_pred_folder = os.path.join(cur_exp_folder_path, "inf_pred")
-        os.mkdir(inference_pred_folder)
-        print("Inference Predictions Folder '% s' created" % inference_pred_folder)
-        return cur_exp_folder_path, inference_pred_folder
-    else:
-        raise ValueError(f"Invalid mode '{mode}'. Must be one of: trn, inf")
+def setup_workdir(model_name, dataset_name, base_folder, train=True):
+    set_name = '__'.join([time.strftime("%Y%m%d-%H%M"), model_name, dataset_name])
+    workdir = make_outdir(os.path.join(base_folder, set_name), err_msg="Creating working directory failed!")
+    print("Working directory [%s] created" % workdir)
+
+    out_name = "tst_pred" if train else "inf_pred"
+    out_folder = make_outdir(os.path.join(workdir, out_name), err_msg="Creating output directory failed!")
+    print("Output folder [%s] created" % out_folder)
+    return workdir, out_folder
 
 
 def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, mode="trn"):

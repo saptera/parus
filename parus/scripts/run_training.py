@@ -5,7 +5,7 @@ import argparse
 
 __package__ = 'parus.scripts'
 from ..model.transformer import EncoderTransformer
-from ..train.experiment import load_hparams, update_hparams, setup_experiment, get_all_training_datagen
+from ..train.experiment import load_hparams, update_hparams, setup_workdir, get_all_training_datagen
 from ..train.train import train
 from ..train.eval import inference
 from ..fio import pklz_write
@@ -30,8 +30,8 @@ if __name__ == '__main__':
     data_hparams = hparams["data"]
     train_hparams = hparams["train"]
 
-    # Create experiment folder and save hyperparameters
-    cur_art_dir_path, tst_pred_folder = setup_experiment(
+    # Create working directories for artifacts
+    cur_art_dir_path, tst_pred_folder = setup_workdir(
         model_hparams["model_name"], data_hparams["dataset_name"], args.art_dir)
 
     # Build model and move to device
@@ -54,9 +54,13 @@ if __name__ == '__main__':
         batch_size=train_hparams["batch_size"],
         data_hparams=data_hparams,
     )
+
+    # Save extended hyperparameters with source data information
     spk_grp = trn_datagen.dataset.meta['grp_str']
+    rec_frq = trn_datagen.dataset.meta['freq']
     hparams["data"]["spike_groups"] = spk_grp
-    update_hparams(hparams, args.hparam)
+    hparams["data"]["sampling_frequency"] = rec_frq
+    update_hparams(hparams, os.path.join(cur_art_dir_path, 'hparams.json'))
 
     # Train model and save results
     train(model, model_hparams["d_model"], trn_datagen, val_datagen, cur_art_dir_path, train_hparams, device)
@@ -66,4 +70,5 @@ if __name__ == '__main__':
     with torch.no_grad():
         pklz_dct = inference(model, tst_datagen, device, test=True)
         pklz_dct['grp'] = spk_grp
+        pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(tst_pred_folder, "test_pred.pklz"), pklz_dct)
