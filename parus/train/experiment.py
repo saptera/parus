@@ -22,7 +22,7 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
 
 
 def setup_experiment(model_name, dataset_name, experiment_folder_path, mode="trn"):
-    experiment_name = "_".join(
+    experiment_name = "__".join(
         [model_name, dataset_name, time.strftime("%Y-%m-%d_%H:%M")])
     cur_exp_folder_path = os.path.join(
         experiment_folder_path, experiment_name)
