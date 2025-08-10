@@ -5,7 +5,7 @@ from parus.fio import sim_args_read, sim_data_read, pklz_read
 import warnings
 
 
-class LabelledSingleFileDataset(Dataset):
+class TrainingDataset(Dataset):
     def __init__(self, data_file_path, n_samples, seq_len):
 
         self.__data_file = h5.File(data_file_path, "r")
@@ -37,7 +37,7 @@ class LabelledSingleFileDataset(Dataset):
         self.__data_file.close()
 
 
-class NoLabelSingleFileDataset(Dataset):
+class InferenceDataset(Dataset):
     def __init__(self, dataset_file_path, seq_len):
         self.sig_lst_numpy = pklz_read(dataset_file_path)
         self.seq_len = seq_len

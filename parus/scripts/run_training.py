@@ -6,19 +6,19 @@ from parus.train.experiment import load_hparams, setup_experiment, get_all_train
 from parus.train.train import train
 from parus.train.eval import inference
 
-if __name__ == '__main__':
-    # Parse command line arguments
-    argParser = argparse.ArgumentParser()
-    argParser.add_argument(
-        "--exp_folder", help="path to experiment folder", type=str, required=True)
-    argParser.add_argument(
-        "--dataset_folder", help="path to dataset folder", type=str, required=True)
-    argParser.add_argument(
-        "--hparams_path", help="path to hparams.json", type=str, required=True)
-    argParser.add_argument(
-        "--debug", help="run training with debug hparams", action="store_true")
-    args = argParser.parse_args()
+# Parse command line arguments
+argParser = argparse.ArgumentParser()
+argParser.add_argument(
+    "--exp_folder", help="path to experiment folder", type=str, required=True)
+argParser.add_argument(
+    "--dataset_folder", help="path to dataset folder", type=str, required=True)
+argParser.add_argument(
+    "--hparams_path", help="path to hparams.json", type=str, required=True)
+argParser.add_argument(
+    "--debug", help="run training with debug hparams", action="store_true")
+args = argParser.parse_args()
 
+if __name__ == '__main__':
     # Load hyperparameters from JSON file
     hparams = load_hparams(args.hparams_path, args.debug)
     model_hparams = hparams["model"]

@@ -4,7 +4,7 @@ import shutil
 import time
 import torch
 from torch.utils import data
-from parus.train.dataset import LabelledSingleFileDataset, NoLabelSingleFileDataset
+from parus.train.dataset import TrainingDataset
 
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
@@ -57,7 +57,7 @@ def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, mode="tr
         raise ValueError(f"Invalid training mode '{mode}'. Must be one of: {list(sample_counts.keys())}")
     
     # Create dataset
-    dataset = LabelledSingleFileDataset(
+    dataset = TrainingDataset(
         data_file_path, 
         sample_counts[mode], 
         seq_len
@@ -75,7 +75,7 @@ def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, mode="tr
     return datagen
 
 
-def _find_first_sim_file(folder_path: str) -> str | None:
+def _find_first_sim_file(folder_path):
     if not os.path.isdir(folder_path):
         return None
     sim_files = [f for f in os.listdir(folder_path) if f.endswith('.sim')]
@@ -84,7 +84,7 @@ def _find_first_sim_file(folder_path: str) -> str | None:
     return os.path.join(folder_path, sim_files[0])
 
 
-def get_all_training_datagen(data_root_folder: str, seq_len: int, batch_size: int, data_hparams: dict):
+def get_all_training_datagen(data_root_folder, seq_len, batch_size, data_hparams):
     modes = ["trn", "val", "tst"]
     datagens = {}
     for mode in modes:
