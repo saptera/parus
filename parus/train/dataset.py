@@ -31,7 +31,7 @@ class TrainingDataset(Dataset):
         data = sim_data_read(self.__data_file, index)
         X = torch.from_numpy(data['sig']).view(1, self.seq_len).type(torch.FloatTensor)
         y_spk = torch.from_numpy(data['lbl']['signal']).view(self.grp_num, self.seq_len).type(torch.FloatTensor)
-        y_pos = torch.from_numpy(data['lbl']['pos']).view(self.grp_num, self.seq_len).type(torch.FloatTensor)
+        y_pos = torch.from_numpy(data['pos']).view(self.grp_num, self.seq_len).type(torch.FloatTensor)
         return X, y_spk, y_pos
 
     def close(self):
