@@ -27,17 +27,6 @@ def update_hparams(hparams, hparams_file_path='hparams.json'):
     return True
 
 
-def setup_workdir(model_name, dataset_name, base_folder, train=True):
-    set_name = '__'.join([time.strftime("%Y%m%d-%H%M"), model_name, dataset_name])
-    workdir = make_outdir(os.path.join(base_folder, set_name), err_msg="Creating working directory failed!")
-    print("Working directory [%s] created" % workdir)
-
-    out_name = "tst_pred" if train else "inf_pred"
-    out_folder = make_outdir(os.path.join(workdir, out_name), err_msg="Creating output directory failed!")
-    print("Output folder [%s] created" % out_folder)
-    return workdir, out_folder
-
-
 def get_file_datagen(data_file_path, seq_len, batch_size, data_hparams, mode="trn"):
     # Define sample counts for each mode
     sample_counts = {

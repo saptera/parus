@@ -7,9 +7,10 @@ import argparse
 __package__ = 'parus.scripts'
 from ..model.transformer import EncoderTransformer
 from ..train.dataset import InferenceDataset
-from ..train.experiment import setup_workdir, load_hparams, load_model
+from ..train.experiment import load_hparams, load_model
 from ..train.eval import inference
 from ..fio import pklz_write
+from ..util import make_outdir
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -26,15 +27,15 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    # Create experiment folder and save hyperparameters
-    dataset_name = os.path.basename(args.inf_dat)
-    cur_out_dir_path, inf_pred_folder = setup_workdir("inf", dataset_name, args.out_dir, train=False)
-    
+    # Create output directory
+    out_dir = make_outdir(args.out_dir, err_msg="Creating output directory failed!")
+
     # Locate pre-trained model for inference
     if os.path.isfile(args.ckpt):
         print(f"Model located at {args.ckpt}")
     else:
         raise FileNotFoundError("Cannot find model checkpoint at defined path!")
+
     # Locate model hyperparameters
     hparam_file = os.path.join(os.path.dirname(args.ckpt), "hparams.json")
     if os.path.isfile(hparam_file):
@@ -63,15 +64,12 @@ if __name__ == '__main__':
     model.to(device)
     print(f"Model successfully loaded!")
 
-    # Run inference on new data
-    inf_dat = args.inf_dat
-    filename_lst = os.listdir(inf_dat)
-
     # Process each file in the inference folder
+    filename_lst = os.listdir(args.inf_dat)
     model.eval()
     with torch.no_grad():
         for filename in filename_lst:
-            file_path = os.path.join(inf_dat, filename)
+            file_path = os.path.join(args.inf_dat, filename)
             print(f"Processing {file_path}")
             inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"])
             inf_datagen = data.DataLoader(
@@ -83,4 +81,4 @@ if __name__ == '__main__':
             pklz_dct = inference(model, inf_datagen, device)
             pklz_dct['grp'] = spk_grp
             pklz_dct['frq'] = rec_frq
-            pklz_write(os.path.join(inf_pred_folder, filename), pklz_dct)
+            pklz_write(os.path.join(out_dir, filename), pklz_dct)
