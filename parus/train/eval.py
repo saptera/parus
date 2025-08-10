@@ -2,8 +2,6 @@ import torch
 import numpy as np
 from parus.model.post_proc import peak_det_diff
 from parus.util import plt_mdl_perf
-from parus.fio import pklz_write
-import os
 import numpy
 
 def training_validation(model, datagen, criterion, device):

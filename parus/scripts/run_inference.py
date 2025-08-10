@@ -7,6 +7,7 @@ from parus.model.transformer import EncoderTransformer
 from parus.train.dataset import InferenceDataset
 from parus.train.experiment import setup_experiment, load_hparams, load_model
 from parus.train.eval import inference
+from parus.fio import pklz_write
 
 
 # Parse command line arguments
@@ -45,9 +46,9 @@ if __name__ == '__main__':
                                 num_layers=model_hparams["n_layers"],
                                 dim_feedforward=model_hparams["d_feedforward"],
                                 output_channels=model_hparams["output_channels"])
-    model = nn.DataParallel(model)
-    
+    model = nn.DataParallel(model)    
     model = load_model(model_ckpt, model)
+    model.to(device)
     print(f"loaded model from {model_ckpt}")
 
     # Run inference on new data
@@ -55,17 +56,20 @@ if __name__ == '__main__':
     filename_lst = os.listdir(inf_dataset_folder)
 
     # Process each file in the inference folder
-    for filename in filename_lst:
-        file_path = os.path.join(inf_dataset_folder, filename)
-        print(f"processing {file_path}")
-        inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"])
-        inf_datagen = data.DataLoader(
-            dataset=inf_dataset,
-            batch_size=args.inf_batch_size,
-            shuffle=False,
-            num_workers=model_hparams["n_worker"])
+    model.eval()
+    with torch.no_grad():
+        for filename in filename_lst:
+            file_path = os.path.join(inf_dataset_folder, filename)
+            print(f"processing {file_path}")
+            inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"])
+            inf_datagen = data.DataLoader(
+                dataset=inf_dataset,
+                batch_size=args.inf_batch_size,
+                shuffle=False,
+                num_workers=model_hparams["n_worker"])
 
-        inference(model, inf_datagen, filename, inf_pred_folder, device)
+            pklz_dct = inference(model, inf_datagen, device)
+            pklz_write(os.path.join(inf_pred_folder, filename), pklz_dct)
         
 
 

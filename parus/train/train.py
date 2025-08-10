@@ -55,7 +55,9 @@ def train(model, model_size, train_datagen, val_datagen, cur_exp_folder_path, tr
                     model.parameters(), train_hparams["model_param_clip"])
 
                 if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
-                    val_loss = training_validation(model, val_datagen, loss_fn, device)
+                    model.eval()
+                    with torch.no_grad():
+                        val_loss = training_validation(model, val_datagen, loss_fn, device)
 
                     # Save checkpoint on improvement or at the final epoch
                     if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:

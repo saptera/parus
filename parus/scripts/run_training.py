@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import argparse
@@ -5,6 +6,7 @@ from parus.model.transformer import EncoderTransformer
 from parus.train.experiment import load_hparams, setup_experiment, get_all_training_datagen
 from parus.train.train import train
 from parus.train.eval import inference
+from parus.fio.fdata import pklz_write
 
 # Parse command line arguments
 argParser = argparse.ArgumentParser()
@@ -40,6 +42,7 @@ if __name__ == '__main__':
                             dim_feedforward=model_hparams["d_feedforward"],
                             output_channels=model_hparams["output_channels"])
     model = nn.DataParallel(model)
+    model.to(device)
 
     # Build datagens by discovering .sim files under data folders
     trn_datagen, val_datagen, tst_datagen = get_all_training_datagen(
@@ -53,6 +56,9 @@ if __name__ == '__main__':
     train(model, model_hparams["d_model"], trn_datagen, val_datagen, cur_exp_folder_path, train_hparams, device)
 
     # Create test predictions directory and run testing
-    inference(model, tst_datagen, tst_pred_folder, device, mode="tst")
+    model.eval()
+    with torch.no_grad():
+        pklz_dct = inference(model, tst_datagen, device, test=True)
+        pklz_write(os.path.join(tst_pred_folder, "test_pred.pklz"), pklz_dct)
 
    
