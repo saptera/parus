@@ -26,18 +26,23 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    print("Parus model training start")
+
     # Load hyperparameters from JSON file
     hparams = load_hparams(args.hparam, args.debug)
     model_hparams = hparams["model"]
     data_hparams = hparams["data"]
     train_hparams = hparams["train"]
+    print("Hyperparameters successfully loaded")
 
     # Create working directories for artifacts
     set_name = '__'.join([time.strftime("%Y%m%d-%H%M"), model_hparams["model_name"], data_hparams["dataset_name"]])
     work_dir = make_outdir(os.path.join(args.art_dir, set_name), err_msg="Creating working directory failed!")
     tst_dir = make_outdir(os.path.join(work_dir, "tst_prd"), err_msg="Creating test output directory failed!")
+    print("Working directories successfully created")
 
     # Build model and move to device
+    print("Building model...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = EncoderTransformer(input_dim=model_hparams["sequence_length"],
                                context_dim=model_hparams["d_context"],
@@ -48,14 +53,17 @@ if __name__ == '__main__':
                                output_channels=model_hparams["output_channels"])
     model = nn.DataParallel(model)
     model.to(device)
+    print("    -> Success!")
 
     # Build DataGens class
+    print("Building data generators...")
     trn_datagen, val_datagen, tst_datagen = get_all_training_datagen(
         data_root_folder=args.dat_dir,
         seq_len=model_hparams["sequence_length"],
         batch_size=train_hparams["batch_size"],
         data_hparams=data_hparams,
     )
+    print("    -> Success!")
 
     # Save extended hyperparameters with source data information
     spk_grp = trn_datagen.dataset.meta['grp_str']
@@ -63,14 +71,20 @@ if __name__ == '__main__':
     hparams["data"]["spike_groups"] = spk_grp
     hparams["data"]["sampling_frequency"] = rec_frq
     update_hparams(hparams, os.path.join(work_dir, 'hparams.json'))
+    print("Current hyperparameters saved to working directory")
 
     # Train model and save checkpoints
+    print("\nTraining started")
     train(model, model_hparams["d_model"], trn_datagen, val_datagen, work_dir, train_hparams, device)
 
     # Create test predictions directory and run testing
+    print("\nInferencing test data...")
     model.eval()
     with torch.no_grad():
         pklz_dct = inference(model, tst_datagen, device, test=True)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(tst_dir, "test_pred.pklz"), pklz_dct)
+    print("    -> Done!")
+
+    print("Parus model training finalized")
