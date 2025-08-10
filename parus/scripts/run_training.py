@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print("Hyperparameters successfully loaded")
 
     # Create working directories for artifacts
-    set_name = '__'.join([time.strftime("%Y%m%d-%H%M"), model_hparams["model_name"], data_hparams["dataset_name"]])
+    set_name = '__'.join([model_hparams["model_name"], data_hparams["dataset_name"], time.strftime("%Y%m%d-%H%M")])
     work_dir = make_outdir(os.path.join(args.art_dir, set_name), err_msg="Creating working directory failed!")
     tst_dir = make_outdir(os.path.join(work_dir, "tst_prd"), err_msg="Creating test output directory failed!")
     print("Working directories successfully created")

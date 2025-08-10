@@ -1,10 +1,8 @@
 import json
 import os
-import time
 import torch
 from torch.utils import data
 from parus.train.dataset import TrainingDataset
-from parus.util import make_outdir
 
 
 def load_hparams(hparams_file_path='hparams.json', debug=False):
