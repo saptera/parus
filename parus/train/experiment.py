@@ -122,6 +122,7 @@ def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')
             fp.write(extra)
         stat = "Epoch: %d/%d - Step: %d - Learning Rate: %.6f - Trn Loss: %.6f - Val Loss: %.6f - Time: %.4f\n" % (
             ep, tot_ep, stp, lr, tls, vls, t)
+        print(stat)
         fp.write(stat)
         fp.flush()  # Update immediately
     else:
