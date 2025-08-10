@@ -3,408 +3,94 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
-from parus.util import plt_mdl_perf
-import typing
+from parus.train.eval import training_validation
+from parus.train.experiment import write_train_log, write_train_history, save
 
-"""Function list:
-train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Train a model with validation
-cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Train a model using outputs from another model
-log_and_print(log_file_path, status_str): Log status to file and print to console
-evaluate(model, val_datagen, criterion, device): Evaluate model on validation data
-save(experiment_folder_path, model, optimizer, cur_epoch): Save model checkpoint
-load_model(ckpt_path, model): Load a saved model checkpoint
-resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams): Resume training from checkpoint
-eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Evaluate binary classification metrics
-"""
+LOSS_FUNCTION_OPTIONS = {
+    "mse": nn.MSELoss(reduction='mean'),
+    "l1": nn.L1Loss(reduction='mean'),
+    "bce": nn.BCEWithLogitsLoss(),
+}
+
+def get_learning_rate(step, model_size, factor, warmup):
+    if step == 0:
+        step = 1
+    rate = factor * (model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5)))
+    if step % 1000 == 0:
+        print(step, rate)
+    return rate
 
 
-def train(model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
-    """ Train a model with validation.
+def train(model, model_size, train_datagen, val_datagen, cur_exp_folder_path, train_hparams, device):
+    loss_fn = LOSS_FUNCTION_OPTIONS[train_hparams["loss_function"]]
+    optimizer = torch.optim.AdamW(model.parameters(), lr=train_hparams["base_learning_rate"])
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer=optimizer, 
+        lr_lambda=lambda step: get_learning_rate(
+            step, 
+            model_size, 
+            train_hparams["learning_rate_factor"], 
+            train_hparams["learning_rate_warmup"]
+        )
+    )
 
-    Args:
-        model: Neural network model to train
-        criterion: Loss function
-        optimizer: Optimization algorithm
-        scheduler: Learning rate scheduler
-        train_datagen: Training data generator
-        val_datagen: Validation data generator 
-        cur_experiment_folder_path (str): Path to save experiment outputs
-        train_hparams (dict): Training hyperparameters including:
-            - start_epoch (int): Starting epoch number
-            - total_epoch (int): Total number of epochs
-            - steps_per_eval (int): Steps between evaluations
-            - model_param_clip (float): Gradient clipping threshold
-
-    Returns:
-        None: Saves model checkpoints and logs to disk
-    """
-    # load model onto gpu
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    # make an empty log.txt file in the experiment folder
-    log_file_path = os.path.join(cur_experiment_folder_path, "log.txt")
-    f = open(log_file_path, "w+")
-    f.close()
-
-    # training loop
     val_loss_min = np.Inf
-    for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
-        start_time = time.perf_counter()
-        for step_i, (inputs, labels, _) in enumerate(train_datagen):
-            model.train()
-            optimizer.zero_grad()
-            inputs, labels = inputs.to(device), labels.to(device)
-            output = model(inputs)
-            loss = criterion(output, labels.float())
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            nn.utils.clip_grad_norm_(
-                # clipping to avoid exploding gradient
-                model.parameters(), train_hparams["model_param_clip"])
+    log_file_path = os.path.join(cur_exp_folder_path, "training.log")
+    history_file_path = os.path.join(cur_exp_folder_path, "training_history.json")
 
-            if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
-                val_loss = evaluate(model, val_datagen, criterion, device)
-                # scheduler.step()  # learning rate updates everytime the loop prints
-                if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
-                    save(cur_experiment_folder_path,
-                         model, optimizer, epoch_i)
-                    saving_str = 'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
-                        val_loss_min, val_loss)
-                    log_and_print(log_file_path, saving_str)
-                    val_loss_min = val_loss
+    with open(log_file_path, "a+") as log_fp, open(history_file_path, "a+") as history_fp:
+        for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
+            start_time = time.perf_counter()
+            for step_i, (inputs, labels) in enumerate(train_datagen):
+                model.train()
+                optimizer.zero_grad()
+                inputs, labels = inputs.to(device), labels.to(device)
+                output = model(inputs)
+                loss = loss_fn(output, labels.float())
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                nn.utils.clip_grad_norm_(
+                    # clipping to avoid exploding gradient
+                    model.parameters(), train_hparams["model_param_clip"])
 
-                # log and print status, reset time counter
-                finish_time = time.perf_counter()
-                status_str = "".join(["Epoch: {}/{}...".format(epoch_i, train_hparams["total_epoch"]),
-                                      "Step: {}...".format(step_i),
-                                      "Learning Rate: {}...".format(
-                                          optimizer.param_groups[0]['lr']),
-                                      "Loss: {:.6f}...".format(loss.item()),
-                                      "Val Loss: {:.6f}...".format(val_loss),
-                                     "Time: {}s...".format(finish_time-start_time)])
-                log_and_print(log_file_path, status_str)
-                start_time = time.perf_counter()
+                if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
+                    val_loss = training_validation(model, val_datagen, loss_fn, device)
 
+                    # Save checkpoint on improvement or at the final epoch
+                    if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
+                        save(cur_exp_folder_path, model, optimizer, epoch_i)
 
-def cascade_train(model, spk_model, criterion, optimizer, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
-    """ Train a model using outputs from another model.
+                    # Log metrics to training.log and append JSON record to training_history.json
+                    finish_time = time.perf_counter()
+                    elapsed_time = finish_time - start_time
+                    current_lr = optimizer.param_groups[0]['lr']
 
-    Args:
-        model: Primary neural network model to train
-        spk_model: Secondary model providing inputs
-        criterion: Loss function
-        optimizer: Optimization algorithm
-        scheduler: Learning rate scheduler
-        train_datagen: Training data generator
-        val_datagen: Validation data generator
-        cur_experiment_folder_path (str): Path to save experiment outputs
-        train_hparams (dict): Training hyperparameters including:
-            - start_epoch (int): Starting epoch number
-            - total_epoch (int): Total number of epochs
-            - steps_per_eval (int): Steps between evaluations
-            - model_param_clip (float): Gradient clipping threshold
+                    write_train_log(
+                        log_fp,
+                        ep=epoch_i,
+                        stp=step_i,
+                        lr=current_lr,
+                        tls=loss.item(),
+                        vls=val_loss,
+                        t=elapsed_time,
+                        tot_ep=train_hparams["total_epoch"],
+                        curr_loss=val_loss_min,
+                    )
 
-    Returns:
-        None: Saves model checkpoints and logs to disk
-    """
-    # load model onto gpu
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    spk_model.to(device)
+                    write_train_history(
+                        history_fp,
+                        ep=epoch_i,
+                        stp=step_i,
+                        lr=current_lr,
+                        tls=loss.item(),
+                        vls=val_loss,
+                        t=elapsed_time,
+                    )
 
-    # make an empty log.txt file in the experiment folder
-    log_file_path = os.path.join(cur_experiment_folder_path, "log.txt")
-    f = open(log_file_path, "w+")
-    f.close()
+                    # Update best validation loss after logging
+                    if val_loss <= val_loss_min:
+                        val_loss_min = val_loss
 
-    # training loop
-    val_loss_min = np.Inf
-    for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
-        start_time = time.perf_counter()
-        for step_i, (inputs, labels, _) in enumerate(train_datagen):
-            model.train()
-            spk_model.eval()
-            optimizer.zero_grad()
-            inputs, labels = inputs.to(device), labels.to(device)
-            with torch.no_grad():
-                spk_output = spk_model(inputs)
-            output = model(spk_output)
-            loss = criterion(output,
-                             labels.float())
-                             # alpha=0.95,
-                             #reduction="mean")
-            loss.backward()
-            optimizer.step()
-            nn.utils.clip_grad_norm_(
-                # clipping to avoid exploding gradient
-                model.parameters(), train_hparams["model_param_clip"])
-
-            if step_i != 0 and step_i % train_hparams["steps_per_eval"] == 0:
-                val_loss = evaluate(model, val_datagen, criterion, device)
-                scheduler.step()  # learning rate updates everytime the loop prints
-                if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
-                    save(cur_experiment_folder_path,
-                         model, optimizer, epoch_i)
-                    saving_str = 'Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
-                        val_loss_min, val_loss)
-                    log_and_print(log_file_path, saving_str)
-                    val_loss_min = val_loss
-
-                # log and print status, reset time counter
-                finish_time = time.perf_counter()
-                status_str = "".join(["Epoch: {}/{}...".format(epoch_i, train_hparams["total_epoch"]),
-                                      "Step: {}...".format(step_i),
-                                      "Learning Rate: {}...".format(
-                                          optimizer.param_groups[0]['lr']),
-                                      "Loss: {:.6f}...".format(loss.item()),
-                                      "Val Loss: {:.6f}...".format(val_loss),
-                                     "Time: {}s...".format(finish_time-start_time)])
-                log_and_print(log_file_path, status_str)
-                start_time = time.perf_counter()
-
-
-def log_and_print(log_file_path, status_str):
-    """Log status to file and print to console.
-    
-    Args:
-        log_file_path (str): Path to log file
-        status_str (str): Status string to log
-        
-    Returns:
-        None
-    """
-    f = open(log_file_path, "a")
-    f.write(status_str+"\n") 
-    f.close()
-    print(status_str)
-
-
-def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')):
-    """ Write model training log to a text file.
-
-    Args:
-        fp (typing.TextIO): File pointer, with mode 'w+', 'r+' or 'a+'
-        ep (int): Current epoch number
-        stp (int): Current step
-        lr (float): Active learning rate
-        tls (float): Model training loss
-        vls (float): Model validation loss
-        t (int | float): Elapsed time
-        tot_ep (int): Total number of epoch
-        curr_loss (float): Current minimum validation loss value (default: float('inf'))
-    """
-    if '+' in fp.mode:
-        if vls < curr_loss:
-            extra = "\nValidation loss decreased (%.6f --> %.6f).  Saving model ...\n\n" % (curr_loss, vls)
-            fp.write(extra)
-        stat = "Epoch: %d/%d - Step: %d - Learning Rate: %.6f - Trn Loss: %.6f - Val Loss: %.6f - Time: %.4f\n" % (
-            ep, tot_ep, stp, lr, tls, vls, t)
-        fp.write(stat)
-        fp.flush()  # Update immediately
-    else:
-        print("Invalid file mode!")
-
-
-def write_train_history(fp, ep, stp, lr, tls, vls, t):
-    """ Write model training history to a JSON formatted file.
-
-    Args:
-        fp (typing.TextIO): File pointer, with mode 'w+', 'r+' or 'a+'
-        ep (int): Current epoch number
-        stp (int): Current step
-        lr (float): Active learning rate
-        tls (float): Model training loss
-        vls (float): Model validation loss
-        t (int | float): Elapsed time
-    """
-    if '+' in fp.mode:
-        rec = {'epoch': ep, 'step': stp, 'learning_rate': lr, 'loss_training': tls, 'loss_validation': vls, 'time': t}
-        jstr = '    ' + str(rec).replace("'", '"') + '\n]\n'
-        # Initialize seek position
-        fp.seek(0, os.SEEK_END)
-        pos = fp.tell()
-        # Seek end ']' mark
-        while pos > 0 and fp.read(1) != '}':
-            pos -= 1
-            fp.seek(pos, os.SEEK_SET)
-        # Write new data
-        if pos == 0:
-            fp.write('[\n')
-        else:
-            fp.seek(pos, os.SEEK_SET)
-            fp.truncate()
-            fp.write('},\n')
-        fp.write(jstr)
-        fp.flush()  # Update immediately
-    else:
-        print("Invalid file mode!")
-
-
-def evaluate(model, val_datagen, criterion, device):
-    """Evaluate model on validation data.
-    
-    Args:
-        model: Neural network model to evaluate
-        val_datagen: Validation data generator
-        criterion: Loss function
-        device: Device to run evaluation on (cuda/cpu)
-        
-    Returns:
-        float: Mean validation loss
-    """
-    model.eval()
-    val_losses = []
-
-    for i, (inputs, labels, _) in enumerate(val_datagen):
-        inputs, labels = inputs.to(device), labels.to(device)
-        outputs = model(inputs)
-        cur_val_loss = criterion(
-            outputs,
-            labels.float())
-        #cur_val_ota, cur_val_metrics_dct = eval_bin_cls(
-        #    outputs, labels.float())
-        #tp = cur_val_metrics_dct["tp"]
-        #tn = cur_val_metrics_dct["tn"]
-        #fp = cur_val_metrics_dct["fp"]
-        #fn = cur_val_metrics_dct["fn"]
-        #print("batch on target accuracy: ", cur_val_ota)
-        #print("tp", tp)
-        #print("tn", tn)
-        #print("fp", fp)
-        #print("fn", fn)
-        #print("f1", (2*tp)/(2*tp + fp + fn))
-        #print("recall", tp/((tp + fn) + 1))
-        #print("precision", tp/((tp + fp) + 1))
-        #print("accuracy", (tp + tn)/(tp + tn + fp + fn))
-
-        val_losses.append(cur_val_loss.item())
-
-        if i == 0:
-            # print visual prediction result of the first sample
-            inp_print = inputs.cpu().clone().detach().numpy()[0][0]
-            out_print = outputs.cpu().clone().detach().numpy()[0][0]
-            lab_print = labels.cpu().clone().detach().numpy()[0][0]
-            plt_mdl_perf(out_print, inp_print,
-                         lab_print, size=(256, 32))
-
-    return np.mean(val_losses)
-
-
-def save(experiment_folder_path, model, optimizer, cur_epoch):
-    """Save model checkpoint.
-    
-    Args:
-        experiment_folder_path (str): Path to save checkpoint
-        model: Model to save
-        optimizer: Optimizer to save
-        cur_epoch (int): Current epoch number
-        
-    Returns:
-        None: Saves checkpoint to disk
-    """
-    ckpt = {
-        "epoch": cur_epoch,
-        "model_state_dict": model.state_dict(),
-        "optimizer_state_dict": optimizer.state_dict()
-    }
-    ckpt_path = os.path.join(
-        experiment_folder_path, "epoch" + str(cur_epoch) + ".ckpt")
-
-    torch.save(ckpt, ckpt_path)
-
-
-def load_model(ckpt_path, model):
-    """Load a saved model checkpoint.
-    
-    Args:
-        ckpt_path (str): Path to checkpoint file
-        model: Model to load weights into
-        
-    Returns:
-        model: Model with loaded weights
-    """
-    ckpt = torch.load(ckpt_path)
-    model.load_state_dict(ckpt['model_state_dict'])
-    return model
-
-
-def resume(ckpt_path, model, optimizer, criterion, scheduler, train_datagen, val_datagen, cur_experiment_folder_path, train_hparams):
-    """Resume training from checkpoint.
-    
-    Args:
-        ckpt_path (str): Path to checkpoint file
-        model: Neural network model to train
-        optimizer: Optimization algorithm  
-        criterion: Loss function
-        scheduler: Learning rate scheduler
-        train_datagen: Training data generator
-        val_datagen: Validation data generator
-        cur_experiment_folder_path (str): Path to save experiment outputs
-        train_hparams (dict): Training hyperparameters
-        
-    Returns:
-        None: Resumes training from checkpoint
-    """
-    ckpt = torch.load(ckpt_path)
-
-    model.load_state_dict(ckpt['model_state_dict'])
-    optimizer.load_state_dict(ckpt['optimizer_state_dict'])
-    # TODO maybe need to load/update scheduler to match original training process
-    train_hparams['start_epoch'] = ckpt['epoch']
-
-    train(model, criterion, optimizer, scheduler,
-          train_datagen, val_datagen, cur_experiment_folder_path, train_hparams)
-
-
-def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5):
-    """ Binary detection evaluation.
-
-    Args:
-        prediction (torch.Tensor): Prediction tensor
-        reference (torch.Tensor): Ground truth tensor, the same shape as [prediction]
-        allowed_distance (int): Index tolerance for binary detection (default: 2)
-        binary_threshold (int | float): Threshold to make binary tensor (default: 0.5)
-
-    Returns:
-        tuple[float, dict[str, int]]:
-            - ota (float): On-target accuracy (%) of binary detection, with allowance defined by [allowed_distance]
-            - sas (dict[str, int]): Four factors for sensitivity and specificity (actual raw values)
-    """
-    # On-target accuracy #
-    # Get basic info
-    win = allowed_distance * 2 + 1
-    pos_prd = torch.where(prediction > binary_threshold)
-    pos_ref = torch.where(reference > binary_threshold)
-    tot_spk = pos_ref[0].nelement()
-    # Get target allowed indices
-    accu_chk = [torch.repeat_interleave(p, win) for p in pos_ref]
-    for i in range(win):
-        accu_chk[2][i::win] = accu_chk[2][i::win] - allowed_distance + i
-    accu_chk[2] = torch.clip(accu_chk[2], min=0, max=reference.size(2) - 1)
-    # Set target value matrix
-    accu_mat = torch.clone(reference)
-    for i in range(tot_spk * (allowed_distance * 2 + 1)):
-        accu_mat[accu_chk[0][i], accu_chk[1][i], accu_chk[2][i]] = 1.0
-    # Check prediction
-    tot_det = 0
-    for i in range(pos_prd[0].nelement()):
-        if accu_mat[pos_prd[0][i], pos_prd[1][i], pos_prd[2][i]] > binary_threshold:
-            tot_det += 1
-    # Summarize
-    ota = tot_det / tot_spk * 100
-
-    # Sensitivity and specificity #
-    # Get confusion vector
-    bin_prd = torch.where(prediction > binary_threshold, 1.0, 0.0)
-    bin_ref = torch.where(reference > binary_threshold, 1.0, 0.0)
-    confusion = bin_prd / bin_ref
-    # Compute four factors
-    tp = torch.sum(confusion == 1).item()
-    tn = torch.sum(torch.isnan(confusion)).item()
-    fp = torch.sum(confusion == float('inf')).item()
-    fn = torch.sum(confusion == 0).item()
-
-    return ota, {'tp': tp, 'tn': tn, 'fp': fp, 'fn': fn}
-
+                    # Reset timer for next interval
+                    start_time = time.perf_counter()
