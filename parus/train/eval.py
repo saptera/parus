@@ -6,7 +6,7 @@ import numpy
 
 def training_validation(model, datagen, criterion, device):
     val_losses = []
-    for i, (inputs, labels) in enumerate(datagen):
+    for i, (inputs, labels, _) in enumerate(datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
         cur_val_loss = criterion(outputs, labels.float())
@@ -25,14 +25,16 @@ def training_validation(model, datagen, criterion, device):
 def inference(model, datagen, device, th=-50, neg=True, gap=20, test=False):
     # Initialize lists
     inp_numpy_lst = []
-    lbl_numpy_lst = []
+    spk_lbl_numpy_lst = []
+    pos_lbl_numpy_lst = []
     spk_pred_numpy_lst = []
     pos_pred_numpy_lst = []
     # Inference
     for item in datagen:
         if test:
-            inputs, labels = item
-            lbl_numpy_lst.append(labels.squeeze().cpu().numpy())
+            inputs, spk_labels, pos_labels = item
+            spk_lbl_numpy_lst.append(spk_labels.squeeze().cpu().numpy())
+            pos_lbl_numpy_lst.append(pos_labels.squeeze().cpu().numpy())
         else:
             inputs = item
         inputs = inputs.to(device)
@@ -47,8 +49,11 @@ def inference(model, datagen, device, th=-50, neg=True, gap=20, test=False):
     pred_numpy_dict = {"spk": numpy.concatenate(spk_pred_numpy_lst, axis=0),
                        "pos": numpy.concatenate(pos_pred_numpy_lst, axis=0)}
     if test:
-        lbl_numpy = numpy.concatenate(lbl_numpy_lst, axis=0)
-        pklz_dct = {"inp": inp_numpy, "prd": pred_numpy_dict, "lbl": lbl_numpy}
+        spk_lbl_numpy = numpy.concatenate(spk_lbl_numpy_lst, axis=0)
+        pos_lbl_numpy = numpy.concatenate(pos_lbl_numpy_lst, axis=0)
+        lbl_dict = {"spk": spk_lbl_numpy,
+                    "pos": pos_lbl_numpy}
+        pklz_dct = {"inp": inp_numpy, "prd": pred_numpy_dict, "lbl": lbl_dict}
     else:
         pklz_dct = {"inp": inp_numpy, "prd": pred_numpy_dict}
     return pklz_dct

@@ -41,7 +41,7 @@ def train(model, model_size, train_datagen, val_datagen, cur_exp_folder_path, tr
     with open(log_file_path, "a+") as log_fp, open(history_file_path, "a+") as history_fp:
         for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
             start_time = time.perf_counter()
-            for step_i, (inputs, labels) in enumerate(train_datagen):
+            for step_i, (inputs, labels, _) in enumerate(train_datagen):
                 model.train()
                 optimizer.zero_grad()
                 inputs, labels = inputs.to(device), labels.to(device)
