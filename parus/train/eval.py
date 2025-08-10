@@ -6,7 +6,7 @@ import numpy
 
 def training_validation(model, datagen, criterion, device):
     val_losses = []
-    for i, (inputs, labels, _) in enumerate(datagen):
+    for i, (inputs, labels) in enumerate(datagen):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model(inputs)
         cur_val_loss = criterion(outputs, labels.float())
