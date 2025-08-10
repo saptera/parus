@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
     # Load hyperparameters from JSON file
-    hparams = load_hparams(args.hparams_path, args.debug)
+    hparams = load_hparams(args.hparam, args.debug)
     model_hparams = hparams["model"]
     data_hparams = hparams["data"]
     train_hparams = hparams["train"]
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     # Build datagens by discovering .sim files under data folders
     trn_datagen, val_datagen, tst_datagen = get_all_training_datagen(
-        data_root_folder=args.dataset_folder,
+        data_root_folder=args.dat_dir,
         seq_len=model_hparams["sequence_length"],
         batch_size=train_hparams["batch_size"],
         data_hparams=data_hparams,
