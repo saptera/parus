@@ -45,17 +45,14 @@ def inference(model, datagen, device, th=-50, neg=True, gap=20, test=False):
         spk_pred_numpy_lst.append(spk_outputs.squeeze().cpu().numpy())
         pos_pred_numpy_lst.append(pos_outputs.squeeze().cpu().numpy())
     # Arrange outputs
-    inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0)
-    pred_numpy_dict = {"spk": numpy.concatenate(spk_pred_numpy_lst, axis=0),
-                       "pos": numpy.concatenate(pos_pred_numpy_lst, axis=0)}
+    inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0).astype('float32')
+    pred_numpy_dict = {'spk': numpy.concatenate(spk_pred_numpy_lst, axis=0).astype('float32'),
+                       'pos': numpy.concatenate(pos_pred_numpy_lst, axis=0).astype('int8')}
+    pklz_dct = {'inp': inp_numpy, 'prd': pred_numpy_dict}
     if test:
-        spk_lbl_numpy = numpy.concatenate(spk_lbl_numpy_lst, axis=0)
-        pos_lbl_numpy = numpy.concatenate(pos_lbl_numpy_lst, axis=0)
-        lbl_dict = {"spk": spk_lbl_numpy,
-                    "pos": pos_lbl_numpy}
-        pklz_dct = {"inp": inp_numpy, "prd": pred_numpy_dict, "lbl": lbl_dict}
-    else:
-        pklz_dct = {"inp": inp_numpy, "prd": pred_numpy_dict}
+        lbl_dict = {'spk': numpy.concatenate(spk_lbl_numpy_lst, axis=0).astype('float32'),
+                    'pos': numpy.concatenate(pos_lbl_numpy_lst, axis=0).astype('int8')}
+        pklz_dct['lbl'] = lbl_dict
     return pklz_dct
 
 
