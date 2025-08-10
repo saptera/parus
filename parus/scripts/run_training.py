@@ -26,7 +26,7 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Parus model training start")
+    print("Parus model training starting")
 
     # Load hyperparameters from JSON file
     hparams = load_hparams(args.hparam, args.debug)
