@@ -233,12 +233,13 @@ def gen_sim_dat(has_spk=True, grp_pas=None):
     """
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
+    pos = []  # INIT VAR, signal peak position
     for i in range(len(arc_sig if args.sig_grp is None else grp_dic)):
-        lbl['signal'].append(np.zeros(args.tot_len, dtype=np.float64))
+        lbl['signal'].append(np.zeros(args.tot_len, dtype=np.float32))
+        pos.append(np.zeros(args.tot_len, dtype=np.int8))
     grp_temp = {k: 0 for k in grp_stat.keys()}  # STAT VAR, grouped signal occurrence per file
 
     # Get simulated signals
-    pos = np.zeros(args.tot_len, dtype=int)  # INIT VAR, signal peak position
     if has_spk:
         sel, idx = sig_asgn_lst(args.min_gap, args.max_gap, args.tot_len, sig_idx, grp_pas)
         for i in range(len(idx)):
@@ -251,15 +252,15 @@ def gen_sim_dat(has_spk=True, grp_pas=None):
             # Set signal slice range
             rang_a = arc_pos_a[sel[i]] - idx[i] + asgn_a
             rang_p = rang_a - asgn_a + asgn_p
-            # Assign signal
+            # Assign signal and set position
             if args.sig_grp is None:
                 lbl['signal'][sel[i]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
+                pos[sel[i]][idx[i]] = 1
                 grp_temp['none'] += 1  # STAT
             else:
                 lbl['signal'][grp_dic[arc_typ[sel[i]]]][asgn_a:asgn_p] = arc_sig[sel[i]][rang_a:rang_p] * curr_fac
+                pos[grp_dic[arc_typ[sel[i]]]][idx[i]] = 1
                 grp_temp[arc_typ[sel[i]]] += 1  # STAT
-            # Set position
-            pos[idx[i]] = 1
     [grp_stat[k].append(grp_temp[k]) for k in grp_stat.keys()]  # STAT SUM
 
     # Get simulated noise
@@ -284,6 +285,7 @@ def gen_sim_dat(has_spk=True, grp_pas=None):
             lbl['noise'] = np.add(lbl['noise'], bsl_sft_sin(args.tot_len, args.freq, args.bsl_amps, args.bsl_freq))
         else:
             pass
+    lbl['noise'] = lbl['noise'].astype(np.float32)  # Cast type
 
     # Create simulated signal
     sig = np.copy(lbl['noise'])
