@@ -42,23 +42,37 @@ def sig_norm_plt(sig: np.ndarray):
 
 # Spike position acquisition function
 def spk_pos_plt(spk: np.ndarray, pos: np.ndarray, sft: float, fix: bool):
-    # Detect spike position
-    px = np.where(pos > 0.8)[0]
-    if px.size == 0:
-        py = np.empty(0)
+    px = []  # INIT VAR
+    py = []  # INIT VAR
+    # Check input dimension
+    if pos.ndim == 1:
+        spk = [spk]
+        pos = [pos]
+        n_pgp = 1
     else:
-        if fix:
-            # Set Y positions for marker
-            py = spk[px] + sft
+        n_pgp = pos.shape[0]
+    # Get position for each dimension
+    for pgp in range(n_pgp):
+        # Detect spike position
+        dpx = np.where(pos[pgp] > 0.8)[0]
+        if dpx.size == 0:
+            dpy = np.empty(0)
         else:
-            # Get spike trend
-            grd = np.gradient(spk, 2, edge_order=1)
-            idx = px - 1
-            idx[0] = 0 if idx[0] < 0 else idx[0]  # Avoid negative index
-            sp = np.sign(grd[idx])
-            # Set Y positions for marker
-            py = spk[px] + sp * sft
-    px = px if args.freq is None else px / (args.freq / 1000)
+            if fix:
+                # Set Y positions for marker
+                dpy = spk[pgp][dpx] + sft
+            else:
+                # Get spike trend
+                grd = np.gradient(spk[pgp], 2, edge_order=1)
+                idx = dpx - 1
+                idx[0] = 0 if idx[0] < 0 else idx[0]  # Avoid negative index
+                sp = np.sign(grd[idx])
+                # Set Y positions for marker
+                dpy = spk[pgp][dpx] + sp * sft
+        dpx = dpx if args.freq is None else dpx / (args.freq / 1000)
+        # Set to output
+        px.append(dpx)
+        py.append(dpy)
     return {'x': px, 'y': py}
 
 
