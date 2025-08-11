@@ -16,7 +16,7 @@
   },
   "train": {
     "start_epoch": 1,
-    "total_epoch": 5,
+    "total_epoch": 10,
     "batch_size": 64,
     "steps_per_eval": 1000,
     "base_learning_rate": 1,

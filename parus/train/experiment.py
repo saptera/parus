@@ -21,7 +21,7 @@ def load_hparams(hparams_file_path='hparams.json', debug=False):
 
 def update_hparams(hparams, hparams_file_path='hparams.json'):
     with open(hparams_file_path, 'w') as fp:
-        json.dump(hparams, fp)
+        json.dump(hparams, fp, indent=2)
     return True
 
 
