@@ -73,22 +73,28 @@ if __name__ == '__main__':
 
     # Process each file in the inference folder
     filename_lst = os.listdir(args.src_dir)
+    tot_len = len(filename_lst)
     print("Inferencing data:")
     model.eval()
     with torch.no_grad():
-        for filename in filename_lst:
+        for i, filename in enumerate(filename_lst):
             file_path = os.path.join(args.src_dir, filename)
-            print("    Processing [%s]" % filename)
+            # Model inference
+            t_init = time.time()  # Start time
             inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"])
             inf_datagen = data.DataLoader(
                 dataset=inf_dataset,
                 batch_size=args.bat_sz,
                 shuffle=False,
                 num_workers=hparams["data"]["n_worker"])
-
             pklz_dct = inference(model, inf_datagen, device)
+            t_stop = time.time()
+            # Add metadata and save output
             pklz_dct['grp'] = spk_grp
             pklz_dct['frq'] = rec_frq
             pklz_write(os.path.join(out_dir, filename), pklz_dct)
+            # CLI print
+            dur = t_stop - t_init
+            print("    File [%s] processed in %.4f seconds (%d/%d)" % (filename, dur, i + 1, tot_len))
 
     print("Parus data inference finalized")
