@@ -27,15 +27,14 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
     print("Parus model training starting")
+    dat_name = os.path.basename(args.dat_dir.rstrip('/\\'))
 
     # Load hyperparameters from JSON file
     hparams = load_hparams(args.hparam, args.debug)
     print("Hyperparameters successfully loaded")
 
     # Create working directories for artifacts
-    set_name = '__'.join([
-        hparams["model"]["model_name"], hparams["data"]["dataset_name"], time.strftime("%Y%m%d-%H%M")
-    ])
+    set_name = '__'.join([hparams["model"]["model_name"], dat_name, time.strftime("%Y%m%d-%H%M")])
     work_dir = make_outdir(os.path.join(args.art_dir, set_name), err_msg="Creating working directory failed!")
     tst_dir = make_outdir(os.path.join(work_dir, "tst_prd"), err_msg="Creating test output directory failed!")
     print("Working directories successfully created")
@@ -53,6 +52,7 @@ if __name__ == '__main__':
     # Get extended hyperparameters with source data information
     spk_grp = trn_datagen.dataset.meta['grp_str']
     rec_frq = trn_datagen.dataset.meta['freq']
+    hparams["data"]["dataset_name"] = dat_name
     hparams["data"]["spike_groups"] = spk_grp
     hparams["data"]["sampling_frequency"] = rec_frq
     hparams["model"]["output_channels"] = len(spk_grp)
