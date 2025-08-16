@@ -3,17 +3,27 @@
 import os
 import re
 from datetime import datetime
-from PySide6 import QtWidgets
+import matplotlib as mpl
+from matplotlib.backend_bases import _Mode
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
+import matplotlib.pyplot as plt
+from PySide6 import QtCore, QtWidgets
+mpl.use('QtAgg')
 
 __package__ = 'parus.gui'
 from ..scripts import gen_sim, gen_sta
 from .desg_genctrl import Ui_ParusGenWindow
+from .desg_wfmsel import Ui_WfmSelWindow
+from .desg_resver import Ui_ParusResWindow
 from .elm_proc import PyScriptExec, path_selector
+from .elm_plot import ResPltLoader
 
-__all__ = ["ParusGen"]
+__all__ = ['ParusGen', 'WfmSel', 'ParusRes']
 """
 Class list:
   ParusGen(parent=None): Parus simulated signal generation window.
+  WfmSel(key, raw, parent=None): Result waveform channel selection window.
+  ParusRes(file, parent=None): Parus inference results viewing and validation window.
 """
 
 
@@ -229,7 +239,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Finalizing
         if self._sim_proc.fin_stop:
             # Set generation statistics file path
-            stat_line = re.search(r'(?<=\[)[^\]]+(?=\])', self._sim_proc.last_line).group()
+            stat_line = re.search(r'(?<=\[)[^]]+(?=])', self._sim_proc.last_line).group()
             stat_path = ' '.join(stat_line.split(' ')[2:])
             self.statFilePath.setText(stat_path)
             # Show status bar message
@@ -545,3 +555,247 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         """ Console vertical slider user RELEASED connected function. """
         if self.procConsole.verticalScrollBar().value() == self.procConsole.verticalScrollBar().maximum():
             self.set_auto_scroll(True)
+
+
+class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
+    sel_sig = QtCore.Signal(list)  # Channel selection signal
+
+    def __init__(self, key, raw, parent=None):
+        """ Result waveform channel selection window.
+
+        Args:
+            key (list[str]): Waveform channel name list
+            raw (list[bool]): Waveform raw type flag
+            parent: Parent window or widget
+        """
+        # Initialize GUI
+        super(WfmSel, self).__init__(parent)
+        self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, False)
+        self.__sel_lst = []
+        # Generate buttons for each channel
+        self.ch_btn = {}
+        for i, (k, r) in enumerate(zip(key, raw)):
+            if r:
+                btn = QtWidgets.QCheckBox(k)
+                btn.setObjectName("Ch_%02d" % i)
+                btn.setChecked(True)
+                self.chRawLayout.addWidget(btn)
+                self.ch_btn[i] = btn
+                btn.clicked.connect(self.__select_channel)
+            else:
+                btn = QtWidgets.QCheckBox(k)
+                btn.setObjectName("Ch_%02d" % i)
+                btn.setChecked(True)
+                self.chSpkLayout.addWidget(btn)
+                self.ch_btn[i] = btn
+                btn.clicked.connect(self.__select_channel)
+        # Fix window height
+        self.window().setFixedHeight(self.layout().sizeHint().height())
+
+    def __select_channel(self):
+        """ Verify and send channel selection signal. """
+        chk_wfm_lst = []  # INIT VAR
+        # Get selection list by check box values
+        for k in self.ch_btn:
+            if self.ch_btn[k].isChecked():
+                chk_wfm_lst.append(self.ch_btn[k].text())
+        # Check for null selection
+        if not chk_wfm_lst:
+            QtWidgets.QMessageBox.warning(self, "Warning", "At least 1 channel required!",
+                                          QtWidgets.QMessageBox.StandardButton.Ok)
+            # Set to the first waveform
+            self.ch_btn[0].setChecked(True)
+            self.__sel_lst = [self.ch_btn[0].text()]
+        else:
+            # Update selection
+            self.__sel_lst = chk_wfm_lst
+        # Send signal
+        self.sel_sig.emit(self.__sel_lst)
+
+
+class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
+    def __init__(self, file, parent=None):
+        """ Parus inference results viewing and validation window.
+
+        Args:
+            file (str): Parus result HDF5 file
+            parent: Parent window or widget
+        """
+        # Initialize main UI
+        super(ParusRes, self).__init__(parent)
+        self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        # Timer initialization
+        self.__timer_val = -1
+
+        # Load and plot data
+        self._result = ResPltLoader(file)
+        self._toolbar = NavigationToolbar2QT(self._result, self)
+        self.signalLayout.addWidget(self._toolbar)
+        self.signalLayout.addWidget(self._result)
+        self._toolbar.setVisible(False)  # Disable toolbar by default
+        # Update to curren class
+        self.data = self._result.data
+        self.fileLine.setText(file.replace('\\', '/'))
+        # Set valid position names
+        pos_key = sum([[k + ' - ' + p for p in self._result.pos[k]] for k in self._result.pos], [])
+        [self.actanoComboBox.addItem(k) for k in pos_key]
+
+        # Set up channel selection window
+        wfm_key = [k for k in self._result.wfm]
+        wfm_raw = ['Raw' in k for k in wfm_key]
+        self.__wfm_sel_win = WfmSel(wfm_key, wfm_raw, self)
+        self.__wfm_sel_win.sel_sig.connect(self.__sel_wfm)
+        # Set active waveform to be raw
+        self.__act_wfm = 'Raw'
+        self._result.set_act_wfm(self.__act_wfm)
+
+        # Set time controls
+        self.__upd_time = True  # Plot time range update flag
+        self.__t_init = self._result.t[0].item()
+        self.__t_stop = self.__t_init + 0.1  # Initial view of 100 milliseconds
+        self.__t_all = self._result.t[-1].item() - self._result.t[0].item()  # Maximum time range
+        self.xrangeSpinBox.setMaximum(min(self.__t_all, 10) * 1000)  # Max 10 seconds
+        self.__update_scroll_bar()
+        # Set amplitude controls
+        self.yminSpinBox.setMinimum(self._result.ax[0].get_ybound()[0])
+        self.yminSpinBox.setValue(self._result.ax[0].get_ybound()[0])
+        self.ymaxSpinBox.setMaximum(self._result.ax[0].get_ybound()[1])
+        self.ymaxSpinBox.setValue(self._result.ax[0].get_ybound()[1])
+
+        # Set control connection
+        self.toolbarBox.clicked.connect(self.__ctrl_mode_switch)
+        self.signalScrollBar.valueChanged.connect(self.__signal_scroll)
+        self.xrangeSpinBox.valueChanged.connect(self.__update_plot_rng)
+        self.yminSpinBox.valueChanged.connect(self.__update_plot_amp)
+        self.ymaxSpinBox.valueChanged.connect(self.__update_plot_amp)
+        self.actanoComboBox.currentIndexChanged.connect(self.__set_act_pos)
+        self.wfmselButton.clicked.connect(self.__wfm_sel_win.show)
+
+    def timerEvent(self, event):
+        """ Timer event for canvas updating. """
+        self.killTimer(self.__timer_val)
+        self.__timer_val = -1
+        self.__draw_canvas()
+
+    def closeEvent(self, event):
+        """ Window closed cleaning and signaling. """
+        plt.close(self._result.fig)
+
+    def __draw_canvas(self):
+        """ Canvas updating function. """
+        if self.__upd_time:
+            self._result.set_time(self.__t_init, self.__t_stop)
+        else:
+            self._result.set_amp(self.yminSpinBox.value(), self.ymaxSpinBox.value())
+        self._result.fig.canvas.draw()
+        self._result.fig.canvas.flush_events()
+
+    def __ctrl_mode_switch(self):
+        """ Switch between standard and advanced control mode. """
+        if self.toolbarBox.isChecked():
+            # Disable standard controls
+            self.xrangeSpinBox.setEnabled(False)
+            self.yminSpinBox.setEnabled(False)
+            self.ymaxSpinBox.setEnabled(False)
+            # Enable toolbar control
+            self._toolbar.setVisible(True)
+        else:
+            # Reset canvas and view
+            self._toolbar.home()
+            self._toolbar.update()
+            # Uncheck navigation button
+            if self._toolbar.mode == _Mode.PAN:
+                self._toolbar.pan()
+            elif self._toolbar.mode == _Mode.ZOOM:
+                self._toolbar.zoom()
+            # Disable toolbar control
+            self._toolbar.setVisible(False)
+            # Enable standard controls
+            self.xrangeSpinBox.setEnabled(True)
+            self.yminSpinBox.setEnabled(True)
+            self.ymaxSpinBox.setEnabled(True)
+
+    def __update_scroll_bar(self):
+        """ Scroll bar limits and step size updater. """
+        if abs(self.__t_all - self.xrangeSpinBox.value() / 1000) <= 0.005:
+            self.signalScrollBar.setMaximum(0)
+            self.signalScrollBar.setSingleStep(0)
+            self.signalScrollBar.setPageStep(0)
+            self.signalScrollBar.setEnabled(False)
+        else:
+            self.signalScrollBar.setMaximum(int((self.__t_all - self.xrangeSpinBox.value() / 1000) * 1000 + 50))
+            self.signalScrollBar.setSingleStep(int(self.xrangeSpinBox.value() * 0.5))
+            self.signalScrollBar.setPageStep(int(self.xrangeSpinBox.value()))
+            self.signalScrollBar.setEnabled(True)
+
+    def __signal_scroll(self):
+        """ Scroll bar motion trigger function. """
+        self.__upd_time = True
+        # Update time range
+        self.__t_init = self.signalScrollBar.value() / 1000
+        self.__t_stop = self.__t_init + self.xrangeSpinBox.value() / 1000
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(5)
+
+    def __update_plot_rng(self):
+        """ Plot time range update trigger function. """
+        self.__upd_time = True
+        # Update time range
+        self.__t_init = self._result.ax[0].get_xbound()[0]
+        self.__t_stop = self._result.ax[0].get_xbound()[0] + self.xrangeSpinBox.value() / 1000
+        # Update scroll bar
+        self.__update_scroll_bar()
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(500)
+
+    def __update_plot_amp(self):
+        """ Plot signal amplitude update trigger function. """
+        self.__upd_time = False
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(50)
+
+    def __set_act_pos(self):
+        """ Set active spike position to verify. """
+        key = self.actanoComboBox.currentText()
+        if key:
+            if key == 'NONE':
+                pos = None
+            else:
+                self.__act_wfm, pos = key.split(' - ')
+            self._result.set_act_pos(self.__act_wfm, pos)
+
+    def __sel_wfm(self, sel):
+        """ Select waveform(s) to be visible.
+
+        Args:
+            sel (list[str]): Waveform name keys
+        """
+        pos_key = self._result.sel_wfm(sel)
+        # Check if active waveform is selected
+        if self.__act_wfm not in sel:
+            if 'Raw' in sel:
+                self.__act_wfm = 'Raw'
+            else:
+                self.__act_wfm = None
+        self._result.set_act_wfm(self.__act_wfm)
+        # Check if current active position should be removed
+        try:
+            idx = pos_key.index(self.actanoComboBox.currentText()) + 1
+        except ValueError:
+            idx = 0
+        self.actanoComboBox.setCurrentIndex(0)
+        # Update active position combobox
+        self.actanoComboBox.clear()
+        for p in ['NONE'] + pos_key:
+            self.actanoComboBox.addItem(p)
+        # Set back index if previous selection is still valid
+        if idx != 0:
+            self.actanoComboBox.setCurrentIndex(idx)

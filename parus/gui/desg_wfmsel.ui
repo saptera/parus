@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WfmSelWindow</class>
+ <widget class="QMainWindow" name="WfmSelWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>300</width>
+    <height>112</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>300</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>400</width>
+    <height>16777215</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Select Waveforms</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="centralLayout">
+    <property name="spacing">
+     <number>10</number>
+    </property>
+    <property name="leftMargin">
+     <number>15</number>
+    </property>
+    <property name="topMargin">
+     <number>15</number>
+    </property>
+    <property name="rightMargin">
+     <number>15</number>
+    </property>
+    <property name="bottomMargin">
+     <number>15</number>
+    </property>
+    <item>
+     <widget class="QGroupBox" name="chRawBox">
+      <property name="toolTip">
+       <string>Event channel list</string>
+      </property>
+      <property name="title">
+       <string>Raw Signal Channels</string>
+      </property>
+      <layout class="QVBoxLayout" name="chRawLayout"/>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="chSpkBox">
+      <property name="toolTip">
+       <string>Signal channel list</string>
+      </property>
+      <property name="title">
+       <string>Spike Signal Channels</string>
+      </property>
+      <layout class="QVBoxLayout" name="chSpkLayout"/>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
