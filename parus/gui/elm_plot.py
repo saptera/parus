@@ -216,7 +216,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         self._clst_pos = [cm(_) for _ in np.linspace(0, cm.N, cnt, endpoint=True, dtype=int)]
 
         # Plot raw data
-        self.wfm['Raw'] = self.ax[0].plot(self.t, self.data['inp'], color='k', alpha=0.8, label="Raw")[0]
+        self.wfm['RAW'] = self.ax[0].plot(self.t, self.data['inp'], color='k', alpha=0.8, label="RAW")[0]
         # Plot results
         cnt = 0  # Position data counter
         for i, (k, c) in enumerate(zip(self.data['spk'], self._clst_spk)):
@@ -301,6 +301,7 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.ax[1].set_yticklabels([])
         # Force figure update
         self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
         # Return possible spike position keys
         pos_key = sum([[k + ' - ' + p for p in self.pos[k]] for k in self.pos if k in sel], [])
         return pos_key
@@ -317,6 +318,9 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Set tick locations
         self.ax[1].set_xticks(np.linspace(start, stop, 5, endpoint=True))
         self.ax[1].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
+        # Force figure update
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def set_amp(self, low, high, reset=False):
         """ Set y-axis (signal amplitude) range.
@@ -337,6 +341,9 @@ class ResPltLoader(FigureCanvasQTAgg):
         minor = (step[major[1]] - step[major[0]]) // 100
         self.ax[0].set_yticks(np.concatenate((step[major], [0])))
         self.ax[0].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(minor))
+        # Force figure update
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def set_act_wfm(self, wfm_key):
         """ Set active waveform to inspect.
@@ -348,11 +355,11 @@ class ResPltLoader(FigureCanvasQTAgg):
         if self.__act_leg is not None:
             self.__act_leg.remove()
         # Set new active waveform
-        if wfm_key is None:
+        if (wfm_key is None) or (not self.wfm[wfm_key].get_visible()):
             self._wpm.set_wfm(None)
             self.__act_leg = None
         else:
-            if wfm_key == 'Raw':
+            if wfm_key == 'RAW':
                 self._wpm.set_wfm(self.data['inp'])
             else:
                 self._wpm.set_wfm(self.data['spk'][wfm_key])
@@ -362,6 +369,7 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.ax[0].add_artist(self.__act_leg)
         # Force figure update
         self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def set_act_pos(self, wfm_key, pos_key):
         """ Set active spike position to verify.
@@ -370,13 +378,14 @@ class ResPltLoader(FigureCanvasQTAgg):
             wfm_key (str | None): Waveform name key
             pos_key (str | None): Spike position name key
         """
-        if (wfm_key is None) or (wfm_key == 'Raw') or (pos_key is None):
+        if (wfm_key is None) or (wfm_key == 'RAW') or (pos_key is None):
             self._wpm.set_pos(None, -1)
-            wfm_key = None if wfm_key is None else 'Raw'
+            if wfm_key == 'RAW':
+                self.set_act_wfm(wfm_key)
         else:
             if isinstance(self.data['pos'][wfm_key], dict):
                 self._wpm.set_pos(self.data['pos'][wfm_key][pos_key], self.pos[wfm_key][pos_key]['idx'])
             else:
                 self._wpm.set_pos(self.data['pos'][wfm_key], self.pos[wfm_key][pos_key]['idx'])
-        # Force the active waveform to be associated with spike position records
-        self.set_act_wfm(wfm_key)
+            # Force the active waveform to be associated with spike position records
+            self.set_act_wfm(wfm_key)

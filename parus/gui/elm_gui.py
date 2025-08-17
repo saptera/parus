@@ -644,11 +644,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
 
         # Set up channel selection window
         wfm_key = [k for k in self._result.wfm]
-        wfm_raw = ['Raw' in k for k in wfm_key]
+        wfm_raw = ['RAW' in k for k in wfm_key]
         self.__wfm_sel_win = WfmSel(wfm_key, wfm_raw, self)
         self.__wfm_sel_win.sel_sig.connect(self.__sel_wfm)
         # Set active waveform to be raw
-        self.__act_wfm = 'Raw'
+        self.__act_wfm = 'RAW'
         self._result.set_act_wfm(self.__act_wfm)
 
         # Set time controls
@@ -672,6 +672,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.ymaxSpinBox.valueChanged.connect(self.__update_plot_amp)
         self.actanoComboBox.currentIndexChanged.connect(self.__set_act_pos)
         self.wfmselButton.clicked.connect(self.__wfm_sel_win.show)
+        # Control key press override
+        self.xrangeSpinBox.keyPressEvent = self.__keybypass_xrange
+        self.yminSpinBox.keyPressEvent = self.__keybypass_ymin
+        self.ymaxSpinBox.keyPressEvent = self.__keybypass_ymax
+        self.actanoComboBox.keyPressEvent = self.__keybypass_actano
 
     def timerEvent(self, event):
         """ Timer event for canvas updating. """
@@ -683,14 +688,69 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         """ Window closed cleaning and signaling. """
         plt.close(self._result.fig)
 
+    def keyPressEvent(self, event) -> bool:
+        """ Main window keyboard inputs. """
+        if (event.key() == QtCore.Qt.Key.Key_Left) or (event.key() == QtCore.Qt.Key.Key_A):
+            self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 5)
+        elif (event.key() == QtCore.Qt.Key.Key_Right) or (event.key() == QtCore.Qt.Key.Key_D):
+            self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 5)
+        elif event.key() == QtCore.Qt.Key.Key_Escape:
+            self.actanoComboBox.setCurrentIndex(0)
+        elif event.key() == QtCore.Qt.Key.Key_F1:
+            self.__act_pos_key_control(1)
+        elif event.key() == QtCore.Qt.Key.Key_F2:
+            self.__act_pos_key_control(2)
+        elif event.key() == QtCore.Qt.Key.Key_F3:
+            self.__act_pos_key_control(3)
+        elif event.key() == QtCore.Qt.Key.Key_F4:
+            self.__act_pos_key_control(4)
+        elif event.key() == QtCore.Qt.Key.Key_F5:
+            self.__act_pos_key_control(5)
+        elif event.key() == QtCore.Qt.Key.Key_F6:
+            self.__act_pos_key_control(6)
+        elif event.key() == QtCore.Qt.Key.Key_F7:
+            self.__act_pos_key_control(7)
+        elif event.key() == QtCore.Qt.Key.Key_F8:
+            self.__act_pos_key_control(8)
+        elif event.key() == QtCore.Qt.Key.Key_F9:
+            self.__act_pos_key_control(9)
+        elif event.key() == QtCore.Qt.Key.Key_F10:
+            self.__act_pos_key_control(10)
+        elif event.key() == QtCore.Qt.Key.Key_F11:
+            self.__act_pos_key_control(11)
+        elif event.key() == QtCore.Qt.Key.Key_F12:
+            self.__act_pos_key_control(12)
+        else:
+            QtWidgets.QMainWindow.keyPressEvent(self, event)
+            return True
+        return False
+
+    def __keybypass_xrange(self, event):
+        """ Override function for [xrangeSpinBox] keyPressEvent. """
+        if self.keyPressEvent(event):
+            QtWidgets.QDoubleSpinBox.keyPressEvent(self.xrangeSpinBox, event)
+
+    def __keybypass_ymin(self, event):
+        """ Override function for [yminSpinBox] keyPressEvent. """
+        if self.keyPressEvent(event):
+            QtWidgets.QDoubleSpinBox.keyPressEvent(self.yminSpinBox, event)
+
+    def __keybypass_ymax(self, event):
+        """ Override function for [ymaxSpinBox] keyPressEvent. """
+        if self.keyPressEvent(event):
+            QtWidgets.QDoubleSpinBox.keyPressEvent(self.ymaxSpinBox, event)
+
+    def __keybypass_actano(self, event):
+        """ Override function for [actanoComboBox] keyPressEvent. """
+        if self.keyPressEvent(event):
+            QtWidgets.QComboBox.keyPressEvent(self.actanoComboBox, event)
+
     def __draw_canvas(self):
         """ Canvas updating function. """
         if self.__upd_time:
             self._result.set_time(self.__t_init, self.__t_stop)
         else:
             self._result.set_amp(self.yminSpinBox.value(), self.ymaxSpinBox.value())
-        self._result.fig.canvas.draw()
-        self._result.fig.canvas.flush_events()
 
     def __ctrl_mode_switch(self):
         """ Switch between standard and advanced control mode. """
@@ -767,10 +827,21 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         key = self.actanoComboBox.currentText()
         if key:
             if key == 'NONE':
+                self.__act_wfm = 'RAW'
                 pos = None
             else:
                 self.__act_wfm, pos = key.split(' - ')
             self._result.set_act_pos(self.__act_wfm, pos)
+
+    def __act_pos_key_control(self, idx):
+        """ Set active spike position with function keys. """
+        tot = self.actanoComboBox.count()
+        if tot > idx:
+            self.actanoComboBox.setCurrentIndex(idx)
+        else:
+            QtWidgets.QMessageBox.warning(self, "Warning", "Selected index [%d] exceed total number of cells [%d]\n"
+                                                           "Set to maximum available cell!" % (idx, tot - 1),
+                                          QtWidgets.QMessageBox.StandardButton.Ok)
 
     def __sel_wfm(self, sel):
         """ Select waveform(s) to be visible.
@@ -781,10 +852,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         pos_key = self._result.sel_wfm(sel)
         # Check if active waveform is selected
         if self.__act_wfm not in sel:
-            if 'Raw' in sel:
-                self.__act_wfm = 'Raw'
-            else:
-                self.__act_wfm = None
+            self.__act_wfm = 'RAW'
         self._result.set_act_wfm(self.__act_wfm)
         # Check if current active position should be removed
         try:
