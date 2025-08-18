@@ -3,6 +3,7 @@
 import os
 import re
 from datetime import datetime
+import h5py as h5
 import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
@@ -628,6 +629,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         # Timer initialization
         self.__timer_val = -1
+        # File saving process
+        self._save_proc = self.SaveResThread()
+        self._save_proc.file = file
+        self._save_proc.finished.connect(self.__save_finalize)
+        self.__safe_close = True  # Check changes before close flag
 
         # Load and plot data
         self._result = ResPltLoader(file)
@@ -672,11 +678,55 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.ymaxSpinBox.valueChanged.connect(self.__update_plot_amp)
         self.actanoComboBox.currentIndexChanged.connect(self.__set_act_pos)
         self.wfmselButton.clicked.connect(self.__wfm_sel_win.show)
+        self.cxSaveButton.clicked.connect(self.save_correction)
+        self.cxDiscardButton.clicked.connect(self.__discard_exit)
         # Control key press override
         self.xrangeSpinBox.keyPressEvent = self.__keybypass_xrange
         self.yminSpinBox.keyPressEvent = self.__keybypass_ymin
         self.ymaxSpinBox.keyPressEvent = self.__keybypass_ymax
         self.actanoComboBox.keyPressEvent = self.__keybypass_actano
+
+    class SaveResThread(QtCore.QThread):
+        """ Data process independent thread for file saving. """
+        file = None
+        data = None
+        __dst = None
+
+        def run(self):
+            if (self.file is None) or (self.data is None):
+                return
+            # Set file name, avoid overwrite
+            stm, ext = os.path.splitext(self.file)
+            self.__dst = stm + '_cor' + ext
+            i = 0
+            while os.path.isfile(self.__dst):
+                self.__dst = stm + '_cor%03d' % i + ext
+                i += 1
+            # Make correction and save
+            fp = h5.File(self.__dst, 'w')
+            # Save sampling frequency
+            fp.create_dataset(name='frq', data=self.data['frq'])
+            # Save raw input data
+            fp.create_dataset(name='inp', data=self.data['inp'], compression="gzip", compression_opts=9)
+            # Save noise cancelled spikes
+            grp = fp.create_group('spk')
+            for k in self.data['spk']:
+                grp.create_dataset(name=k, data=self.data['spk'][k], compression="gzip", compression_opts=9)
+            # Save corrected positions
+            grp = fp.create_group('pos')
+            for k in self.data['pos']:
+                if isinstance(self.data['pos'][k], dict):
+                    ctp = grp.create_group(k)
+                    for p in self.data['pos'][k]:
+                        ctp.create_dataset(name=p, data=self.data['pos'][k][p], compression="gzip", compression_opts=9)
+                else:
+                    grp.create_dataset(name=k, data=self.data['pos'][k], compression="gzip", compression_opts=9)
+            # Close file
+            fp.close()
+
+        def get_last_dst(self):
+            """ Get last file saved location. """
+            return self.__dst
 
     def timerEvent(self, event):
         """ Timer event for canvas updating. """
@@ -686,7 +736,21 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
 
     def closeEvent(self, event):
         """ Window closed cleaning and signaling. """
-        plt.close(self._result.fig)
+        if self.__safe_close:
+            if self._result.check_correction():
+                reply = QtWidgets.QMessageBox.warning(
+                    self, "Corrected Results", "Manual corrections have been made\nDo you want to exit?",
+                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                    QtWidgets.QMessageBox.StandardButton.No
+                )
+                if reply == QtWidgets.QMessageBox.StandardButton.No:
+                    event.ignore()
+                elif reply == QtWidgets.QMessageBox.StandardButton.Yes:
+                    plt.close(self._result.fig)
+                    event.accept()
+        else:
+            plt.close(self._result.fig)
+            event.accept()
 
     def keyPressEvent(self, event) -> bool:
         """ Main window keyboard inputs. """
@@ -867,3 +931,31 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Set back index if previous selection is still valid
         if idx != 0:
             self.actanoComboBox.setCurrentIndex(idx)
+
+    def save_correction(self):
+        """ Save manual made corrections. """
+        if self._result.check_correction():
+            # Disable buttons
+            self.cxDiscardButton.setEnabled(False)
+            self.cxSaveButton.setEnabled(False)
+            # Link file saving process
+            self._save_proc.data = self._result.make_correction()
+            self._save_proc.start()
+            QtWidgets.QMessageBox.information(self, "Saving", "File being saved\nYou can still browse the signal")
+        else:
+            QtWidgets.QMessageBox.warning(self, "Saving", "No changes made!\nFile not saved")
+
+    def __save_finalize(self):
+        """ Save process finalize function. """
+        # Reset process
+        dst = self._save_proc.get_last_dst()
+        self._save_proc.data = None
+        QtWidgets.QMessageBox.information(self, "Saving", "Results saved to [%s]" % dst)
+        # Enable buttons
+        self.cxDiscardButton.setEnabled(True)
+        self.cxSaveButton.setEnabled(True)
+
+    def __discard_exit(self):
+        """ Discard all changes and exit. """
+        self.__safe_close = False
+        self.close()

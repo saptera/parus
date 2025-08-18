@@ -18,7 +18,7 @@ class Ui_ParusResWindow(object):
     def setupUi(self, ParusResWindow):
         if not ParusResWindow.objectName():
             ParusResWindow.setObjectName(u"ParusResWindow")
-        ParusResWindow.resize(900, 700)
+        ParusResWindow.resize(1018, 745)
         self.centralWidget = QWidget(ParusResWindow)
         self.centralWidget.setObjectName(u"centralWidget")
         self.centralLayout = QVBoxLayout(self.centralWidget)
@@ -30,7 +30,7 @@ class Ui_ParusResWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.signalFrame.sizePolicy().hasHeightForWidth())
         self.signalFrame.setSizePolicy(sizePolicy)
-        self.signalFrame.setMinimumSize(QSize(840, 480))
+        self.signalFrame.setMinimumSize(QSize(1000, 600))
         self.signalFrame.setFrameShape(QFrame.Shape.StyledPanel)
         self.signalFrame.setFrameShadow(QFrame.Shadow.Sunken)
         self.signalLayout = QVBoxLayout(self.signalFrame)
@@ -62,9 +62,9 @@ class Ui_ParusResWindow(object):
 
         self.pltctrlLayout.addLayout(self.fileLayout)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.pltCtrlSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.pltctrlLayout.addItem(self.horizontalSpacer)
+        self.pltctrlLayout.addItem(self.pltCtrlSpacer)
 
         self.xrangeLayout = QVBoxLayout()
         self.xrangeLayout.setSpacing(5)
@@ -231,6 +231,31 @@ class Ui_ParusResWindow(object):
 
         self.centralLayout.addLayout(self.navctrlLayout)
 
+        self.corExLayout = QHBoxLayout()
+        self.corExLayout.setObjectName(u"corExLayout")
+        self.cxDiscardButton = QPushButton(self.centralWidget)
+        self.cxDiscardButton.setObjectName(u"cxDiscardButton")
+        self.cxDiscardButton.setMinimumSize(QSize(120, 30))
+        self.cxDiscardButton.setMaximumSize(QSize(120, 30))
+        self.cxDiscardButton.setFont(font1)
+
+        self.corExLayout.addWidget(self.cxDiscardButton)
+
+        self.cxModeSpacerA = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.corExLayout.addItem(self.cxModeSpacerA)
+
+        self.cxSaveButton = QPushButton(self.centralWidget)
+        self.cxSaveButton.setObjectName(u"cxSaveButton")
+        self.cxSaveButton.setMinimumSize(QSize(120, 30))
+        self.cxSaveButton.setMaximumSize(QSize(120, 30))
+        self.cxSaveButton.setFont(font1)
+
+        self.corExLayout.addWidget(self.cxSaveButton)
+
+
+        self.centralLayout.addLayout(self.corExLayout)
+
         ParusResWindow.setCentralWidget(self.centralWidget)
         QWidget.setTabOrder(self.actanoComboBox, self.xrangeSpinBox)
         QWidget.setTabOrder(self.xrangeSpinBox, self.yminSpinBox)
@@ -272,5 +297,13 @@ class Ui_ParusResWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.wfmselButton.setText(QCoreApplication.translate("ParusResWindow", u"Select Waveforms", None))
         self.toolbarBox.setText(QCoreApplication.translate("ParusResWindow", u"Toolbar", None))
+#if QT_CONFIG(tooltip)
+        self.cxDiscardButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
+#endif // QT_CONFIG(tooltip)
+        self.cxDiscardButton.setText(QCoreApplication.translate("ParusResWindow", u"Discard && Exit", None))
+#if QT_CONFIG(tooltip)
+        self.cxSaveButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
+#endif // QT_CONFIG(tooltip)
+        self.cxSaveButton.setText(QCoreApplication.translate("ParusResWindow", u"Save", None))
     # retranslateUi
 

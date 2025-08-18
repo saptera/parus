@@ -4,9 +4,11 @@ from typing import Iterable
 import numpy as np
 import h5py as h5
 import matplotlib as mpl
+from matplotlib.backend_bases import MouseButton
 from matplotlib.backends import backend_agg
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib import artist
+from matplotlib import ticker
 from matplotlib.legend import Legend
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
@@ -52,7 +54,7 @@ class BlitManager:
         self.artists.append(art)
 
     def on_draw(self, event):
-        """ Callback to register with 'draw_event'. """
+        """ Callback to register with [draw_event]. """
         if event is not None:
             if event.canvas != self.cvs:
                 raise RuntimeError("Event canvas is not managed!")
@@ -79,13 +81,14 @@ class BlitManager:
 
 
 class WfmPosMarker(BlitManager):
-    def __init__(self, canvas, axes, t, wfm=None, pos=None):
+    def __init__(self, canvas, axes, t, keys, wfm=None, pos=None):
         """ Bit blit manager for assistive marking elements.
 
         Args:
             canvas (backend_agg.FigureCanvasAgg): The canvas to work with
             axes (plt.Axes): List of the axes to add cursor lines
             t (np.ndarray): {1D-float} Time vector of plot
+            keys (dict[str, list[str]]): Position keys groups to manage
             wfm (np.ndarray | None): {1D-float} Waveform data (default: None)
             pos (tuple[np.ndarray, int] | None): {1D-int(0|1), Index} Spike position data (default: None)
         """
@@ -93,10 +96,16 @@ class WfmPosMarker(BlitManager):
         self.t = t
         self.__t_ini = t[0].item()
         self.__t_fac = 0 if t[-1] == t[0] else (len(t) - 1) / (t[-1].item() - t[0].item())
+        self.idx = None  # Current plot index
         # Set data arrays
         self._wfm = wfm
         self._pos = None if pos is None else pos[0]
         self._py = 0 if pos is None else pos[1]
+        # Set position correction variables
+        self.cor_wfm = None  # Active waveform key for manual correction
+        self.cor_pos = None  # Active spike position key for manual correction
+        self.cor_dot = None  # Active spike position on select
+        self.__pos_on = False
         # Retrieve cursor lines for all axes
         self._csr_ln = []
         for ax in axes:
@@ -109,6 +118,23 @@ class WfmPosMarker(BlitManager):
         self.__pos_bkg = Rectangle(xy=(t[0].item(), -0.5), width=t[-1].item() - t[0].item(), height=1.0,
                                    ec='none', fc='slategray', alpha=0.5, zorder=-1)
         axes[1].add_patch(self.__pos_bkg)
+
+        # Spike position manual correction markings
+        self.__cor_idx = {}  # Correction recording
+        self.__cor_mkr = {}  # Correction marker
+        for k in keys:
+            self.__cor_idx[k] = {}
+            self.__cor_mkr[k] = {}
+            for p in keys[k]:
+                # Set plots
+                add_mrk, = axes[1].plot([None], [None], marker='P', ms=8, color='crimson', ls='none')
+                self._ano_mk.append(add_mrk)
+                rmv_mrk, = axes[1].plot([None], [None], marker='X', ms=9, color='crimson', ls='none')
+                self._ano_mk.append(rmv_mrk)
+                # Set control variables
+                self.__cor_idx[k][p] = {'+': set(), '-': set()}  # Use set to keep uniqueness
+                self.__cor_mkr[k][p] = {'+': add_mrk, '-': rmv_mrk}
+
         # Initialize parent class
         super().__init__(canvas, self._csr_ln + self._ano_mk)
         # Set marker visibility
@@ -117,17 +143,35 @@ class WfmPosMarker(BlitManager):
         self.__pos_bkg.set_visible(False)
         # Connect signaling when mouse moved
         self.sid = self.cvs.mpl_connect('motion_notify_event', self.__on_motion)
+        self.cid = self.cvs.mpl_connect('button_press_event', self.__on_click)
 
     def find_nearest(self, value):
         """ Find the index of nearest value in array.
 
         Args:
-            value (int or float): Value to be searched
+            value (int | float): Value to be searched
 
         Returns:
             int: Index of nearest value in array
         """
         return round((value - self.__t_ini) * self.__t_fac)
+
+    def find_extremum(self, index):
+        """ Find the index of nearest extremum in array, assuming the extremum have the same sign.
+
+        Args:
+            index (int): Initial index
+
+        Returns:
+            int | None: Index of nearest extremum
+        """
+        if self._wfm is None:
+            return None
+        else:
+            if self._wfm[index] > 0:
+                return np.argmax(self._wfm[index - 5:index + 6]).item() + index - 5
+            else:
+                return np.argmin(self._wfm[index - 5:index + 6]).item() + index - 5
 
     def set_wfm(self, wfm):
         """ Set waveform to attach interactive objects.
@@ -139,43 +183,143 @@ class WfmPosMarker(BlitManager):
         self.__wfm_mkr.set_visible(wfm is not None)
         self.update()
 
-    def set_pos(self, pos, y):
+    def set_pos(self, pos, y, wfm_key, pos_key):
         """ Set spike position to attach interactive objects.
 
         Args:
-            pos: {1D-int(0|1)} Spike position data (default: None)
+            pos (np.ndarray | None): {1D-int(0|1)} Spike position data (default: None)
             y (int): Spike position virtual Y data index
+            wfm_key (str | None): Waveform name
+            pos_key (str | None): Spike name
         """
         self._pos = pos
+        self.cor_wfm = wfm_key
+        self.cor_pos = pos_key
         # Set marking configurations
         if pos is None:
             self._py = -1
             self.__pos_mkr.set_visible(False)
             self.__pos_bkg.set_visible(False)
+            self.__pos_on = False
         else:
             self._py = y
             self.__pos_bkg.set_y(y - 0.5)
             self.__pos_bkg.set_visible(True)
+            self.__pos_on = True
+        self.update()
+
+    def chk_cor(self):
+        """ Check if any manual correction has been made.
+
+        Returns:
+            bool: Correction made flag
+        """
+        flag = False
+        for k in self.__cor_idx:
+            if flag:
+                break
+            for p in self.__cor_idx[k]:
+                if self.__cor_idx[k][p]['+']:
+                    flag = True
+                    break
+                if self.__cor_idx[k][p]['-']:
+                    flag = True
+                    break
+        return flag
+
+    def get_cor(self):
+        """ Get all manual correction data.
+
+        Returns:
+            {1D-int8(-1|0|1)} Manual correction data
+        """
+        cor = {}  # INIT VAR
+        for k in self.__cor_idx:
+            if len(self.__cor_idx[k]) == 1:
+                man = np.zeros_like(self.t, dtype=np.int8)
+                if self.__cor_idx[k][k]['+']:
+                    man[list(self.__cor_idx[k][k]['+'])] = 1
+                if self.__cor_idx[k][k]['-']:
+                    man[list(self.__cor_idx[k][k]['-'])] = -1
+                cor[k] = man.copy()
+            else:
+                cor[k] = {}
+                for p in self.__cor_idx[k]:
+                    man = np.zeros_like(self.t, dtype=np.int8)
+                    if self.__cor_idx[k][p]['+']:
+                        man[list(self.__cor_idx[k][p]['+'])] = 1
+                    if self.__cor_idx[k][p]['-']:
+                        man[list(self.__cor_idx[k][p]['-'])] = -1
+                    cor[k][p] = man.copy()
+        return cor
+
+    def __plt_cor_mrk(self):
+        """ Plot manual correction marker """
+        # Plot added positions
+        self.__cor_mkr[self.cor_wfm][self.cor_pos]['+'].set_data(
+            self.t[list(self.__cor_idx[self.cor_wfm][self.cor_pos]['+'])],
+            [self._py] * len(self.__cor_idx[self.cor_wfm][self.cor_pos]['+'])
+        )
+        # Plot removed positions
+        self.__cor_mkr[self.cor_wfm][self.cor_pos]['-'].set_data(
+            self.t[list(self.__cor_idx[self.cor_wfm][self.cor_pos]['-'])],
+            [self._py] * len(self.__cor_idx[self.cor_wfm][self.cor_pos]['-'])
+        )
+        # Update plot
         self.update()
 
     def __on_motion(self, event):
+        """ Callback to register with [motion_notify_event]. """
         if event.xdata is not None:
             # Set cursor lines
             for a in self._csr_ln:
                 a.set_xdata([event.xdata, event.xdata])
             # Set plot markers
-            idx = self.find_nearest(event.xdata)
+            self.idx = self.find_nearest(event.xdata)
             if self._wfm is not None:
-                self.__wfm_mkr.set_ydata([self._wfm[idx], self._wfm[idx]])
+                self.__wfm_mkr.set_ydata([self._wfm[self.idx], self._wfm[self.idx]])
             if self._pos is not None:
-                pr = np.nonzero(self._pos[idx - 5:idx + 6])[0]
-                if pr:
-                    ps = pr[0] + idx - 5
-                    self.__pos_mkr.set_data([self.t[ps]], [self._py])
+                # Check if inference position nearby
+                p_inf = np.nonzero(self._pos[self.idx - 5:self.idx + 6])[0]
+                if p_inf:
+                    self.cor_dot = p_inf[0] + self.idx - 5
+                    self.idx = self.cor_dot
+                    self.__pos_mkr.set_data([self.t[self.cor_dot]], [self._py])
                     self.__pos_mkr.set_visible(True)
                 else:
-                    self.__pos_mkr.set_visible(False)
+                    # Check if manual corrected position nearby
+                    for i in self.__cor_idx[self.cor_wfm][self.cor_pos]['+']:
+                        if self.idx - 6 < i < self.idx + 6:
+                            self.cor_dot = i
+                            self.idx = self.cor_dot
+                            self.__pos_mkr.set_data([self.t[self.cor_dot]], [self._py])
+                            self.__pos_mkr.set_visible(True)
+                            break
+                    # Do not mark when not found
+                    else:
+                        self.cor_dot = None
+                        self.__pos_mkr.set_visible(False)
             self.update()
+
+    def __on_click(self, event):
+        """ Callback to register with [button_press_event]. """
+        if event.button is MouseButton.LEFT:
+            if self.__pos_on:
+                if self.idx in self.__cor_idx[self.cor_wfm][self.cor_pos]['-']:
+                    self.__cor_idx[self.cor_wfm][self.cor_pos]['-'].remove(self.idx)
+                else:
+                    if self.cor_dot is None:
+                        exm_idx = self.find_extremum(self.idx)  # Find extremum around the index for easier usage
+                        self.__cor_idx[self.cor_wfm][self.cor_pos]['+'].add(exm_idx)
+                self.__plt_cor_mrk()
+        elif event.button is MouseButton.RIGHT:
+            if self.__pos_on:
+                if self.idx in self.__cor_idx[self.cor_wfm][self.cor_pos]['+']:
+                    self.__cor_idx[self.cor_wfm][self.cor_pos]['+'].remove(self.idx)
+                else:
+                    if self.cor_dot is not None:
+                        self.__cor_idx[self.cor_wfm][self.cor_pos]['-'].add(self.idx)
+                self.__plt_cor_mrk()
 
 
 class ResPltLoader(FigureCanvasQTAgg):
@@ -193,7 +337,6 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Initialize data attributes
         self.wfm = {}  # Waveforms in the data
         self.pos = {}  # Detected spike positions
-        self.cor = {}  # Manual corrected spike positions
         # Initialize figure
         self.fig, self.ax = plt.subplots(2, 1, sharex='all', sharey='none', height_ratios=(5, 1))
         self.fig.set_layout_engine(layout='tight', h_pad=-0.6)
@@ -225,18 +368,15 @@ class ResPltLoader(FigureCanvasQTAgg):
             # Plot position and initialize correction arrays
             self.pos[k] = {}
             if isinstance(self.data['pos'][k], dict):
-                self.cor[k] = {}
                 for j, p in enumerate(self.data['pos'][k]):
                     pos = np.nonzero(self.data['pos'][k][p])[0]
                     sct = self.ax[1].scatter(self.t[pos], [cnt] * len(pos), color=self._clst_pos[cnt])
                     self.pos[k][p] = {'plt': sct, 'idx': cnt}
-                    self.cor[k][p] = np.zeros_like(self.data['pos'][k][p], dtype='int8')
                     cnt += 1  # Counter
             else:
                 pos = np.nonzero(self.data['pos'][k])[0]
                 sct = self.ax[1].scatter(self.t[pos], [cnt] * len(pos), color=self._clst_pos[cnt])
                 self.pos[k][k] = {'plt': sct, 'idx': cnt}
-                self.cor[k] = np.zeros_like(self.data['pos'][k], dtype='int8')
                 cnt += 1  # Counter
 
         # Set X axis
@@ -265,7 +405,8 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Connect to Qt backend
         super(ResPltLoader, self).__init__(self.fig)
         # Connect to BlitManager
-        self._wpm = WfmPosMarker(self.fig.canvas, self.ax, self.t)
+        key_wpm = {k: list(self.pos[k].keys()) for k in self.pos}
+        self._wpm = WfmPosMarker(self.fig.canvas, self.ax, self.t, key_wpm)
         # Set initial view
         self.set_time(0, 0.1)  # 100ms initial view
         self.set_amp(self._y_min, self._y_max)
@@ -317,7 +458,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.ax[1].set_xbound(start, stop)
         # Set tick locations
         self.ax[1].set_xticks(np.linspace(start, stop, 5, endpoint=True))
-        self.ax[1].xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(5))
+        self.ax[1].xaxis.set_minor_locator(ticker.AutoMinorLocator(5))
         # Force figure update
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -338,9 +479,9 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Set tick locations
         step = np.arange(low, high, step=100)
         major = np.linspace(0, len(step) - 1, 5, endpoint=True, dtype=int)
-        minor = (step[major[1]] - step[major[0]]) // 100
+        minor = (step[major[1]].item() - step[major[0].item()]) // 100
         self.ax[0].set_yticks(np.concatenate((step[major], [0])))
-        self.ax[0].yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(minor))
+        self.ax[0].yaxis.set_minor_locator(ticker.AutoMinorLocator(minor))
         # Force figure update
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -379,13 +520,29 @@ class ResPltLoader(FigureCanvasQTAgg):
             pos_key (str | None): Spike position name key
         """
         if (wfm_key is None) or (wfm_key == 'RAW') or (pos_key is None):
-            self._wpm.set_pos(None, -1)
+            self._wpm.set_pos(None, -1, None, None)
             if wfm_key == 'RAW':
                 self.set_act_wfm(wfm_key)
         else:
-            if isinstance(self.data['pos'][wfm_key], dict):
-                self._wpm.set_pos(self.data['pos'][wfm_key][pos_key], self.pos[wfm_key][pos_key]['idx'])
+            pos_grp = self.data['pos'][wfm_key]
+            if isinstance(pos_grp, dict):
+                self._wpm.set_pos(pos_grp[pos_key], self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
             else:
-                self._wpm.set_pos(self.data['pos'][wfm_key], self.pos[wfm_key][pos_key]['idx'])
+                self._wpm.set_pos(pos_grp, self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
             # Force the active waveform to be associated with spike position records
             self.set_act_wfm(wfm_key)
+
+    def check_correction(self):
+        """ Check if manual correction exist. """
+        return self._wpm.chk_cor()
+
+    def make_correction(self):
+        """ Set all manual corrected position to current data. """
+        cor = self._wpm.get_cor()
+        for k in self.data['pos']:
+            if isinstance(self.data['pos'][k], dict):
+                for p in self.data['pos'][k]:
+                    self.data['pos'][k][p] += cor[k][p]
+            else:
+                self.data['pos'][k] += cor[k]
+        return self.data
