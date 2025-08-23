@@ -94,7 +94,7 @@ if __name__ == '__main__':
         pklz_dct = inference(model, tst_datagen, device, test=True)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
-        pklz_write(os.path.join(tst_dir, "test_pred.pklz"), pklz_dct)
+        pklz_write(os.path.join(tst_dir, "tst_final.pklz"), pklz_dct)
     print("    -> Done!")
 
     print("Parus model training finalized")

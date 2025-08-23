@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from parus.train.eval import training_validation
-from parus.train.experiment import write_train_log, write_train_history, save
+from parus.train.experiment import write_train_log, write_train_history, save_model
 
 LOSS_FUNCTION_OPTIONS = {
     "mse": nn.MSELoss(reduction='mean'),
@@ -16,8 +16,6 @@ def get_learning_rate(step, model_size, factor, warmup):
     if step == 0:
         step = 1
     rate = factor * (model_size ** (-0.5) * min(step ** (-0.5), step * warmup ** (-1.5)))
-    if step % 1000 == 0:
-        print(step, rate)
     return rate
 
 
@@ -35,10 +33,13 @@ def train(model, model_size, train_datagen, val_datagen, cur_exp_folder_path, tr
     )
 
     val_loss_min = np.Inf
-    log_file_path = os.path.join(cur_exp_folder_path, "training.log")
-    history_file_path = os.path.join(cur_exp_folder_path, "training_history.json")
+    log_file_path = os.path.join(cur_exp_folder_path, "train.log")
+    history_file_path = os.path.join(cur_exp_folder_path, "history.json")
     log_fp = open(log_file_path, "a+")
     hst_fp = open(history_file_path, "a+")
+    # Write initial log
+    log_fp.write("Parus model training started at: " + time.strftime("%Y-%m-%d %H:%M:%S") + '\n\n')
+    log_fp.flush()  # Update immediately
 
     for epoch_i in range(train_hparams["start_epoch"], train_hparams["total_epoch"] + 1):
         start_time = time.perf_counter()
@@ -61,8 +62,10 @@ def train(model, model_size, train_datagen, val_datagen, cur_exp_folder_path, tr
                     val_loss = training_validation(model, val_datagen, loss_fn, device)
 
                 # Save checkpoint on improvement or at the final epoch
-                if val_loss <= val_loss_min or epoch_i == train_hparams["total_epoch"]:
-                    save(cur_exp_folder_path, model, optimizer, epoch_i)
+                if val_loss <= val_loss_min:
+                    save_model(cur_exp_folder_path, model, optimizer, epoch_i, 'optimum')
+                if epoch_i == train_hparams["total_epoch"]:
+                    save_model(cur_exp_folder_path, model, optimizer, epoch_i, 'final')
 
                 # Log metrics to training.log and append JSON record to training_history.json
                 finish_time = time.perf_counter()
