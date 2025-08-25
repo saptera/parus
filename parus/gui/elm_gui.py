@@ -614,6 +614,16 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         # Send signal
         self.sel_sig.emit(self.__sel_lst)
 
+    def toggle_channel(self, idx):
+        """ Toggle selected channel. """
+        if idx < len(self.ch_btn):
+            stat = self.ch_btn[idx].isChecked()
+            self.ch_btn[idx].setChecked(not stat)
+            self.__select_channel()
+        else:
+            QtWidgets.QMessageBox.warning(self, "Warning", "Selected channel not exceeding total channels!",
+                                          QtWidgets.QMessageBox.StandardButton.Ok)
+
 
 class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
     def __init__(self, file, parent=None):
@@ -754,10 +764,47 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
 
     def keyPressEvent(self, event) -> bool:
         """ Main window keyboard inputs. """
+        # Plot navigation keys
         if (event.key() == QtCore.Qt.Key.Key_Left) or (event.key() == QtCore.Qt.Key.Key_A):
-            self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 5)
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 1)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 10)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 20)
+            else:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 5)
         elif (event.key() == QtCore.Qt.Key.Key_Right) or (event.key() == QtCore.Qt.Key.Key_D):
-            self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 5)
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 1)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 10)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 20)
+            else:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 5)
+        # Waveform toggle key combinations
+        elif (event.key() == QtCore.Qt.Key.Key_0) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(0)
+        elif (event.key() == QtCore.Qt.Key.Key_1) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(1)
+        elif (event.key() == QtCore.Qt.Key.Key_2) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(2)
+        elif (event.key() == QtCore.Qt.Key.Key_3) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(3)
+        elif (event.key() == QtCore.Qt.Key.Key_4) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(4)
+        elif (event.key() == QtCore.Qt.Key.Key_5) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(5)
+        elif (event.key() == QtCore.Qt.Key.Key_6) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(6)
+        elif (event.key() == QtCore.Qt.Key.Key_7) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(7)
+        elif (event.key() == QtCore.Qt.Key.Key_8) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(8)
+        elif (event.key() == QtCore.Qt.Key.Key_9) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+            self.__wfm_sel_win.toggle_channel(9)
+        # Spike annotation keys
         elif event.key() == QtCore.Qt.Key.Key_Escape:
             self.actanoComboBox.setCurrentIndex(0)
         elif event.key() == QtCore.Qt.Key.Key_F1:
