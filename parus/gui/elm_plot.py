@@ -253,6 +253,14 @@ class WfmPosMarker(BlitManager):
                     cor[k][p] = man.copy()
         return cor
 
+    def reset_cor(self):
+        """ Reset all manual corrections. """
+        for k in self.__cor_idx:
+            for p in self.__cor_idx[k]:
+                self.__cor_idx[k][p] = {'+': set(), '-': set()}  # Reset to original
+        self.__plt_cor_mrk()  # Update plot
+
+
     def __plt_cor_mrk(self):
         """ Plot manual correction marker """
         # Plot added positions
@@ -542,7 +550,20 @@ class ResPltLoader(FigureCanvasQTAgg):
         for k in self.data['pos']:
             if isinstance(self.data['pos'][k], dict):
                 for p in self.data['pos'][k]:
+                    # Set new position data
                     self.data['pos'][k][p] += cor[k][p]
+                    # Update plot
+                    pos = np.nonzero(self.data['pos'][k][p])[0]
+                    self.pos[k][p]['plt'].set_offsets(np.c_[self.t[pos], [self.pos[k][p]['idx']] * len(pos)])
             else:
+                # Set new position data
                 self.data['pos'][k] += cor[k]
+                # Update plot
+                pos = np.nonzero(self.data['pos'][k])[0]
+                self.pos[k][k]['plt'].set_offsets(np.c_[self.t[pos], [self.pos[k][k]['idx']] * len(pos)])
+        # Reset all corrections
+        self._wpm.reset_cor()
+        # Force figure update
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
         return self.data

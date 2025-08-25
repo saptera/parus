@@ -3,6 +3,7 @@
 import os
 import re
 from datetime import datetime
+import shutil
 import h5py as h5
 import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
@@ -712,16 +713,10 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             while os.path.isfile(self.__dst):
                 self.__dst = stm + '_cor%03d' % i + ext
                 i += 1
-            # Make correction and save
-            fp = h5.File(self.__dst, 'w')
-            # Save sampling frequency
-            fp.create_dataset(name='frq', data=self.data['frq'])
-            # Save raw input data
-            fp.create_dataset(name='inp', data=self.data['inp'], compression="gzip", compression_opts=9)
-            # Save noise cancelled spikes
-            grp = fp.create_group('spk')
-            for k in self.data['spk']:
-                grp.create_dataset(name=k, data=self.data['spk'][k], compression="gzip", compression_opts=9)
+            # Prepare output file
+            shutil.copy2(self.file, self.__dst)  # Make copy
+            fp = h5.File(self.__dst, 'r+')
+            del fp['pos']  # Delete original position data
             # Save corrected positions
             grp = fp.create_group('pos')
             for k in self.data['pos']:
@@ -988,7 +983,6 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             # Link file saving process
             self._save_proc.data = self._result.make_correction()
             self._save_proc.start()
-            QtWidgets.QMessageBox.information(self, "Saving", "File being saved\nYou can still browse the signal")
         else:
             QtWidgets.QMessageBox.warning(self, "Saving", "No changes made!\nFile not saved")
 
