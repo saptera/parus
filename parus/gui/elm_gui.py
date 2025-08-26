@@ -83,6 +83,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.bsl_amps = self.__set_bsl_amps()
         self.bsl_freq = self.__set_bsl_freq()
         self.num_eg = self.__set_num_eg()
+        self.set_typ = self.__set_set_typ()
         self.__set_stat_path()  # None return statistic file check function
 
         # IO path control
@@ -119,8 +120,9 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.bslAmpMax.valueChanged.connect(self.__set_bsl_amps)
         self.bslFrqMin.valueChanged.connect(self.__set_bsl_freq)
         self.bslFrqMax.valueChanged.connect(self.__set_bsl_freq)
-        # Extra example control
+        # Extra settings control
         self.exEg.valueChanged.connect(self.__set_num_eg)
+        self.setTypBox.currentIndexChanged.connect(self.__set_set_typ)
         # Generation statistics control
         self.statFileSelect.clicked.connect(self.__sel_stat_path)
         self.statFilePath.textChanged.connect(self.__set_stat_path)
@@ -165,6 +167,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.sigSelect.setEnabled(enable)
         self.noiPath.setEnabled(enable)
         self.noiSelect.setEnabled(enable)
+        self.setTypBox.setEnabled(enable)
         self.outPath.setEnabled(enable)
         self.outSelect.setEnabled(enable)
         # Generation basic controls
@@ -215,7 +218,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             # Finalize argument list
             args = (self.arc_dir + self.noi_dir + self.out_dir + self.num_sim + self.tot_len + self.freq +
                     self.min_gap + self.max_gap + grouping + self.no_rat + self.sig_fac + self.noi_fac +
-                    baseline + self.num_eg)
+                    baseline + self.num_eg + self.set_typ)
             self._sim_proc.set_arguments(args)
 
     def __switch_gen_sim(self):
@@ -481,6 +484,16 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Update process arguments
         self.set_gensim_args()
         return self.num_eg
+
+    def __set_set_typ(self):
+        """ Set generation dataset type string. """
+        if self.setTypBox.currentIndex() == 0:
+            self.set_typ = []
+        else:
+            self.set_typ = ['-tp', ['trn', 'vld', 'tst'][self.setTypBox.currentIndex() - 1]]
+        # Update process arguments
+        self.set_gensim_args()
+        return self.set_typ
 
     def __sel_stat_path(self):
         """ Select archived noise file (*.noi) folder button connection. """

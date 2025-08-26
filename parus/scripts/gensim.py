@@ -63,9 +63,12 @@ parser.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, d
                     help="Randomize baseline shift amplitude [low] [high] (default: %(default)s = disabled)")
 parser.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
                     help="Randomize baseline frequency (Hz) [low] [high], 'sin' only (default: %(default)s = disabled)")
-# Extra example generation (optional)
+# Extra example and set settings (optional)
 parser.add_argument('-eg', '--example', dest='num_eg', type=int, default=None, metavar="[int]",
                     help="Number of extra examples to be generated (default: %(default)s = disabled)")
+parser.add_argument('-tp', '--settyp', dest='set_typ', type=str, default=None, metavar="[str]",
+                    help="Generated dataset usage type (default: %(default)s) = not specified")
+
 # Parse inputs
 args = parser.parse_args()
 
@@ -325,7 +328,8 @@ def save_gen_h5(h5_fp, name, gen_typ, sig, lbl, pos):
 
 
 # Main process loop
-sim_fp = h5.File(os.path.join(args.out_dir, gen_time + '.sim'), 'w')
+gen_file = gen_time if args.set_typ is None else args.set_typ + '_' + gen_time
+sim_fp = h5.File(os.path.join(args.out_dir, gen_file + '.sim'), 'w')
 
 # Save generation parameters
 print("Saving generation parameters")
@@ -393,7 +397,7 @@ sim_fp.close()
 
 # Arrange and save generation statistics
 print("Saving generation report file")
-rep_file = os.path.join(args.out_dir, gen_time + '.cjh')
+rep_file = os.path.join(args.out_dir, gen_file + '.cjh')
 gen_rep['prop'] = {
     'arc_cnt': arc_stat, 'grp_cnt': grp_stat, 'sig_fac': sig_fac_stat, 'noi_fac': noi_fac_stat, 'bsl_cnt': noi_bls_stat
 }

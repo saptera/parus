@@ -432,6 +432,9 @@
               <bold>true</bold>
              </font>
             </property>
+            <property name="toolTip">
+             <string>Generated dataset type</string>
+            </property>
             <property name="title">
              <string>Generated Signal Output Directory</string>
             </property>
@@ -440,10 +443,51 @@
               <number>10</number>
              </property>
              <item>
+              <widget class="QComboBox" name="setTypBox">
+               <property name="minimumSize">
+                <size>
+                 <width>90</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>100</width>
+                 <height>22</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <bold>false</bold>
+                </font>
+               </property>
+               <item>
+                <property name="text">
+                 <string>General</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Training</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Validation</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Testing</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
               <widget class="QLineEdit" name="outPath">
                <property name="minimumSize">
                 <size>
-                 <width>1000</width>
+                 <width>900</width>
                  <height>22</height>
                 </size>
                </property>
@@ -459,7 +503,7 @@
                 </font>
                </property>
                <property name="placeholderText">
-                <string>Select folder for storing generated signals</string>
+                <string>Select folder for storing generated signals, define dataset type with the combobox left</string>
                </property>
               </widget>
              </item>
