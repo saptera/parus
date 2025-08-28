@@ -82,32 +82,33 @@ def tdt_tev_read(tev_file, tsq, name=None):
             name = [name]
     # Process import
     fp = open(tev_file, 'rb')
-    tev = {n: {} for n in name}  # INIT VAR
+    tev = {}  # INIT VAR
     for n in name:
         # Locate data indices
         idx = np.where(tsq['name'] == n)[0]
         info = {k: tsq[k][idx] for k in tsq}
-        # Get data basic info
-        chs = np.unique(info['channel'])
-        pos = [np.where(info['channel'] == c)[0] for c in chs]
-        dts = [__tev_dt['dtype'][info['format'][p][0]] for p in pos]
-        fsc = [info['frequency'][p][0].item() for p in pos]
-        # Get data timing info
-        tms = [info['timestamp'][p] for p in pos]
-        stc = [info['sortcode'][p] for p in pos]
-        # Get data positions in file
-        loc = [info['fp_loc'][p] for p in pos]
-        smp = (info['size'] - 10) * [__tev_dt['count'][i] for i in info['format']]
-        smp = [smp[p] for p in pos]
-        # Set data structure
-        data = {c: {'signal': np.zeros((len(smp[i]), max(smp[i])), dtype=dts[i]),
-                    'timestamp': tms[i], 'sortcode': stc[i], 'frequency': fsc[i]} for i, c in enumerate(chs)}
-        # Read data
-        for i, c in enumerate(chs):
-            for p in range(len(pos[i])):
-                fp.seek(loc[i][p], 0)
-                data[c]['signal'][p] = np.fromfile(fp, dtype=dts[i], count=smp[i][p])
-        tev[n] = copy.deepcopy(data)
+        if info['format'][0] < 4:  # Exclude epoch data
+            # Get data basic info
+            chs = np.unique(info['channel'])
+            pos = [np.where(info['channel'] == c)[0] for c in chs]
+            dts = [__tev_dt['dtype'][info['format'][p][0]] for p in pos]
+            fsc = [info['frequency'][p][0].item() for p in pos]
+            # Get data timing info
+            tms = [info['timestamp'][p] for p in pos]
+            stc = [info['sortcode'][p] for p in pos]
+            # Get data positions in file
+            loc = [info['fp_loc'][p] for p in pos]
+            smp = (info['size'] - 10) * [__tev_dt['count'][i] for i in info['format']]
+            smp = [smp[p] for p in pos]
+            # Set data structure
+            data = {c: {'signal': np.zeros((len(smp[i]), max(smp[i])), dtype=dts[i]),
+                        'timestamp': tms[i], 'sortcode': stc[i], 'frequency': fsc[i]} for i, c in enumerate(chs)}
+            # Read data
+            for i, c in enumerate(chs):
+                for p in range(len(pos[i])):
+                    fp.seek(loc[i][p], 0)
+                    data[c]['signal'][p] = np.fromfile(fp, dtype=dts[i], count=smp[i][p])
+            tev[n] = copy.deepcopy(data)
     fp.close()
     return tev
 
