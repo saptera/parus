@@ -72,7 +72,7 @@ if __name__ == '__main__':
     print("    -> Success!")
 
     # Process each file in the inference folder
-    filename_lst = os.listdir(args.src_dir)
+    filename_lst = [f for f in os.listdir(args.src_dir) if f.endswith('.sig')]
     tot_len = len(filename_lst)
     print("Inferencing data:")
     model.eval()
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             t_stop = time.time()
             # Add metadata and save output
             pklz_dct['grp'] = spk_grp
-            pklz_dct['frq'] = rec_frq
+            pklz_dct['frq'] = inf_dataset.frq
             pklz_write(os.path.join(out_dir, filename), pklz_dct)
             # CLI print
             dur = t_stop - t_init

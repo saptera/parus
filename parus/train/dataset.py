@@ -39,13 +39,25 @@ class TrainingDataset(Dataset):
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, dataset_file_path, seq_len):
-        self.sig_lst_numpy = pklz_read(dataset_file_path)
+    def __init__(self, file, seq_len):
+        """ Load raw recording data for model inference.
+
+        Args:
+            file (str): Path to raw recording file.
+            seq_len (int): Model sequence length.
+        """
+        # Load data
+        data = pklz_read(file)
+        self.sig_lst = data['sig']
+        self.frq = data['frq']
+        # Check sequence length
+        if len(self.sig_lst[0]) != seq_len:
+            raise ValueError("The length of signal must be equal to the model sequence length!")
         self.seq_len = seq_len
 
     def __len__(self):
-        return len(self.sig_lst_numpy)
+        return len(self.sig_lst)
 
     def __getitem__(self, index):
         # Not converting in __init__ to avoid memory issues
-        return torch.from_numpy(self.sig_lst_numpy[index]).type(torch.FloatTensor).view(1, self.seq_len)
+        return torch.from_numpy(self.sig_lst[index]).type(torch.FloatTensor).view(1, self.seq_len)
