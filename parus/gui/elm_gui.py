@@ -608,6 +608,10 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         # Fix window height
         self.window().setFixedHeight(self.layout().sizeHint().height())
 
+    def emit_sig(self):
+        """ Force emit selection signal. """
+        self.__select_channel()
+
     def __select_channel(self):
         """ Verify and send channel selection signal. """
         chk_wfm_lst = []  # INIT VAR
@@ -701,6 +705,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.yminSpinBox.valueChanged.connect(self.__update_plot_amp)
         self.ymaxSpinBox.valueChanged.connect(self.__update_plot_amp)
         self.actanoComboBox.currentIndexChanged.connect(self.__set_act_pos)
+        self.lnkAnoBox.clicked.connect(self.__toggle_lnk_ano)
         self.wfmselButton.clicked.connect(self.__wfm_sel_win.show)
         self.cxSaveButton.clicked.connect(self.save_correction)
         self.cxDiscardButton.clicked.connect(self.__discard_exit)
@@ -968,24 +973,30 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         Args:
             sel (list[str]): Waveform name keys
         """
-        pos_key = self._result.sel_wfm(sel)
+        lnk_pos = self.lnkAnoBox.isChecked()
+        pos_key = self._result.sel_wfm(sel, lnk_pos)
         # Check if active waveform is selected
         if self.__act_wfm not in sel:
             self.__act_wfm = 'RAW'
         self._result.set_act_wfm(self.__act_wfm)
-        # Check if current active position should be removed
-        try:
-            idx = pos_key.index(self.actanoComboBox.currentText()) + 1
-        except ValueError:
-            idx = 0
-        self.actanoComboBox.setCurrentIndex(0)
-        # Update active position combobox
-        self.actanoComboBox.clear()
-        for p in ['NONE'] + pos_key:
-            self.actanoComboBox.addItem(p)
-        # Set back index if previous selection is still valid
-        if idx != 0:
-            self.actanoComboBox.setCurrentIndex(idx)
+        if lnk_pos:
+            # Check if current active position should be removed
+            try:
+                idx = pos_key.index(self.actanoComboBox.currentText()) + 1
+            except ValueError:
+                idx = 0
+            self.actanoComboBox.setCurrentIndex(0)
+            # Update active position combobox
+            self.actanoComboBox.clear()
+            for p in ['NONE'] + pos_key:
+                self.actanoComboBox.addItem(p)
+            # Set back index if previous selection is still valid
+            if idx != 0:
+                self.actanoComboBox.setCurrentIndex(idx)
+
+    def __toggle_lnk_ano(self):
+        """ Force re-emit waveform selection signal with linked annotation check box. """
+        self.__wfm_sel_win.emit_sig()
 
     def save_correction(self):
         """ Save manual made corrections. """

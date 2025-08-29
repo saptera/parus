@@ -419,28 +419,38 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.set_time(0, 0.1)  # 100ms initial view
         self.set_amp(self._y_min, self._y_max)
 
-    def sel_wfm(self, sel):
+    def sel_wfm(self, sel, lnk_pos=True):
         """ Select waveform(s) to be visible.
 
         Args:
             sel (list[str]): Waveform name keys
+            lnk_pos (bool): If corresponding position plot will be disabled (default: True)
 
         Returns:
             list[str]: Possible spike position keys
         """
-        # Select artists
+        # Set waveform
         for k in self.wfm:
             self.wfm[k].set_visible(k in sel)
-        for k in self.pos:
-            [self.pos[k][p]['plt'].set_visible(k in sel) for p in self.pos[k]]
         # Update legends
         self.__leg.remove()
         sel_w = [k for k in self.wfm if k in sel]
         self.__leg = Legend(self.ax[0], [self.wfm[k] for k in sel_w], sel_w, loc='upper right', fontsize=16)
         self.ax[0].add_artist(self.__leg)
-        # Update position plots
-        idx = sum([[self.pos[k][p]['idx'] for p in self.pos[k]] for k in self.pos if k in sel], [])
-        ano = sum([list(self.pos[k].keys()) for k in self.pos if k in sel], [])
+        # Set positions
+        if lnk_pos:
+            for k in self.pos:
+                [self.pos[k][p]['plt'].set_visible(k in sel) for p in self.pos[k]]
+            # Update position locations
+            idx = sum([[self.pos[k][p]['idx'] for p in self.pos[k]] for k in self.pos if k in sel], [])
+            ano = sum([list(self.pos[k].keys()) for k in self.pos if k in sel], [])
+        else:
+            for k in self.pos:
+                [self.pos[k][p]['plt'].set_visible(True) for p in self.pos[k]]
+            # Update position locations
+            idx = sum([[self.pos[k][p]['idx'] for p in self.pos[k]] for k in self.pos], [])
+            ano = sum([list(self.pos[k].keys()) for k in self.pos], [])
+        # Update Y-axis labels
         if idx:
             self.ax[1].set_ylim(min(idx) - 1, max(idx) + 1)
             self.ax[1].set_yticks(idx)
@@ -451,7 +461,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Force figure update
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
-        # Return possible spike position keys
+        # Return spike position keys with visible waveform
         pos_key = sum([[k + ' - ' + p for p in self.pos[k]] for k in self.pos if k in sel], [])
         return pos_key
 
@@ -538,7 +548,10 @@ class ResPltLoader(FigureCanvasQTAgg):
             else:
                 self._wpm.set_pos(pos_grp, self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
             # Force the active waveform to be associated with spike position records
-            self.set_act_wfm(wfm_key)
+            if self.wfm[wfm_key].get_visible():
+                self.set_act_wfm(wfm_key)
+            else:
+                self.set_act_wfm('RAW')
 
     def check_correction(self):
         """ Check if manual correction exist. """

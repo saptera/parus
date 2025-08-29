@@ -312,6 +312,43 @@
        </layout>
       </item>
       <item>
+       <widget class="QCheckBox" name="lnkAnoBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>130</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>130</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Linked Annotation</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="wfmselButton">
         <property name="minimumSize">
          <size>
@@ -509,8 +546,11 @@ QScrollBar::sub-line:horizontal {
   <tabstop>xrangeSpinBox</tabstop>
   <tabstop>yminSpinBox</tabstop>
   <tabstop>ymaxSpinBox</tabstop>
+  <tabstop>lnkAnoBox</tabstop>
   <tabstop>wfmselButton</tabstop>
   <tabstop>toolbarBox</tabstop>
+  <tabstop>cxDiscardButton</tabstop>
+  <tabstop>cxSaveButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>

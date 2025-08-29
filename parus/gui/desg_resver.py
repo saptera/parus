@@ -162,13 +162,28 @@ class Ui_ParusResWindow(object):
 
         self.pltctrlLayout.addLayout(self.actanoLayout)
 
+        self.lnkAnoBox = QCheckBox(self.centralWidget)
+        self.lnkAnoBox.setObjectName(u"lnkAnoBox")
+        sizePolicy1.setHeightForWidth(self.lnkAnoBox.sizePolicy().hasHeightForWidth())
+        self.lnkAnoBox.setSizePolicy(sizePolicy1)
+        self.lnkAnoBox.setMinimumSize(QSize(130, 30))
+        self.lnkAnoBox.setMaximumSize(QSize(130, 30))
+        font = QFont()
+        font.setPointSize(10)
+        font.setBold(False)
+        self.lnkAnoBox.setFont(font)
+        self.lnkAnoBox.setCheckable(True)
+        self.lnkAnoBox.setChecked(True)
+
+        self.pltctrlLayout.addWidget(self.lnkAnoBox)
+
         self.wfmselButton = QPushButton(self.centralWidget)
         self.wfmselButton.setObjectName(u"wfmselButton")
         self.wfmselButton.setMinimumSize(QSize(120, 30))
         self.wfmselButton.setMaximumSize(QSize(120, 30))
-        font = QFont()
-        font.setPointSize(10)
-        self.wfmselButton.setFont(font)
+        font1 = QFont()
+        font1.setPointSize(10)
+        self.wfmselButton.setFont(font1)
 
         self.pltctrlLayout.addWidget(self.wfmselButton)
 
@@ -221,10 +236,10 @@ class Ui_ParusResWindow(object):
         self.toolbarBox.setSizePolicy(sizePolicy1)
         self.toolbarBox.setMinimumSize(QSize(75, 30))
         self.toolbarBox.setMaximumSize(QSize(75, 30))
-        font1 = QFont()
-        font1.setPointSize(10)
-        font1.setBold(True)
-        self.toolbarBox.setFont(font1)
+        font2 = QFont()
+        font2.setPointSize(10)
+        font2.setBold(True)
+        self.toolbarBox.setFont(font2)
 
         self.navctrlLayout.addWidget(self.toolbarBox)
 
@@ -237,7 +252,7 @@ class Ui_ParusResWindow(object):
         self.cxDiscardButton.setObjectName(u"cxDiscardButton")
         self.cxDiscardButton.setMinimumSize(QSize(120, 30))
         self.cxDiscardButton.setMaximumSize(QSize(120, 30))
-        self.cxDiscardButton.setFont(font1)
+        self.cxDiscardButton.setFont(font2)
 
         self.corExLayout.addWidget(self.cxDiscardButton)
 
@@ -249,7 +264,7 @@ class Ui_ParusResWindow(object):
         self.cxSaveButton.setObjectName(u"cxSaveButton")
         self.cxSaveButton.setMinimumSize(QSize(120, 30))
         self.cxSaveButton.setMaximumSize(QSize(120, 30))
-        self.cxSaveButton.setFont(font1)
+        self.cxSaveButton.setFont(font2)
 
         self.corExLayout.addWidget(self.cxSaveButton)
 
@@ -260,8 +275,11 @@ class Ui_ParusResWindow(object):
         QWidget.setTabOrder(self.actanoComboBox, self.xrangeSpinBox)
         QWidget.setTabOrder(self.xrangeSpinBox, self.yminSpinBox)
         QWidget.setTabOrder(self.yminSpinBox, self.ymaxSpinBox)
-        QWidget.setTabOrder(self.ymaxSpinBox, self.wfmselButton)
+        QWidget.setTabOrder(self.ymaxSpinBox, self.lnkAnoBox)
+        QWidget.setTabOrder(self.lnkAnoBox, self.wfmselButton)
         QWidget.setTabOrder(self.wfmselButton, self.toolbarBox)
+        QWidget.setTabOrder(self.toolbarBox, self.cxDiscardButton)
+        QWidget.setTabOrder(self.cxDiscardButton, self.cxSaveButton)
 
         self.retranslateUi(ParusResWindow)
 
@@ -292,6 +310,7 @@ class Ui_ParusResWindow(object):
         self.actanoLabel.setText(QCoreApplication.translate("ParusResWindow", u"Active Annotation", None))
         self.actanoComboBox.setItemText(0, QCoreApplication.translate("ParusResWindow", u"NONE", None))
 
+        self.lnkAnoBox.setText(QCoreApplication.translate("ParusResWindow", u"Linked Annotation", None))
 #if QT_CONFIG(tooltip)
         self.wfmselButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
 #endif // QT_CONFIG(tooltip)
