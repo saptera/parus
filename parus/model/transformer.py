@@ -124,7 +124,7 @@ class EncoderTransformer(nn.Module):
         # self.context_loader = ContextLoader(
         #     emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_loader = SparseContextLoader(
-            emb_dim=context_dim, ant_samp=context_dim // 2, n_samp=input_dim, sel_meth='geo', gap=5
+            emb_dim=context_dim, ant_samp=context_dim // 4, n_samp=input_dim, sel_meth='stp', gap=2
         )
         self.extra_linear1 = nn.Linear(context_dim, 2*context_dim)
         self.extra_linear2 = nn.Linear(2*context_dim, context_dim)
