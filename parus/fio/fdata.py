@@ -233,15 +233,16 @@ def arc_write(arc_file, arc_data):
     return True
 
 
-def arc_plot(arc_file, save=False):
+def arc_plot(arc_file, save=None, close_on_save=True):
     """ Plot archival neural signal data.
 
     Args:
         arc_file (str): File contained archival neuronal signal data (*.arc)
-        save (bool): Defines if the figure should be saved (default: False)
+        save (str | bool | None): Figure save path, True = use the same path as [arc_file] (default: None)
+        close_on_save (bool): Define if the figure should be closed after saving (default: True)
 
     Returns:
-        str: Name of created figure
+        tuple[plt.Figure | None, plt.Axes | None]: Plot figure and ax
     """
     # Import data
     data = arc_read(arc_file)['data']
@@ -252,22 +253,32 @@ def arc_plot(arc_file, save=False):
     # Get signal range
     sig_rng = data['rng'] if data['rng'] is not None else None
     # Setup plot
-    name = "Archival Signal of [%s]" % os.path.split(arc_file)[1].rstrip('.arc')
-    plt.figure(name)
-    plt.title(name)
-    plt.xlabel('Data Point')
-    plt.ylabel('Amplitude')
+    name = os.path.basename(arc_file).rstrip('.arc')
+    fig, ax = plt.subplots(1, 1, num="Archival Signal of [%s]" % name, dpi=150)
+    fig.set_layout_engine(layout='tight')
+    ax.set_title("Archival Signal\n[%s]" % name, fontsize=12, fontweight='bold')
+    ax.set_xlabel("Data Point", fontsize=12)
+    ax.set_ylabel("Amplitude", fontsize=12)
     # Plotting
-    plt.plot(t, data['sig'], zorder=1)
-    plt.scatter(peak_t, peak_sig, marker='x', c='r', alpha=0.75, zorder=3)
+    ax.plot(t, data['sig'], lw=1.5, zorder=1)
+    ax.scatter(peak_t, peak_sig, marker='x', c='r', s=64, alpha=0.75, zorder=4)
+    # Add reference lines
+    ax.axhline(0, c='darkgray', lw=0.5, alpha=0.75, zorder=2)
     if sig_rng is not None:
-        plt.axvline(sig_rng[0], c='gray', ls='-.', alpha=0.75, zorder=2)
-        plt.axvline(sig_rng[1], c='gray', ls='-.', alpha=0.75, zorder=2)
+        ax.axvline(sig_rng[0], c='gray', ls='-.', lw=1, alpha=0.75, zorder=3)
+        ax.axvline(sig_rng[1], c='gray', ls='-.', lw=1, alpha=0.75, zorder=3)
     # Saving function
     if save:
-        plt.savefig(os.path.splitext(arc_file)[0] + '.png')
-    # Return figure name
-    return name
+        if isinstance(save, str):
+            fig.savefig(os.path.splitext(save)[0] + '.png', format='png')
+        else:
+            fig.savefig(os.path.splitext(arc_file)[0] + '.png', format='png')
+        # Close figure
+        if close_on_save:
+            plt.close(fig)
+            return None, None
+    # Return figure
+    return fig, ax
 
 
 """ NOI data structure definition:
