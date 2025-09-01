@@ -1,4 +1,5 @@
 import h5py as h5
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from parus.fio import sim_args_read, sim_data_read, pklz_read
@@ -39,25 +40,37 @@ class TrainingDataset(Dataset):
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, file, seq_len):
+    def __init__(self, file, size, overlap=10):
         """ Load raw recording data for model inference.
 
         Args:
-            file (str): Path to raw recording file.
-            seq_len (int): Model sequence length.
+            file (str): Path to raw recording file
+            size (int): Model sequence length.
+            overlap (int): Sample overlapping length
         """
         # Load data
         data = pklz_read(file)
-        self.sig_lst = data['sig']
+        # Get features
         self.frq = data['frq']
-        # Check sequence length
-        if len(self.sig_lst[0]) != seq_len:
-            raise ValueError("The length of signal must be equal to the model sequence length!")
-        self.seq_len = seq_len
+        self.size = size
+        self.overlap = overlap
+        self.step = size - overlap
+        # Check padding length
+        total = len(data['sig'])
+        if total < size:
+            self.pad = size - total
+            self.length = 1
+        else:
+            self.pad = (total - overlap - 1) // (size - overlap) * (size - overlap) + size - total
+            self.length = (total - overlap - 1) // (size - overlap) + 1
+        # Set input array
+        self.sig = np.pad(data['sig'], (0, self.pad), mode='constant', constant_values=0)
 
     def __len__(self):
-        return len(self.sig_lst)
+        return self.length
 
     def __getitem__(self, index):
         # Not converting in __init__ to avoid memory issues
-        return torch.from_numpy(self.sig_lst[index]).type(torch.FloatTensor).view(1, self.seq_len)
+        init = index * self.step
+        stop = init + self.size
+        return torch.from_numpy(self.sig[init:stop]).type(torch.FloatTensor).view(1, self.size)

@@ -81,7 +81,7 @@ if __name__ == '__main__':
             file_path = os.path.join(args.src_dir, filename)
             # Model inference
             t_init = time.time()  # Start time
-            inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"])
+            inf_dataset = InferenceDataset(file_path, model_hparams["sequence_length"], overlap=10)
             inf_datagen = data.DataLoader(
                 dataset=inf_dataset,
                 batch_size=args.bat_sz,
@@ -92,6 +92,8 @@ if __name__ == '__main__':
             # Add metadata and save output
             pklz_dct['grp'] = spk_grp
             pklz_dct['frq'] = inf_dataset.frq
+            pklz_dct['overlap'] = inf_dataset.overlap
+            pklz_dct['padsize'] = inf_dataset.pad
             pklz_write(os.path.join(out_dir, filename), pklz_dct)
             # CLI print
             dur = t_stop - t_init
