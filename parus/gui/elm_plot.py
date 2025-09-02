@@ -496,10 +496,9 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.ax[0].set_ybound(low, high)
         # Set tick locations
         step = np.arange(low, high, step=100)
-        major = np.linspace(0, len(step) - 1, 5, endpoint=True, dtype=int)
-        minor = (step[major[1]].item() - step[major[0].item()]) // 100
+        major = np.linspace(0, len(step) - 1, 6, endpoint=True, dtype=int)
         self.ax[0].set_yticks(np.concatenate((step[major], [0])))
-        self.ax[0].yaxis.set_minor_locator(ticker.AutoMinorLocator(minor))
+        self.ax[0].yaxis.set_minor_locator(ticker.AutoMinorLocator(5))
         # Force figure update
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
