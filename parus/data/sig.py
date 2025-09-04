@@ -9,7 +9,7 @@ __all__ = [
     'spk_lowpass', 'spk_highpass', 'spk_bandpass', 'spk_notch',
     'noise_white', 'noise_freq_decr', 'noise_freq_incr', 'bsl_sft_lin', 'bsl_sft_sin',
     'neuron_sig_slc', 'sig_split', 'sig_merge',
-    'loc_ext_1d', 'sig_peak_det', 'peak_extremum',
+    'loc_ext_1d', 'sig_peak_zsc', 'sig_peak_fwd', 'peak_extremum',
     'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
 ]
 """
@@ -31,7 +31,8 @@ Function list:
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
   # Feature process functions:
     loc_ext_1d(arr, allow_plateau=True): Detect local extrema of given 1D list or array.
-    sig_peak_det(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
+    sig_peak_zsc(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
+    sig_peak_fwd(prd, th, neg=True): Signal peak detection using forward difference.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
     tpt_spk_frq(spk, t=None, g=None, org=0, end=None): Compute average firing frequency for timestamp spikes.
@@ -487,7 +488,7 @@ def loc_ext_1d(arr, allow_plateau=True):
     return {'max': idx[mx], 'min': idx[mi]}
 
 
-def sig_peak_det(signal, lag, threshold, influence=0.0):
+def sig_peak_zsc(signal, lag, threshold, influence=0.0):
     """ Robust signal peak detection using z-scores.
         Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
@@ -522,6 +523,23 @@ def sig_peak_det(signal, lag, threshold, influence=0.0):
         lin_sum = lin_sum + filt[i + lag] - filt[i]
         sqr_sum = sqr_sum + (filt[i + lag] + filt[i]) * (filt[i + lag] - filt[i])
     return peak
+
+
+def sig_peak_fwd(prd, th, neg=True):
+    """ Signal peak detection using forward difference.
+
+    Args:
+        prd (list[int | float] | np.ndarray): {1D-Scalar} Input prediction results
+        th (int | float): Peak detection threshold
+        neg (bool): Negative peak flag -- True = peak less than threshold, False = peak greater than threshold
+
+    Returns:
+        np.ndarray: {int} Detected peak indices -- 1 = peak, 0 = no peak
+    """
+    diff = np.sign(np.ediff1d(prd, to_end=prd[-1:]))
+    diff[1:] = diff[:-1] + diff[1:]
+    det = np.where((prd < th) & (diff == 0), 1, 0) if neg else np.where((prd > th) & (diff == 0), 1, 0)
+    return det.astype(np.int8)
 
 
 def peak_extremum(signal, peak, threshold, positive=True, sampling=None):

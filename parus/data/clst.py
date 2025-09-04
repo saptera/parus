@@ -3,19 +3,55 @@
 import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
-__all__ = ['cls_pk_val']
+__all__ = ['cls_pk_val', 'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg', 'post_cls_chk']
 """
 Function list:
   cls_pk_val(sig, pos, bw=None): Clustering spikes with peak height only.
+  cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5): Clustering spikes by cosine and amplitude similarity, block mode.
+  cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2): Clustering spikes by combining cosine and amplitude similarity, progressive mode.
+  cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
+  cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson correlation coefficient, progressive mode.
+  post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
+Protected functions:
+  _get_wfm_smp(sig, pos, asp, psp): Get waveform samples for clustering algorithms.
 """
+
+
+def _get_wfm_smp(sig, pos, asp, psp):
+    """ Get aligned waveform samples for clustering algorithms.
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: {2D-float, 1D-int} Waveform samples and associated location
+            - smp (np.ndarray): {2D-float (Num, Val)} Waveform snippets, 1D = sample number | 2D = sample value
+            - loc (np.ndarray): {1D-int} Aligned sample associated location in original signal
+    """
+    # Check inputs
+    asp = 0 if asp < 0 else asp
+    psp = 0 if psp < 0 else psp
+    # Set index tiles
+    num = asp + psp + 1
+    blk = np.arange(-asp, psp + 1, step=1, dtype=int)
+    loc = np.nonzero(pos)[0]
+    # Get required index
+    idx = np.repeat(loc, num) + np.tile(blk, len(loc))
+    idx = np.clip(idx, a_min=0, a_max=len(sig))
+    # Get data
+    smp = sig[idx].reshape(-1, num)
+    return smp, loc
 
 
 def cls_pk_val(sig, pos, bw=None):
     """ Clustering spikes with peak height only.
 
     Args:
-        sig (np.ndarray[int | float]): Input signal
-        pos (np.ndarray[int]): One-hot spike position
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
         bw (int | float | None): Bandwidth used in the flat kernel (default: None = estimate from data)
 
     Returns:
@@ -36,4 +72,269 @@ def cls_pk_val(sig, pos, bw=None):
     res = {}  # INIT VAR
     for l in np.unique(lbl):
         res[l.item()] = idx[lbl == l].tolist()
+    return res
+
+
+def cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5):
+    """ Clustering spikes by combining cosine and amplitude similarity, block mode.
+
+    The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
+    Where c = (A (dot) B) / (||A|| * ||B||), a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)
+    --------
+    This function runs with BLOCK mode, considering the all waveform snippets in the whole recording together.
+    This mode is more conservative and computes faster, but may perform worse in processing drifting samples.
+    For progressive processing of the waveform snippets pairwise, use [cls_cosamp_prg].
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
+
+    Returns:
+        tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
+            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+    """
+    # Get data
+    smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Initialize process variables
+    stp = np.arange(len(loc))
+    res = []
+    avg = []
+    # COS-AMP composite accuracy
+    nrm = np.linalg.norm(smp, ord=2, axis=1)  # 2nd order norm
+    while len(stp) > 0:
+        # Compute result components
+        dot = smp[stp] @ smp[stp[0]]
+        mag = nrm[stp] * nrm[stp[0]]
+        les = np.where(nrm[stp] < nrm[stp[0]], nrm[stp], nrm[stp[0]]) * 2
+        acc = nrm[stp] + nrm[stp[0]]
+        # Assign results
+        var = (dot / mag) * (les / acc) ** beta
+        grp = np.where(var >= k)[0]
+        res.append(loc[stp[grp]])
+        avg.append(np.mean(smp[stp[grp]], axis=0))
+        # Remove grouped indices
+        stp = np.delete(stp, grp)
+    return res, avg
+
+
+def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2):
+    """ Clustering spikes by combining cosine and amplitude similarity, progressive mode.
+
+    The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
+    Where c = (A (dot) B) / (||A|| * ||B||), a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)
+    --------
+    This function runs with PROGRESSIVE mode, considering the waveform snippets step-by-step.
+    This mode is more sensitive and not broadcasting, but may processing drifting samples better.
+    For block processing of the waveform snippets, use [cls_cosamp_blk].
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
+        delta (float | None): {[0, 1]} Weight for new samples
+
+    Returns:
+        tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
+            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+    """
+    # Get data
+    smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Initialize clustering history variables
+    hst = smp[np.newaxis, 0]
+    res = [np.array([loc[0]])]
+    avg = [smp[0]]
+    # Progressive COS-AMP composite accuracy
+    nrm = np.linalg.norm(hst, ord=2, axis=1)
+    for i, s in zip(loc[1:], smp[1:]):
+        nc = np.linalg.norm(s, ord=2)
+        # Compute results
+        dot = hst @ s
+        mag = nrm * nc
+        les = np.where(nrm < nc, nrm, nc) * 2
+        acc = nrm + nc
+        var =  (dot / mag) * (les / acc) ** beta
+        # Check and assign results
+        grp = np.argmax(var)
+        if var[grp] < k:
+            hst = np.vstack((hst, s))  # Add new history group
+            res.append(np.array([i]))  # Add new result group
+            avg.append(s)  # Add new average group
+        else:
+            res[grp] = np.append(res[grp], i)
+            # Sum for all signal
+            avg[grp] = avg[grp] + s
+            # Update signal means
+            if delta is None:
+                hst[grp] = avg[grp] / len(res[grp])  # No weighting
+            else:
+                hst[grp] = hst[grp] * (1 - delta) + s * delta  # Weighted average for signal drifting
+        # Update history norm
+        nrm = np.linalg.norm(hst, ord=2, axis=1)
+    return res, [avg[_] / len(res[_]) for _ in range(len(res))]
+
+
+def cls_crscor_blk(sig, pos, asp, psp, k=0.8):
+    """ Clustering spikes by Pearson correlation coefficient, block mode.
+
+    The similarity between 2 waveforms A and B is defined as:
+    S = ((A - mean(A)) (dot) (B - mean(B))) / sqrt(sum((A - mean(A)) ^ 2) * sum((B - mean(B)) ^ 2))
+    --------
+    This function runs with BLOCK mode, considering the all waveform snippets in the whole recording together.
+    This mode is more conservative and computes faster, but may perform worse in processing drifting samples.
+    For progressive processing of the waveform snippets pairwise, use [cls_crscor_prg].
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+
+    Returns:
+        tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
+            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+    """
+    # Get data
+    smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Initialize process variables
+    stp = np.arange(len(loc))
+    res = []
+    avg = []
+    # Pearson's R
+    sft = (smp.T - np.mean(smp, axis=1)).T  # Sample mean shift
+    sqs = np.sum(sft ** 2, axis=1)  # Sum of squares of mean shift
+    while len(stp) > 0:
+        # Get numerator and denominator for Pearson-R
+        nmr = sft[stp] @ sft[stp[0]]
+        dnm = np.sqrt(sqs[stp] * sqs[stp[0]])
+        # Assign results
+        var = nmr / dnm
+        grp = np.where(var >= k)[0]
+        res.append(loc[stp[grp]])
+        avg.append(np.mean(smp[stp[grp]], axis=0))
+        # Remove grouped indices
+        stp = np.delete(stp, grp)
+    return res, avg
+
+
+def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
+    """ Clustering spikes by Pearson correlation coefficient, progressive mode.
+
+    The similarity between 2 waveforms A and B is defined as:
+    S = ((A - mean(A)) (dot) (B - mean(B))) / sqrt(sum((A - mean(A)) ^ 2) * sum((B - mean(B)) ^ 2))
+    --------
+    This function runs with PROGRESSIVE mode, considering the waveform snippets step-by-step.
+    This mode is more sensitive and not broadcasting, but may processing drifting samples better.
+    For block processing of the waveform snippets, use [cls_crscor_blk].
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        delta (float | None): {[0, 1]} Weight for new samples
+
+    Returns:
+        tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
+            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+    """
+    # Get data
+    smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Initialize clustering history variables
+    hst = smp[np.newaxis, 0]
+    res = [np.array([loc[0]])]
+    avg = [smp[0]]
+    # Progressive Pearson's R
+    sft = (smp.T - np.mean(smp, axis=1)).T  # Sample mean shift
+    sqs = np.sum(sft ** 2, axis=1)  # Sum of squares of mean shift
+    hsf = (hst.T - np.mean(hst, axis=1)).T  # Averaged history mean shift
+    hss = np.sum(hsf ** 2, axis=1)  # History sum of squares of mean shift
+    for i, s, f, q in zip(loc[1:], smp[1:], sft[1:], sqs[1:]):
+        # Compute results
+        nmr = hsf @ f
+        dnm = np.sqrt(hss * q)
+        var = nmr / dnm
+        # Check and assign results
+        grp = np.argmax(var)
+        if var[grp] < k:
+            hst = np.vstack((hst, s))  # Add new history group
+            res.append(np.array([i]))  # Add new result group
+            avg.append(s)  # Add new average group
+        else:
+            res[grp] = np.append(res[grp], i)
+            # Sum for all signal
+            avg[grp] = avg[grp] + s
+            # Update signal means
+            if delta is None:
+                hst[grp] = avg[grp] / len(res[grp])  # No weighting
+            else:
+                hst[grp] = hst[grp] * (1 - delta) + s * delta  # Weighted average for signal drifting
+        # Update history variables
+        hsf = (hst.T - np.mean(hst, axis=1)).T
+        hss = np.sum(hsf ** 2, axis=1)
+    return res, [avg[_] / len(res[_]) for _ in range(len(res))]
+
+
+def post_cls_chk(avg, mode='cosamp', beta=0.5):
+    """ Post-check the means of clusters from clustering function.
+
+    Args:
+        avg (list[np.ndarray]): Mean of clustered waveforms, returned from clustering functions
+        mode (str): {'cossim', 'ampsim', 'cosamp', 'crscor'} Check mode
+        beta (int | float): {>0} Weight for amplitude component, oly valid with [cosamp] (default: 0.5 = soft effect)
+
+    Returns:
+        np.ndarray: {2D-float32} Similarity matrix
+    """
+    res = np.zeros((len(avg), len(avg)), dtype=np.float32)
+    avg = np.asarray(avg)  # Cast type
+    if mode == 'cossim':
+        nrm = np.linalg.norm(avg, ord=2, axis=1)  # 2nd order norm
+        for i in range(len(avg) - 1):
+            dot = avg[i + 1:] @ avg[i]
+            mag = nrm[i + 1:] * nrm[i]
+            # Assign results
+            res[i, i] = 1.0
+            res[i, i + 1:] = res[i + 1:, i] = dot / mag
+    elif mode == 'ampsim':
+        nrm = np.linalg.norm(avg, ord=2, axis=1)  # 2nd order norm
+        for i in range(len(avg) - 1):
+            les = np.where(nrm[i + 1:] < nrm[i], nrm[i + 1:], nrm[i]) * 2
+            acc = nrm[i + 1:] + nrm[i]
+            # Assign results
+            res[i, i] = 1.0
+            res[i, i + 1:] = res[i + 1:, i] = les / acc
+    elif mode == 'cosamp':
+        nrm = np.linalg.norm(avg, ord=2, axis=1)  # 2nd order norm
+        for i in range(len(avg) - 1):
+            dot = avg[i + 1:] @ avg[i]
+            mag = nrm[i + 1:] * nrm[i]
+            les = np.where(nrm[i + 1:] < nrm[i], nrm[i + 1:], nrm[i]) * 2
+            acc = nrm[i + 1:] + nrm[i]
+            # Assign results
+            res[i, i] = 1.0
+            res[i, i + 1:] = res[i + 1:, i] = (dot / mag) * (les / acc) ** beta
+    elif mode == 'crscor':
+        sft = (avg.T - np.mean(avg, axis=1)).T  # Sample mean shift
+        sqs = np.sum(sft ** 2, axis=1)  # Sum of squares of mean shift
+        for i in range(len(avg) - 1):
+            nmr = sft[i + 1:] @ sft[i]
+            dnm = np.sqrt(sqs[i + 1:] * sqs[i])
+            # Assign results
+            res[i, i] = 1.0
+            res[i, i + 1:] = res[i + 1:, i] = nmr / dnm
+    else:
+        raise ValueError("Invalid similarity check mode, allowed mode: ['cossim', 'ampsim', 'cosamp', 'crscor'].")
     return res

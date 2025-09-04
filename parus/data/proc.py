@@ -6,7 +6,8 @@ from scipy.stats import norm, laplace
 
 __all__ = [
     'arr_rand_samp', 'norm_lst_gen', 'laplace_lst_gen',
-    'spk_merge', 'neuron_rnd_samp', 'neuron_sig_samp', 'neuron_sig_mean', 'pred_mae', 'nsd_asgnv'
+    'spk_merge', 'neuron_rnd_samp', 'neuron_sig_samp', 'neuron_sig_mean', 'pred_mae', 'nsd_asgnv',
+    'chk_settle'
 ]
 """
 Function list:
@@ -19,6 +20,7 @@ Function list:
   neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
   pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
   nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
+  chk_settle(sig, win=10): Locate the first point where the signal settles to baseline. (SUPERVISION NEEDED)
 """
 
 
@@ -299,3 +301,42 @@ def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
     # Return values
     sig_data_out['lbl'] = lbl
     return sig_data_out
+
+
+def chk_settle(sig, win=10):
+    """ Locate the first point where the signal settles to baseline.
+
+    This function is largely depends on the window size, cannot be used without supervision.
+
+    Args:
+        sig (list[int | float] | np.ndarray): Input signal
+        win (int): Sliding window size
+
+    Returns:
+        int: Settle point
+    """
+    # Compute sliding window initial values
+    step = len(sig) - win
+    win_fac = 1 / win
+    lin_sum = np.sum(sig[:win], axis=None)
+    sqr_sum = np.sum(np.square(sig[:win]), axis=None)
+    # Compute global effects
+    abs_glob = abs(np.mean(sig))
+    std_glob = np.std(sig)
+
+    abs_rec = np.zeros(step, dtype=float)  # INIT VAR
+    std_rec = np.zeros(step, dtype=float)  # INIT VAR
+    for i in range(step):
+        # Update filter
+        avg = lin_sum * win_fac
+        std = np.sqrt(abs(sqr_sum * win_fac - avg * avg))  # abs() to avoid negative value caused by precision loss
+        # Update sliding window sums
+        lin_sum = lin_sum + sig[i + win] - sig[i]
+        sqr_sum = sqr_sum + (sig[i + win] + sig[i]) * (sig[i + win] - sig[i])
+        # Record value
+        abs_rec[i] = abs(avg) + i  # Plus distance penalty
+        std_rec[i] = std
+
+    # Compare and return
+    comp = abs_rec / abs_glob + std_rec / std_glob
+    return np.argmin(comp).item() + win // 2
