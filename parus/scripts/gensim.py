@@ -28,45 +28,49 @@ parser.add_argument('out_dir', type=str, metavar="outputFolder",
 parser.add_argument('num_sim', type=int, metavar="sampleNumber",
                     help="[%(type)s] Number of simulated data to be generated")
 # Simulated data generation properties (optional)
-parser.add_argument('-l', '--length', dest='tot_len', type=int, default=300, metavar="[int]",
+prp_pgp = parser.add_argument_group("Generation property arguments")
+prp_pgp.add_argument('-l', '--length', dest='tot_len', type=int, default=300, metavar="[int]",
                     help="Total length of final signal sample (default: %(default)s)")
-parser.add_argument('-f', '--freq', dest='freq', type=int or float, default=20000, metavar="[int or float]",
+prp_pgp.add_argument('-f', '--freq', dest='freq', type=int or float, default=20000, metavar="[int or float]",
                     help="Sampling frequency (Hz) of the system (default: %(default)s)")
-parser.add_argument('-ig', '--mingap', dest='min_gap', type=int, default=20, metavar="[int]",
+prp_pgp.add_argument('-ig', '--mingap', dest='min_gap', type=int, default=20, metavar="[int]",
                     help="Minimum index gap of signal events (default: %(default)s)")
-parser.add_argument('-xg', '--maxgap', dest='max_gap', type=int, default=80, metavar="[int]",
+prp_pgp.add_argument('-xg', '--maxgap', dest='max_gap', type=int, default=80, metavar="[int]",
                     help="Maximum index gap of signal events (default: %(default)s)")
-parser.add_argument('-gp', '--group', dest='sig_grp', type=str, choices=['typ', 'spk'], default=None,
+prp_pgp.add_argument('-gp', '--group', dest='sig_grp', type=str, choices=['typ', 'spk'], default=None,
                     metavar="{typ, spk}",
                     help="Grouping method: 'typ' = cell type, 'spk' = spike type (default: %(default)s = disabled)")
-parser.add_argument('-gr', '--grpratio', dest='grp_rat', nargs='+', type=int or float, default=None,
+prp_pgp.add_argument('-gr', '--grpratio', dest='grp_rat', nargs='+', type=int or float, default=None,
                     metavar="[int or float]",
                     help="Occurrence ratio of groups, the order is associated with the group names alphabetical order, "
                          "and suggested to be the same length of group number (default: %(default)s = equally occurs)")
-parser.add_argument('-no', '--noionly', dest='no_rat', type=float, default=0.0, metavar="[float]",
+prp_pgp.add_argument('-no', '--noionly', dest='no_rat', type=float, default=0.0, metavar="[float]",
                     help="Occurrence ratio of noise only data, 0.0<= value <1.0) (default: %(default)s)")
 # Simulated data randomized weighing properties (optional)
-parser.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, default=None, metavar="[float]",
+rnd_pgp = parser.add_argument_group("Data randomization arguments")
+rnd_pgp.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, default=None, metavar="[float]",
                     help="Signal amplitude multiplication factor [low] [high] (default: %(default)s = disabled)")
-parser.add_argument('-nf', '--noifac', dest='noi_fac', nargs=2, type=float, default=None, metavar="[float]",
+rnd_pgp.add_argument('-nf', '--noifac', dest='noi_fac', nargs=2, type=float, default=None, metavar="[float]",
                     help="Noise level multiplication factor [low] [high] (default: %(default)s = disabled)")
 # Simulated baseline shifting (optional)
-parser.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin', 'nos'],
+bsl_pgp = parser.add_argument_group("Baseline augmentation arguments")
+bsl_pgp.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin', 'nos'],
                     default=None, metavar=("{cst, lin, sin, nos}", ""),
                     help="Baseline random shifting method: 'cst' = constant, 'lin' = linear, 'sin' = sinusoid, "
                          "'nos' = no-shift (default: %(default)s = disabled)")
-parser.add_argument('-bp', '--basecomp', dest='bsl_comp', nargs='+', type=int or float, default=None,
+bsl_pgp.add_argument('-bp', '--basecomp', dest='bsl_comp', nargs='+', type=int or float, default=None,
                     metavar="[int or float]",
                     help="Baseline shift composition ratio of each method, suggested to be the same order and length "
                          "as methods inputs (default: %(default)s = equally occurs)")
-parser.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, default=None, metavar="[float]",
+bsl_pgp.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, default=None, metavar="[float]",
                     help="Randomize baseline shift amplitude [low] [high] (default: %(default)s = disabled)")
-parser.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
+bsl_pgp.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
                     help="Randomize baseline frequency (Hz) [low] [high], 'sin' only (default: %(default)s = disabled)")
 # Extra example and set settings (optional)
-parser.add_argument('-eg', '--example', dest='num_eg', type=int, default=None, metavar="[int]",
+exa_pgp = parser.add_argument_group("Extra settings arguments")
+exa_pgp.add_argument('-eg', '--example', dest='num_eg', type=int, default=None, metavar="[int]",
                     help="Number of extra examples to be generated (default: %(default)s = disabled)")
-parser.add_argument('-tp', '--settyp', dest='set_typ', type=str, default=None, metavar="[str]",
+exa_pgp.add_argument('-tp', '--settyp', dest='set_typ', type=str, default=None, metavar="[str]",
                     help="Generated dataset usage type (default: %(default)s) = not specified")
 
 # Parse inputs
