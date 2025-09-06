@@ -1,16 +1,33 @@
+# Data loader classes for model
+
 import h5py as h5
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from parus.fio import sim_args_read, sim_data_read, pklz_read
 import warnings
+
+__package__ = 'parus.model'
+from ..fio import sim_args_read, sim_data_read, pklz_read
+
+__all__ = ['TrainingDataset', 'InferenceDataset']
+"""
+Class list:
+  TrainingDataset(file, n_samples, seq_len): Load simulated dataset for model training.
+  InferenceDataset(self, file, seq_len, overlap=10): Load raw recording data for model inference.
+"""
 
 
 class TrainingDataset(Dataset):
-    def __init__(self, data_file_path, n_samples, seq_len):
+    def __init__(self, file, n_samples, seq_len):
+        """ Load simulated dataset for model training.
 
-        self.__data_file = h5.File(data_file_path, "r")
-        self.meta = sim_args_read(self.__data_file)
+        Args:
+            file (str): Path to simulated dataset file (HDF5 format)
+            n_samples (int): Number of samples to load
+            seq_len (int): Model sequence length
+        """
+        self.__fp = h5.File(file, 'r')
+        self.meta = sim_args_read(self.__fp)
         self.grp_num = len(self.meta['grp_str'])
         # Check [n_samples] input
         if self.meta['num_sim'] < n_samples:
@@ -29,40 +46,40 @@ class TrainingDataset(Dataset):
         return self.n_samples
 
     def __getitem__(self, index):
-        data = sim_data_read(self.__data_file, index)
+        data = sim_data_read(self.__fp, index)
         X = torch.from_numpy(data['sig']).view(1, self.seq_len).type(torch.FloatTensor)
         y_spk = torch.from_numpy(data['lbl']['signal']).view(self.grp_num, self.seq_len).type(torch.FloatTensor)
         y_pos = torch.from_numpy(data['pos']).view(self.grp_num, self.seq_len).type(torch.FloatTensor)
         return X, y_spk, y_pos
 
     def close(self):
-        self.__data_file.close()
+        self.__fp.close()
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, file, size, overlap=10):
+    def __init__(self, file, seq_len, overlap=10):
         """ Load raw recording data for model inference.
 
         Args:
-            file (str): Path to raw recording file
-            size (int): Model sequence length.
+            file (str): Path to raw recording file (PKLZ format)
+            seq_len (int): Model sequence length
             overlap (int): Sample overlapping length
         """
         # Load data
         data = pklz_read(file)
         # Get features
         self.frq = data['frq']
-        self.size = size
+        self.size = seq_len
         self.overlap = overlap
-        self.step = size - overlap
+        self.step = seq_len - overlap
         # Check padding length
         total = len(data['sig'])
-        if total < size:
-            self.pad = size - total
+        if total < seq_len:
+            self.pad = seq_len - total
             self.length = 1
         else:
-            self.pad = (total - overlap - 1) // (size - overlap) * (size - overlap) + size - total
-            self.length = (total - overlap - 1) // (size - overlap) + 1
+            self.pad = (total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - total
+            self.length = (total - overlap - 1) // (seq_len - overlap) + 1
         # Set input array
         self.sig = np.pad(data['sig'], (0, self.pad), mode='constant', constant_values=0)
 

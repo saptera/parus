@@ -6,11 +6,8 @@ from torch.utils import data
 import argparse
 
 __package__ = 'parus.scripts'
-from ..model.transformer import EncoderTransformer
-from ..train.dataset import TrainingDataset
-from ..train.experiment import load_hparams, load_model
-from ..train.eval import inference
 from ..fio import pklz_write
+from ..model import EncoderTransformer, TrainingDataset, load_hparams, load_model, inference
 from ..util import make_outdir
 
 

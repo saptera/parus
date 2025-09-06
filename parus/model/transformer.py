@@ -10,9 +10,8 @@ class PositionalEncoding(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(max_len, embedding_dim)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(
-            # -9.210340371976184 = -ln(10000.0)
-            0, embedding_dim, 2).float() * (-9.210340371976184 / embedding_dim))
+        div_term = torch.exp(torch.arange(0, embedding_dim, 2).float() *
+                             (-9.210340371976184 / embedding_dim))  # -9.210340371976184 = -ln(10000.0)
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(1, 2)
@@ -21,26 +20,6 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + self.pe
         return self.dropout(x)
-
-
-class ContextLoader(nn.Module):
-    def __init__(self, emb_dim, ant_samp):
-        self.emb_dim = emb_dim
-        ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
-        # Get padding width
-        self.pw = ((0, 0), (0, 0), (ant, emb_dim - 1 - ant))
-        super().__init__()
-
-    def forward(self, x):
-        bs, nch, _ = x.shape
-        x_np = x.detach().cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw,
-                       mode='constant', constant_values=0.0)
-        x_win = np.lib.stride_tricks.sliding_window_view(
-            x_pad, window_shape=(bs, nch, self.emb_dim))[0, 0, :, :, 0, :]
-        x_trs = np.transpose(x_win, axes=(1, 2, 0))
-        x_context = np.flip(x_trs, axis=1).copy()
-        return torch.from_numpy(x_context).cuda()
 
 
 class SparseContextLoader(nn.Module):

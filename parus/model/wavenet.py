@@ -1,5 +1,5 @@
 import torch
-import numpy as np
+
 
 class DilatedCausalConv1d(torch.nn.Module):
     """Dilated Causal Convolution for WaveNet"""
@@ -7,7 +7,7 @@ class DilatedCausalConv1d(torch.nn.Module):
         super(DilatedCausalConv1d, self).__init__()
 
         self.conv = torch.nn.Conv1d(channels, channels,
-                                    kernel_size=2, stride=1,  # Fixed for WaveNet
+                                    kernel_size=3, stride=1,  # Fixed for WaveNet
                                     dilation=dilation,
                                     padding=dilation,  # Fixed for WaveNet dilation
                                     bias=True)  # Fixed for WaveNet but not sure
@@ -20,7 +20,7 @@ class DilatedCausalConv1d(torch.nn.Module):
                 m.weight.data.fill_(0.5)
 
     def forward(self, x):
-        output = self.conv(x)[:,:,:-self.dilation]
+        output = self.conv(x)[:,:,:]
         return output
 
 
@@ -31,7 +31,7 @@ class CausalConv1d(torch.nn.Module):
 
         # padding=1 for same size(length) between input and output for causal convolution
         self.conv = torch.nn.Conv1d(in_channels, out_channels,
-                                    kernel_size=2, stride=1, padding=1,
+                                    kernel_size=3, stride=1, padding=1,
                                     bias=True)  # Fixed for WaveNet but not sure
 
     def init_weights_for_test(self):
@@ -43,7 +43,7 @@ class CausalConv1d(torch.nn.Module):
         output = self.conv(x)
 
         # remove last value for causal convolution
-        return output[:, :, :-1]
+        return output
 
 
 class ResidualBlock(torch.nn.Module):
@@ -208,9 +208,9 @@ class WaveNet(torch.nn.Module):
         :return: Tensor[batch, timestep, channels]
         """
         scale = torch.abs(x).max(2, keepdim=True)[0]
-        x /= scale
+        output = x / scale
 
-        output = self.causal(x)
+        output = self.causal(output)
         #print("causal output: ", output.shape)
         skip_connections = self.res_stack(output, 300)
         #print("skip shape: ", skip_connections.shape)

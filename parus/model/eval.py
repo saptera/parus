@@ -1,10 +1,33 @@
-import torch
+# Model evaluation and inference functions
+
 import numpy as np
-from parus.model.post_proc import peak_det_diff
-from parus.util import plt_mdl_perf
-import numpy
+import torch
+
+__package__ = 'parus.model'
+from ..util import plt_mdl_perf
+from .post import peak_fwd_torch
+
+__all__ = ['training_validation', 'inference', 'eval_bin_cls']
+"""
+Function list:
+  training_validation(model, datagen, criterion, device): Validation for model training.
+  inference(model, datagen, device, th=-1, test=False): Inference data.
+  eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Binary detection evaluation.
+"""
+
 
 def training_validation(model, datagen, criterion, device):
+    """ Validation for model training.
+
+    Args:
+        model (torch.nn.Module): PyTorch model
+        datagen (torch.utils.data.DataLoader): Dataset loader
+        criterion (torch.nn.Module): Loss function
+        device (torch.device): Device for model training
+
+    Returns:
+        float: Mean loss
+    """
     val_losses = []
     for i, (inputs, labels, _) in enumerate(datagen):
         inputs, labels = inputs.to(device), labels.to(device)
@@ -12,7 +35,7 @@ def training_validation(model, datagen, criterion, device):
         cur_val_loss = criterion(outputs, labels.float())
         val_losses.append(cur_val_loss.item())
 
-        # print visual prediction result of the first sample
+        # CLI plot for visual prediction result of the first sample
         if i == 0:
             inp_print = inputs.cpu().clone().detach().numpy()[0][0]
             out_print = outputs.cpu().clone().detach().numpy()[0][0]
@@ -22,7 +45,19 @@ def training_validation(model, datagen, criterion, device):
     return np.mean(val_losses)
 
 
-def inference(model, datagen, device, th=-50, neg=True, gap=20, test=False):
+def inference(model, datagen, device, th=-1, test=False):
+    """ Inference data.
+
+    Args:
+        model (torch.nn.Module): PyTorch model
+        datagen (torch.utils.data.DataLoader): Dataset loader
+        device (torch.device): Device for model training
+        th (int | float): Minimum peak threshold (default: -1 = avoid baseline fluctuation)
+        test (bool): Test dataset flag (default: False)
+
+    Returns:
+        Inference results
+    """
     # Initialize lists
     inp_numpy_lst = []
     spk_lbl_numpy_lst = []
@@ -39,19 +74,19 @@ def inference(model, datagen, device, th=-50, neg=True, gap=20, test=False):
             inputs = item
         inputs = inputs.to(device)
         spk_outputs = model(inputs)
-        pos_outputs = peak_det_diff(spk_outputs, th=th, neg=neg, gap=gap)
+        pos_outputs = peak_fwd_torch(spk_outputs, th=th, neg=True, gap=None)
 
         inp_numpy_lst.append(inputs.squeeze().cpu().numpy())
         spk_pred_numpy_lst.append(spk_outputs.squeeze().cpu().numpy())
         pos_pred_numpy_lst.append(pos_outputs.squeeze().cpu().numpy())
     # Arrange outputs
-    inp_numpy = numpy.concatenate(inp_numpy_lst, axis=0).astype('float32')
-    pred_numpy_dict = {'spk': numpy.concatenate(spk_pred_numpy_lst, axis=0).astype('float32'),
-                       'pos': numpy.concatenate(pos_pred_numpy_lst, axis=0).astype('int8')}
+    inp_numpy = np.concatenate(inp_numpy_lst, axis=0).astype('float32')
+    pred_numpy_dict = {'spk': np.concatenate(spk_pred_numpy_lst, axis=0).astype('float32'),
+                       'pos': np.concatenate(pos_pred_numpy_lst, axis=0).astype('int8')}
     pklz_dct = {'inp': inp_numpy, 'prd': pred_numpy_dict}
     if test:
-        lbl_dict = {'spk': numpy.concatenate(spk_lbl_numpy_lst, axis=0).astype('float32'),
-                    'pos': numpy.concatenate(pos_lbl_numpy_lst, axis=0).astype('int8')}
+        lbl_dict = {'spk': np.concatenate(spk_lbl_numpy_lst, axis=0).astype('float32'),
+                    'pos': np.concatenate(pos_lbl_numpy_lst, axis=0).astype('int8')}
         pklz_dct['lbl'] = lbl_dict
     return pklz_dct
 

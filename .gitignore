@@ -67,3 +67,6 @@ venv.bak/
 *test*
 .DS_Store
 *.swp
+
+# Auto generated files
+_hparams.json

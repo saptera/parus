@@ -1,13 +1,17 @@
+# Model inference post-process functions
+
 import torch
 
-"""Function list:
-peak_det_torch(prd, lag, threshold, influence=0.0): Robust signal peak detection using z-scores, PyTorch version.
-peak_det_diff(prd, th, neg=True, gap=None): Signal peak detection using forward difference.
-eval_pos(prd, lbl, tol=2): Evaluate spike position accuracy.
+__all__ = ['peak_zsc_torch', 'peak_fwd_torch', 'eval_pos']
+"""
+Function list:
+  peak_zsc_torch(prd, lag, threshold, influence=0.0): Robust signal peak detection using z-scores, PyTorch version.
+  peak_fwd_torch(prd, th, neg=True, gap=None): Signal peak detection using forward difference, PyTorch version.
+  eval_pos(prd, lbl, tol=2): Evaluate spike position accuracy.
 """
 
 
-def peak_det_torch(prd, lag, threshold, influence=0.0):
+def peak_zsc_torch(prd, lag, threshold, influence=0.0):
     """ Robust signal peak detection using z-scores, PyTorch version.
         Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
@@ -50,8 +54,8 @@ def peak_det_torch(prd, lag, threshold, influence=0.0):
     return det
 
 
-def peak_det_diff(prd, th, neg=True, gap=None):
-    """ Signal peak detection using forward difference.
+def peak_fwd_torch(prd, th, neg=True, gap=None):
+    """ Signal peak detection using forward difference, PyTorch version.
 
     Args:
         prd (torch.Tensor): {3D-float, (n-ch, n-feat, n-samp)} Input prediction results
@@ -111,4 +115,3 @@ def eval_pos(prd, lbl, tol=2):
     fp = torch.sum(diff, dim=-1)
 
     return fn, fp
-

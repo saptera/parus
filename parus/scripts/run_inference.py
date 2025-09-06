@@ -6,11 +6,8 @@ from torch.utils import data
 import argparse
 
 __package__ = 'parus.scripts'
-from ..model.transformer import EncoderTransformer
-from ..train.dataset import InferenceDataset
-from ..train.experiment import load_hparams, load_model
-from ..train.eval import inference
 from ..fio import pklz_write
+from ..model import EncoderTransformer, InferenceDataset, load_hparams, load_model, inference
 from ..util import make_outdir
 
 
@@ -21,7 +18,7 @@ parser.add_argument('-v', '--version', action='version', version="Parus - Data i
 parser.add_argument('ckpt', type=str, help="[%(type)s] Absolute path to pre-trained model checkpoint")
 parser.add_argument('src_dir', type=str, help="[%(type)s] Path to recoding data to be processed")
 parser.add_argument('out_dir', type=str, help="[%(type)s] Path to store results")
-parser.add_argument('-bs', '--batch', dest='bat_sz', type=int, default=1, metavar="[int]",
+parser.add_argument('-bs', '--batch', dest='bat_sz', type=int, default=2048, metavar="[int]",
                     help="Processing batch size (default: %(default)s)")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
