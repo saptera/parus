@@ -90,9 +90,9 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
     log_fp.flush()  # Update immediately
 
     # Train loop
-    for epoch_i in range(train_hparams['start_epoch'], train_hparams['total_epoch'] + 1):
+    for ep in range(train_hparams['start_epoch'], train_hparams['total_epoch'] + 1):
         start_time = time.perf_counter()
-        for step_i, (inputs, labels, _) in enumerate(trn_data):
+        for stp, (inputs, labels, _) in enumerate(trn_data):
             # Train
             model.train()
             optimizer.zero_grad()
@@ -105,7 +105,8 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
             nn.utils.clip_grad_norm_(model.parameters(), train_hparams['model_param_clip'])  # Avoid exploding gradient
 
             # Validation and logging
-            if step_i != 0 and step_i % train_hparams['steps_per_eval'] == 0:
+            stp = stp + 1  # Covert to one-based
+            if stp % train_hparams['steps_per_eval'] == 0:
                 model.eval()
                 with torch.no_grad():
                     val_loss = training_validation(model, vld_data, criterion, device)
@@ -113,21 +114,20 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
                 # Log metrics to [train.log] and training history to [history.json]
                 elapsed_time = time.perf_counter() - start_time
                 current_lr = optimizer.param_groups[0]['lr']
-                write_train_log(log_fp, ep=epoch_i, stp=step_i, lr=current_lr, tls=loss.item(), vls=val_loss,
+                write_train_log(log_fp, ep=ep, stp=stp, lr=current_lr, tls=loss.item(), vls=val_loss,
                                 t=elapsed_time, tot_ep=train_hparams['total_epoch'], curr_loss=val_loss_min)
-                write_train_history(hst_fp, ep=epoch_i, stp=step_i, lr=current_lr, tls=loss.item(), vls=val_loss,
+                write_train_history(hst_fp, ep=ep, stp=stp, lr=current_lr, tls=loss.item(), vls=val_loss,
                                     t=elapsed_time)
 
-                # Save checkpoint on improvement or at the final epoch
+                # Save checkpoint on improvement
                 if val_loss <= val_loss_min:
-                    save_model(work_dir, model, optimizer, epoch_i, 'optimum')
+                    save_model(work_dir, model, optimizer, ep, 'optimum')
                     val_loss_min = val_loss  # Update best loss
-                if epoch_i == train_hparams['total_epoch']:
-                    save_model(work_dir, model, optimizer, epoch_i, 'final')
-
                 # Reset timer for next interval
                 start_time = time.perf_counter()
 
+    # Save final model
+    save_model(work_dir, model, optimizer, train_hparams['total_epoch'], 'final')
     # Close log files
     log_fp.close()
     hst_fp.close()

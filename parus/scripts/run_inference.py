@@ -14,7 +14,7 @@ from ..util import make_outdir
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusDatInf", description="Parus data inference",
                                  epilog="Inference raw recoding data and perform spike detection")
-parser.add_argument('-v', '--version', action='version', version="Parus - Data inference: v1.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Data inference: v1.5")
 parser.add_argument('ckpt', type=str, help="[%(type)s] Absolute path to pre-trained model checkpoint")
 parser.add_argument('src_dir', type=str, help="[%(type)s] Path to recoding data to be processed")
 parser.add_argument('out_dir', type=str, help="[%(type)s] Path to store results")
@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Parus data inference starting")
+    print("Parus model inference script initialized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
 
     # Create output directory
     dat_name = os.path.basename(args.src_dir.rstrip('/\\'))
@@ -96,4 +96,4 @@ if __name__ == '__main__':
             dur = t_stop - t_init
             print("    File [%s] processed in %.4f seconds (%d/%d)" % (filename, dur, i + 1, tot_len))
 
-    print("Parus data inference finalized")
+    print("Parus data inference finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

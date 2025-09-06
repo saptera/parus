@@ -12,9 +12,9 @@ from ..util import make_outdir
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusModelTrain", description="Train Parus signal model",
+parser = argparse.ArgumentParser(prog="ParusModTrn", description="Train Parus signal model",
                                  epilog="Creat signal separation model for spike detection")
-parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v1.0")
+parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.1")
 # Path definition (positional)
 parser.add_argument('art_dir', type=str, help="[%(type)s] Path to store model training artifacts")
 parser.add_argument('dat_dir', type=str, help="[%(type)s] Path to training datasets")
@@ -72,7 +72,7 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Parus model training starting")
+    print("Parus model training script initialized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
     dat_name = os.path.basename(args.dat_dir.rstrip('/\\'))
 
     # Load and update hyperparameters
@@ -158,9 +158,9 @@ if __name__ == '__main__':
         pklz_dct = inference(model, tst_datagen, device, test=True)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
-        pklz_write(os.path.join(work_dir, "opt_fin.pklz"), pklz_dct)
+        pklz_write(os.path.join(work_dir, "tst_opt.pklz"), pklz_dct)
     print("    -> Done!")
     # Close test dataset
     tst_datagen.dataset.close()
 
-    print("Parus model training finalized")
+    print("Parus model training finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

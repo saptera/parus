@@ -66,13 +66,13 @@ _default_hparams = {
 # Debug hyperparameters for model test run
 _debug_hparams = {
     'data': {
-        'n_trn_samples': 5000,
+        'n_trn_samples': 6400,
         'n_vld_samples': 500,
         'n_tst_samples': 500
     },
     'train': {
-        'total_epoch': 1,
-        'steps_per_eval': 80
+        'total_epoch': 2,
+        'steps_per_eval': 50
     }
 }
 
@@ -91,7 +91,7 @@ def save_hparams(hparams_file, hparams=None):
     hp = _default_hparams.copy()
     # Update hyperparameters
     if isinstance(hparams, dict):
-        hp.update(hparams)
+        [hp[k].update(hparams[k]) for k in hparams]
     # Write file
     with open(hparams_file, 'w') as fp:
         json.dump(hp, fp, indent=2)
@@ -114,11 +114,11 @@ def load_hparams(hparams_file=None, debug=False):
     if (hparams_file is not None) and os.path.isfile(hparams_file):
         with open(hparams_file, 'r') as fp:
             hparams = json.load(fp)
-        hp.update(hparams)
+        [hp[k].update(hparams[k]) for k in hparams]
     # Debug mode
     if debug:
         print("Set hyperparameters for debugging mode")
-        hp.update(_debug_hparams)
+        [hp[k].update(_debug_hparams[k]) for k in _debug_hparams]
     return hp
 
 
