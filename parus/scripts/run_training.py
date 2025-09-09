@@ -7,14 +7,14 @@ import argparse
 __package__ = 'parus.scripts'
 from .. import pkg_root
 from ..fio import pklz_write
-from ..model import EncoderTransformer, load_hparams, save_hparams, load_all_datasets, train, load_model, inference
+from ..model import EncoderTransformer, load_hparams, save_hparams, load_all_datasets, train, load_model, testing
 from ..util import make_outdir
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusModTrn", description="Train Parus signal model",
                                  epilog="Creat signal separation model for spike detection")
-parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.1")
+parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.5")
 # Path definition (positional)
 parser.add_argument('art_dir', type=str, help="[%(type)s] Path to store model training artifacts")
 parser.add_argument('dat_dir', type=str, help="[%(type)s] Path to training datasets")
@@ -64,7 +64,9 @@ pg_t.add_argument('-tls', '--lossfn', dest='loss_function', type=str, choices=['
                   default=argparse.SUPPRESS, metavar="{mse, l1, bce}",
                   help="Loss function: 'l1' = Mean Absolute Error, 'mse' = Mean Squared Error, "
                        "'bce' = Binary Cross Entropy with Sigmoid")
-# Debug mode
+# Extra options
+parser.add_argument('-t', '--hint', dest='hint', type=str, choices=['text', 'disp', 'save', 'none'], default='text',
+                    metavar="{text, disp, save, none}", help="Validation result hinting method (default: %(default)s)")
 parser.add_argument('-d', '--debug', dest='debug', default=False, action="store_true", help="Run with debug settings")
 # Parse inputs
 args = parser.parse_args()
@@ -117,9 +119,9 @@ if __name__ == '__main__':
     if not args.debug:
         save_hparams(os.path.join(pkg_root, '_hparams.json'), hparams)
     # Update sample numbers to actual value
-    hparams['data']['n_trn_samples'] = trn_datagen.dataset.n_samples
-    hparams['data']['n_vld_samples'] = vld_datagen.dataset.n_samples
-    hparams['data']['n_tst_samples'] = tst_datagen.dataset.n_samples
+    hparams['data']['n_trn_samples'] = trn_datagen.dataset.n_sample
+    hparams['data']['n_vld_samples'] = vld_datagen.dataset.n_sample
+    hparams['data']['n_tst_samples'] = tst_datagen.dataset.n_sample
     # Write current model hyperparameter for future loading
     save_hparams(os.path.join(work_dir, 'hparams.json'), hparams)
     print("Current hyperparameters saved")
@@ -140,22 +142,23 @@ if __name__ == '__main__':
 
     # Train model and save checkpoints
     print("\nTraining started")
-    train(model, hparams['model']['d_model'], trn_datagen, vld_datagen, work_dir, hparams['train'], device)
+    train(model, hparams['model']['d_model'], trn_datagen, vld_datagen, work_dir, hparams['train'], device, args.hint)
 
     # Run testing for final model
     print("\nInferencing test data with final model...")
     model.eval()
     with torch.no_grad():
-        pklz_dct = inference(model, tst_datagen, device, test=True)
+        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(work_dir, "tst_fin.pklz"), pklz_dct)
     print("    -> Done!")
     print("Inferencing test data with optimum model...")
+    # Run testing for optimum model
     model = load_model(os.path.join(work_dir, "optimum.ckpt"), model)  # Override with optimum checkpoint
     model.eval()
     with torch.no_grad():
-        pklz_dct = inference(model, tst_datagen, device, test=True)
+        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(work_dir, "tst_opt.pklz"), pklz_dct)

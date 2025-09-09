@@ -432,7 +432,7 @@ def sig_merge(src, overlap=10, trim=0):
     """ Merge a list of signal parts into a signal trace.
 
     Args:
-        src (list[np.ndarray | list[int | float]]): {1D - n * size} Input list of split signal
+        src (list[np.ndarray | list[int | float]] | np.ndarray): {1D(n * size) | 2D(n, size)} Input list of split signal
         overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)
         trim (int): Samples to remove at the end of merged signal
 

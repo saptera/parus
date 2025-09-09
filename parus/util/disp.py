@@ -3,25 +3,25 @@
 import numpy as np
 import scipy.optimize as spopt
 import plotext as ptx
+import matplotlib.pyplot as plt
 import warnings
 
-__all__ = ['plt_mdl_perf', 'fit_exp_loss']
+__all__ = ['plt_mod_cli', 'plt_mod_img', 'fit_exp_loss']
 """
 Function list:
-  plt_mdl_perf(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
+  plt_mod_cli(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
+  plt_mod_img(prd, sig, lbl, img=None): Plot current model performance with ground truth to image file.
   fit_exp_loss(trn_loss, vld_loss): Estimate future loss with exponential model.
 """
 
 
-def plt_mdl_perf(prd, sig, lbl, size=(256, 32)):
+def plt_mod_cli(prd, sig, lbl, size=(256, 32)):
     """ Plot current model performance with ground truth on terminal.
 
     Args:
-        prd (np.ndarray): {1D} Model prediction of [sig]
+        prd (np.ndarray): {1D} Model prediction
         sig (np.ndarray): {1D} Raw data input to model
-        lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
-            - noise (np.ndarray): {1D} Noise ground truth of [sig]
-            - signal (list[np.ndarray]): {1D} Grouped noise-free signal ground truth of [sig]
+        lbl (np.ndarray): {1D} Noise-free signal ground truth
         size (tuple[int, int] | list[int, int] | None): Plot size, width * height (default: 256 * 32)
     """
     # Set theme
@@ -43,11 +43,47 @@ def plt_mdl_perf(prd, sig, lbl, size=(256, 32)):
     # Set plot text
     ptx.title("Model Performance")
     ptx.ticks_style('bold')
-    ptx.xlabel('Sample Index')
-    ptx.ylabel('Amplitude (mV)')
+    ptx.xlabel("Sample Index")
+    ptx.ylabel("Amplitude (mV)")
     # Display plot on terminal and clear
     ptx.show()
     ptx.clear_figure()
+
+
+def plt_mod_img(prd, sig, lbl, img=None):
+    """ Plot current model performance with ground truth to image file.
+
+    Args:
+        prd (np.ndarray): {1D} Model prediction
+        sig (np.ndarray): {1D} Raw data input to model
+        lbl (np.ndarray): {1D} Noise-free signal ground truth
+        img (str | None): Output image file (default: None = return figure, no save)
+
+    Returns:
+        tuple[plt.Figure, plt.Axes] | tuple[None, None]: Plotted figure
+    """
+    # Set figure
+    fig, ax = plt.subplots(1, 1, dpi=150)
+    fig.set_layout_engine(layout='tight')
+    ax.spines[['top', 'right']].set_visible(False)
+    # Plot data
+    ax.plot(sig, color='#ff7f0f', label="Signal", zorder=1)
+    ax.plot(lbl, color='#28a028', label="Reference", zorder=1)
+    ax.plot(prd, color='#1e78b4', label="Prediction", zorder=1)
+    # Add reference lines
+    ax.axhline(0, c='darkgray', lw=0.5, alpha=0.75, zorder=2)
+    # Set plot text
+    ax.set_title("Model Performance", fontsize=12, fontweight='bold')
+    ax.set_xlabel("Sample Index", fontsize=12)
+    ax.set_ylabel("Amplitude (mV)", fontsize=12)
+    ax.legend(loc='upper left')
+    # Output options
+    if img is None:
+        return fig, ax
+    else:
+        fig.savefig(img, format='png')
+        plt.close(fig)
+        return None, None
 
 
 def fit_exp_loss(trn_loss, vld_loss):

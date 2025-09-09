@@ -8,7 +8,7 @@ import torch.nn as nn
 
 __package__ = 'parus.model'
 from .mio import save_model, write_train_log, write_train_history
-from .eval import training_validation
+from .eval import validation
 
 __all__ = ['get_learning_rate', 'train']
 """
@@ -45,7 +45,7 @@ def get_learning_rate(step, model_size, factor, warmup):
     return rate
 
 
-def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device):
+def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device, hint='text'):
     """ General training function for models.
 
     Args:
@@ -65,6 +65,11 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
             - model_param_clip (float): Clipping value to avoid exploding gradient
             - loss_function (str): {mse, l1, bce} Loss function name
         device (torch.device): Device for model training
+        hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+            - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
+            - 'disp': Show image with [matplotlib]
+            - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
+            - 'none': No hinting (fallback for invalid method input)
     """
     # Set loss function
     criterion = _loss_function_options[train_hparams['loss_function']]
@@ -109,7 +114,8 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
             if stp % train_hparams['steps_per_eval'] == 0:
                 model.eval()
                 with torch.no_grad():
-                    val_loss = training_validation(model, vld_data, criterion, device)
+                    image = os.path.join(work_dir, "vld_ep%02d_stp%04d.png" % (ep, stp))
+                    val_loss = validation(model, vld_data, criterion, device, hint, image)
 
                 # Log metrics to [train.log] and training history to [history.json]
                 elapsed_time = time.perf_counter() - start_time

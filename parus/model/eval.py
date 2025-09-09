@@ -4,19 +4,20 @@ import numpy as np
 import torch
 
 __package__ = 'parus.model'
-from ..util import plt_mdl_perf
+from ..util import plt_mod_cli, plt_mod_img
 from .post import peak_fwd_torch
 
-__all__ = ['training_validation', 'inference', 'eval_bin_cls']
+__all__ = ['validation', 'testing', 'inference', 'eval_bin_cls']
 """
 Function list:
-  training_validation(model, datagen, criterion, device): Validation for model training.
-  inference(model, datagen, device, th=-1, test=False): Inference data.
+  validation(model, datagen, criterion, device): Validation for model training.
+  testing(model, datagen, channel, device, th=-1): Testing for model training.
+  inference(model, datagen, channel, device): Inference data.
   eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Binary detection evaluation.
 """
 
 
-def training_validation(model, datagen, criterion, device):
+def validation(model, datagen, criterion, device, hint='text', image=None):
     """ Validation for model training.
 
     Args:
@@ -24,6 +25,12 @@ def training_validation(model, datagen, criterion, device):
         datagen (torch.utils.data.DataLoader): Dataset loader
         criterion (torch.nn.Module): Loss function
         device (torch.device): Device for model training
+        hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+            - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
+            - 'disp': Show image with [matplotlib]
+            - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
+            - 'none': No hinting (fallback for invalid method input)
+        image (str | None): Image save path for [hint = 'save']
 
     Returns:
         float: Mean loss
@@ -35,60 +42,97 @@ def training_validation(model, datagen, criterion, device):
         cur_val_loss = criterion(outputs, labels.float())
         val_losses.append(cur_val_loss.item())
 
-        # CLI plot for visual prediction result of the first sample
-        if i == 0:
+        # Plot for visual prediction result of the first sample
+        if (i == 0) and (hint != 'none'):
+            prd_print = outputs.cpu().clone().detach().numpy()[0][0]
             inp_print = inputs.cpu().clone().detach().numpy()[0][0]
-            out_print = outputs.cpu().clone().detach().numpy()[0][0]
-            lab_print = labels.cpu().clone().detach().numpy()[0][0]
-            plt_mdl_perf(out_print, inp_print, lab_print, size=(256, 32))
+            lbl_print = labels.cpu().clone().detach().numpy()[0][0]
+            if hint == 'text':
+                plt_mod_cli(prd_print, inp_print, lbl_print, size=(256, 32))
+            elif hint == 'disp':
+                fig, ax = plt_mod_img(prd_print, inp_print, lbl_print, img=None)
+                fig.show()
+            elif hint == 'save':
+                plt_mod_img(prd_print, inp_print, lbl_print, img=image)
 
     return np.mean(val_losses)
 
 
-def inference(model, datagen, device, th=-1, test=False):
+def testing(model, datagen, channel, device, th=-1):
+    """ Testing for model training.
+
+    Args:
+        model (torch.nn.Module): PyTorch model
+        datagen (torch.utils.data.DataLoader): Dataset loader
+        channel (int): Number of output channels of model
+        device (torch.device): Device for model training
+        th (int | float): Minimum peak threshold (default: -1 = avoid baseline fluctuation)
+
+    Returns:
+        dict: {3D (Index, Channel, Sample)}Test dataset results
+            - 'inp': (np.ndarray): {3D-float32} Input signal
+            - 'prd': (dict): Model prediction results
+                - 'spk' (np.ndarray): {3D-float32} Predicted spike signal
+                - 'pos' (np.ndarray): {3D-int8} Predicted spike position
+            - 'lbl': (np.ndarray): Signal label
+                - 'spk' (np.ndarray): {3D-float32} Reference spike signal
+                - 'pos' (np.ndarray): {3D-int8} Reference spike position
+    """
+    bs = datagen.batch_size
+    shape = (datagen.dataset.n_sample, channel, datagen.dataset.seq_len)
+    # Initialize lists
+    inp_arr = np.zeros((datagen.dataset.n_sample, datagen.dataset.seq_len), dtype=np.float32)
+    spk_lbl = np.zeros(shape, dtype=np.float32)
+    pos_lbl = np.zeros(shape, dtype=np.int8)
+    spk_prd = np.zeros(shape, dtype=np.float32)
+    pos_prd = np.zeros(shape, dtype=np.int8)
+    # Inference
+    for i, item in enumerate(datagen):
+        s = i * bs
+        e = s + bs
+        # Arrange inputs
+        inputs, spk_labels, pos_labels = item
+        spk_lbl[s:e] = spk_labels.squeeze().cpu().numpy()
+        pos_lbl[s:e] = pos_labels.squeeze().cpu().numpy()
+        # Process inference
+        inputs = inputs.to(device)
+        spk_outputs = model(inputs)
+        pos_outputs = peak_fwd_torch(spk_outputs, th=th, neg=True, gap=None)
+        # Store results
+        inp_arr[s:e] = inputs.squeeze().cpu().numpy()
+        spk_prd[s:e] = spk_outputs.squeeze().cpu().numpy()
+        pos_prd[s:e] = pos_outputs.squeeze().cpu().numpy()
+    # Arrange outputs
+    return {'inp': inp_arr, 'prd': {'spk': spk_prd, 'pos': pos_prd}, 'lbl': {'spk': spk_lbl, 'pos': pos_lbl}}
+
+
+def inference(model, datagen, channel, device):
     """ Inference data.
 
     Args:
         model (torch.nn.Module): PyTorch model
         datagen (torch.utils.data.DataLoader): Dataset loader
+        channel (int): Number of output channels of model
         device (torch.device): Device for model training
-        th (int | float): Minimum peak threshold (default: -1 = avoid baseline fluctuation)
-        test (bool): Test dataset flag (default: False)
 
     Returns:
-        Inference results
+        np.ndarray: {3D-float32 (Index, Channel, Sample)} Inference results
     """
-    # Initialize lists
-    inp_numpy_lst = []
-    spk_lbl_numpy_lst = []
-    pos_lbl_numpy_lst = []
-    spk_pred_numpy_lst = []
-    pos_pred_numpy_lst = []
+    bs = datagen.batch_size
+    shape = (datagen.dataset.n_sample, channel, datagen.dataset.seq_len)
+    # Initialize return
+    spk = np.zeros(shape, dtype=np.float32)
     # Inference
-    for item in datagen:
-        if test:
-            inputs, spk_labels, pos_labels = item
-            spk_lbl_numpy_lst.append(spk_labels.squeeze().cpu().numpy())
-            pos_lbl_numpy_lst.append(pos_labels.squeeze().cpu().numpy())
-        else:
-            inputs = item
+    for i, inputs in enumerate(datagen):
+        s = i * bs
+        e = s + bs
+        # Process inference
         inputs = inputs.to(device)
-        spk_outputs = model(inputs)
-        pos_outputs = peak_fwd_torch(spk_outputs, th=th, neg=True, gap=None)
-
-        inp_numpy_lst.append(inputs.squeeze().cpu().numpy())
-        spk_pred_numpy_lst.append(spk_outputs.squeeze().cpu().numpy())
-        pos_pred_numpy_lst.append(pos_outputs.squeeze().cpu().numpy())
-    # Arrange outputs
-    inp_numpy = np.concatenate(inp_numpy_lst, axis=0).astype('float32')
-    pred_numpy_dict = {'spk': np.concatenate(spk_pred_numpy_lst, axis=0).astype('float32'),
-                       'pos': np.concatenate(pos_pred_numpy_lst, axis=0).astype('int8')}
-    pklz_dct = {'inp': inp_numpy, 'prd': pred_numpy_dict}
-    if test:
-        lbl_dict = {'spk': np.concatenate(spk_lbl_numpy_lst, axis=0).astype('float32'),
-                    'pos': np.concatenate(pos_lbl_numpy_lst, axis=0).astype('int8')}
-        pklz_dct['lbl'] = lbl_dict
-    return pklz_dct
+        outputs = model(inputs)
+        # Store results
+        spk[s:e] = outputs.squeeze().cpu().numpy()
+    # Return results
+    return spk
 
 
 def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5):
