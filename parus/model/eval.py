@@ -92,16 +92,16 @@ def testing(model, datagen, channel, device, th=-1):
         e = s + bs
         # Arrange inputs
         inputs, spk_labels, pos_labels = item
-        inp_arr[s:e] = inputs.squeeze().cpu().numpy()
-        spk_lbl[s:e] = spk_labels.squeeze().cpu().numpy()
-        pos_lbl[s:e] = pos_labels.squeeze().cpu().numpy()
+        inp_arr[s:e] = inputs.cpu().numpy()
+        spk_lbl[s:e] = spk_labels.cpu().numpy()
+        pos_lbl[s:e] = pos_labels.cpu().numpy()
         # Process inference
         inputs = inputs.to(device)
         spk_outputs = model(inputs)
         pos_outputs = peak_fwd_torch(spk_outputs, th=th, neg=True, gap=None)
         # Store results
-        spk_prd[s:e] = spk_outputs.squeeze().cpu().numpy()
-        pos_prd[s:e] = pos_outputs.squeeze().cpu().numpy()
+        spk_prd[s:e] = spk_outputs.cpu().numpy()
+        pos_prd[s:e] = pos_outputs.cpu().numpy()
     # Arrange outputs
     return {'inp': inp_arr, 'prd': {'spk': spk_prd, 'pos': pos_prd}, 'lbl': {'spk': spk_lbl, 'pos': pos_lbl}}
 
@@ -130,7 +130,7 @@ def inference(model, datagen, channel, device):
         inputs = inputs.to(device)
         outputs = model(inputs)
         # Store results
-        spk[s:e] = outputs.squeeze().cpu().numpy()
+        spk[s:e] = outputs.cpu().numpy()
     # Return results
     return spk
 
