@@ -92,6 +92,7 @@ def testing(model, datagen, channel, device, th=-1):
         e = s + bs
         # Arrange inputs
         inputs, spk_labels, pos_labels = item
+        inp_arr[s:e] = inputs.squeeze().cpu().numpy()
         spk_lbl[s:e] = spk_labels.squeeze().cpu().numpy()
         pos_lbl[s:e] = pos_labels.squeeze().cpu().numpy()
         # Process inference
@@ -99,7 +100,6 @@ def testing(model, datagen, channel, device, th=-1):
         spk_outputs = model(inputs)
         pos_outputs = peak_fwd_torch(spk_outputs, th=th, neg=True, gap=None)
         # Store results
-        inp_arr[s:e] = inputs.squeeze().cpu().numpy()
         spk_prd[s:e] = spk_outputs.squeeze().cpu().numpy()
         pos_prd[s:e] = pos_outputs.squeeze().cpu().numpy()
     # Arrange outputs

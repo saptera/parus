@@ -13,7 +13,7 @@ from ..util import make_outdir
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusModTrn", description="Train Parus signal model",
-                                 epilog="Creat signal separation model for spike detection")
+                                 epilog="Train signal separation model for spike detection")
 parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.5")
 # Path definition (positional)
 parser.add_argument('art_dir', type=str, help="[%(type)s] Path to store model training artifacts")

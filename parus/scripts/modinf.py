@@ -16,7 +16,7 @@ from ..util import make_outdir
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusDatInf", description="Parus data inference",
-                                 epilog="Inference raw recoding data and perform spike detection")
+                                 epilog="Inference raw recoding data with trained model")
 parser.add_argument('-v', '--version', action='version', version="Parus - Data inference: v2.0")
 # Model definition (positional)
 parser.add_argument('ckpt', type=str, help="[%(type)s] Absolute path to pre-trained model checkpoint")
