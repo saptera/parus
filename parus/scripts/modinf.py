@@ -139,6 +139,11 @@ if __name__ == '__main__':
         raise FileNotFoundError("Model hyperparameter missing!\n"
                                 "[hparams.json] file must be located in the same folder as defined model checkpoint.")
 
+    # Check sampling arguments
+    if args.overlap >= model_hparams['sequence_length']:
+        raise ValueError("Sample overlap size must be less than model sequence length!\n"
+                         "Current values: overlap=%d, sequence=%d" % (args.overlap, model_hparams['sequence_length']))
+
     # Build model
     print("    Building the model with pretrained weights")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

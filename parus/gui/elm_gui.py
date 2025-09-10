@@ -4,6 +4,7 @@ import os
 import re
 from datetime import datetime
 import shutil
+import json
 import h5py as h5
 import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
@@ -13,6 +14,7 @@ from PySide6 import QtCore, QtWidgets
 mpl.use('QtAgg')
 
 __package__ = 'parus.gui'
+from .. import pkg_data
 from ..scripts import gen_sim, gen_sta
 from .desg_genctrl import Ui_ParusGenWindow
 from .desg_wfmsel import Ui_WfmSelWindow
@@ -88,8 +90,11 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
 
         # IO path control
         self.sigSelect.clicked.connect(self.__sel_sig_dir)
+        self.sigPath.textChanged.connect(self.__set_sig_dir)
         self.noiSelect.clicked.connect(self.__sel_noi_dir)
+        self.noiPath.textChanged.connect(self.__set_noi_dir)
         self.outSelect.clicked.connect(self.__sel_out_dir)
+        self.outPath.textChanged.connect(self.__set_out_dir)
         # Basic sample feature control
         self.sampCnt.valueChanged.connect(self.__set_num_sim)
         self.sampFreq.valueChanged.connect(self.__set_freq)
@@ -140,8 +145,10 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.procConsole.verticalScrollBar().sliderPressed.connect(self.__manual_slider_press)
         self.procConsole.verticalScrollBar().sliderReleased.connect(self.__manual_slider_release)
 
+        # Load previous execution parameters
+        self.__load_params()
         # System standby
-        self.statBar.showMessage("Ready!")
+        self.statBar.showMessage("System standby")
 
     def timerEvent(self, event):
         """ Timer event for controls with delayed updating. """
@@ -243,6 +250,8 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.__switch_gen_sim()
         # Finalizing
         if self._sim_proc.fin_stop:
+            # Save current successful execution params
+            self.__save_params()
             # Set generation statistics file path
             stat_line = re.search(r'(?<=\[)[^]]+(?=])', self._sim_proc.last_line).group()
             stat_path = ' '.join(stat_line.split(' ')[2:])
@@ -272,8 +281,12 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.statBar.showMessage("Generation statistics file closed")
 
     # Control element related functions ------------------------------------------------------------------------------ #
-    def reset_all(self):
-        """ Reset all controls to defaults. """
+    def reset_all(self, notify=True):
+        """  Reset all controls to defaults.
+
+        Args:
+            notify (bool): Console/Statusbar notification flag (default: True)
+        """
         self.arc_dir = self.sigPath.clear()
         self.noi_dir = self.noiPath.clear()
         self.out_dir = self.outPath.clear()
@@ -281,7 +294,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.sampLen.setValue(15.0)
         self.sampFreq.setValue(20000)
         self.exEg.setValue(100)
-        self.spkGrpMthd.setCurrentIndex(0)
+        self.spkGrpMthd.setCurrentIndex(2)
         self.spkGrpRate.clear()
         self.noiOnlyRate.setValue(5.0)
         self.minSpkFreq.setValue(50)
@@ -303,13 +316,86 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Reset argument
         self.set_gensim_args()
         self._sta_proc.reset_arguments()
-        # Inform console
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        text = "<span style=\"color:black;font-weight:bold;\">All parameters reset to defaults!</span>"
-        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
-        self.procConsole.append(message)
-        # Inform status bar
-        self.statBar.showMessage("All parameters reset")
+        # Set notification
+        if notify:
+            # Inform console
+            time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            text = "<span style=\"color:black;font-weight:bold;\">All parameters reset to defaults!</span>"
+            message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
+            self.procConsole.append(message)
+            # Inform status bar
+            self.statBar.showMessage("All parameters reset")
+
+    def __load_params(self):
+        """ Load GUI settings from previous execution. """
+        par_json = os.path.join(pkg_data, '_gen_params.json')
+        if os.path.isfile(par_json):
+            # Load previous settings
+            with open(par_json, 'r') as fp:
+                pars = json.load(fp)
+            # Set to current controls
+            self.sigPath.setText(pars['archival_signal_folder'])
+            self.noiPath.setText(pars['archival_noise_folder'])
+            self.sampCnt.setValue(pars['sample_number'])
+            self.sampLen.setValue(pars['sample_length'])
+            self.sampFreq.setValue(pars['sample_frequency'])
+            self.exEg.setValue(pars['sample_extra'])
+            self.spkGrpMthd.setCurrentIndex(pars['group_method'])
+            self.noiOnlyRate.setValue(pars['noise_only_ratio'])
+            self.minSpkFreq.setValue(pars['spike_freq_min'])
+            self.maxSpkFreq.setValue(pars['spike_freq_max'])
+            self.chnCellCnt.setValue(pars['max_cell_per_channel'])
+            self.sigMultMin.setValue(pars['spike_multiplier_min'])
+            self.sigMultMax.setValue(pars['spike_multiplier_max'])
+            self.noiMultMin.setValue(pars['noise_multiplier_min'])
+            self.noiMultMax.setValue(pars['noise_multiplier_max'])
+            self.bslNos.setValue(pars['baseline_no_shift_magnitude'])
+            self.bslCst.setValue(pars['baseline_constant_shift_magnitude'])
+            self.bslLin.setValue(pars['baseline_linear_ramp_magnitude'])
+            self.bslSin.setValue(pars['baseline_sinusoid_oscillation_magnitude'])
+            self.bslAmpMin.setValue(pars['baseline_shift_value_min'])
+            self.bslAmpMax.setValue(pars['baseline_shift_value_max'])
+            self.bslFrqMin.setValue(pars['baseline_oscillation_freq_min'])
+            self.bslFrqMax.setValue(pars['baseline_oscillation_freq_min'])
+            # Update group rate with signal blocked
+            self.spkGrpRate.blockSignals(True)
+            self.spkGrpRate.setText(pars['group_magnitude'])
+            self.spkGrpRate.blockSignals(False)
+            self.__set_grp_rat()  # Re-trigger filtering
+        else:
+            self.reset_all(notify=False)
+
+    def __save_params(self):
+        """ Save GUI settings of current execution. """
+        pars = {}  # INIT VAR
+        # Read current controls
+        pars['archival_signal_folder'] = self.sigPath.text()
+        pars['archival_noise_folder'] = self.noiPath.text()
+        pars['sample_number'] = self.sampCnt.value()
+        pars['sample_length'] = self.sampLen.value()
+        pars['sample_frequency'] = self.sampFreq.value()
+        pars['sample_extra'] = self.exEg.value()
+        pars['group_method'] = self.spkGrpMthd.currentIndex()
+        pars['group_magnitude'] = self.spkGrpRate.text()
+        pars['noise_only_ratio'] = self.noiOnlyRate.value()
+        pars['spike_freq_min'] = self.minSpkFreq.value()
+        pars['spike_freq_max'] = self.maxSpkFreq.value()
+        pars['max_cell_per_channel'] = self.chnCellCnt.value()
+        pars['spike_multiplier_min'] = self.sigMultMin.value()
+        pars['spike_multiplier_max'] = self.sigMultMax.value()
+        pars['noise_multiplier_min'] = self.noiMultMin.value()
+        pars['noise_multiplier_max'] = self.noiMultMax.value()
+        pars['baseline_no_shift_magnitude'] = self.bslNos.value()
+        pars['baseline_constant_shift_magnitude'] = self.bslCst.value()
+        pars['baseline_linear_ramp_magnitude'] = self.bslLin.value()
+        pars['baseline_sinusoid_oscillation_magnitude'] = self.bslSin.value()
+        pars['baseline_shift_value_min'] = self.bslAmpMin.value()
+        pars['baseline_shift_value_max'] = self.bslAmpMax.value()
+        pars['baseline_oscillation_freq_min'] = self.bslFrqMin.value()
+        pars['baseline_oscillation_freq_min'] = self.bslFrqMax.value()
+        # Save to file
+        with open(os.path.join(pkg_data, '_gen_params.json'), 'w') as fp:
+            json.dump(pars, fp, indent=2)
 
     def __sel_sig_dir(self):
         """ Select archived signal file (*.arc) folder button connection. """
@@ -321,6 +407,26 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
         self.genSimButton.setEnabled(not flag)
 
+    def __set_sig_dir(self):
+        """ Select archived signal file (*.arc) folder line edit connection. """
+        path = self.sigPath.text()
+        if os.path.isdir(path):
+            self.arc_dir = [path]
+            self.statBar.showMessage("Archival signal folder defined")
+        else:
+            self.arc_dir = None
+            self.statBar.showMessage("Archival signal folder is invalid!")
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(1000)
+        return self.arc_dir
+
     def __sel_noi_dir(self):
         """ Select archived noise file (*.noi) folder button connection. """
         path = path_selector(self.noiPath, mode='path', caption="Select Archived Noise Folder", parent=self)
@@ -331,6 +437,26 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
         self.genSimButton.setEnabled(not flag)
 
+    def __set_noi_dir(self):
+        """ Select archived noise file (*.noi) folder line edit connection. """
+        path = self.noiPath.text()
+        if os.path.isdir(path):
+            self.noi_dir = [path]
+            self.statBar.showMessage("Archival noise folder defined")
+        else:
+            self.noi_dir = None
+            self.statBar.showMessage("Archival noise folder is invalid!")
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(1000)
+        return self.noi_dir
+
     def __sel_out_dir(self):
         """ Select generation output folder button connection. """
         path = path_selector(self.outPath, mode='path', caption="Select Output Folder", parent=self)
@@ -340,6 +466,26 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Set availability of generation start button
         flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
         self.genSimButton.setEnabled(not flag)
+
+    def __set_out_dir(self):
+        """ Select generation output folder line edit connection. """
+        path = self.outPath.text()
+        if os.path.isdir(path):
+            self.out_dir = [path]
+            self.statBar.showMessage("Generation output folder defined")
+        else:
+            self.out_dir = None
+            self.statBar.showMessage("Generation output folder is invalid!")
+        # Update process arguments
+        self.set_gensim_args()
+        # Set availability of generation start button
+        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
+        self.genSimButton.setEnabled(not flag)
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(1000)
+        return self.out_dir
 
     def __set_num_sim(self):
         """ Set number of simulated data to be generated. """

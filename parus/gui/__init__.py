@@ -5,7 +5,7 @@ import os
 from PySide6 import QtCore, QtWidgets
 
 # Set default working directory
-sys.path.extend(os.path.split(__file__)[0])
+sys.path.extend(os.path.dirname(__file__))
 os.chdir(os.path.expanduser('~'))
 
 # Settings for high resolution monitors

@@ -5,7 +5,7 @@ import torch.nn as nn
 import argparse
 
 __package__ = 'parus.scripts'
-from .. import pkg_root
+from .. import pkg_data
 from ..fio import pklz_write
 from ..model import EncoderTransformer, load_hparams, save_hparams, load_all_datasets, train, load_model, testing
 from ..util import make_outdir
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     dat_name = os.path.basename(args.dat_dir.rstrip('/\\'))
 
     # Load and update hyperparameters
-    hparams = load_hparams(os.path.join(pkg_root, '_hparams.json'), debug=args.debug)
+    hparams = load_hparams(os.path.join(pkg_data, '_hparams.json'), debug=args.debug)
     hparams['data'].update({k: args.__dict__[k] for k in hparams['data'] if k in args})
     hparams['model'].update({k: args.__dict__[k] for k in hparams['model'] if k in args})
     hparams['train'].update({k: args.__dict__[k] for k in hparams['train'] if k in args})
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     hparams['model']['output_channels'] = len(spk_grp)
     # Write root hyperparameter file for next run
     if not args.debug:
-        save_hparams(os.path.join(pkg_root, '_hparams.json'), hparams)
+        save_hparams(os.path.join(pkg_data, '_hparams.json'), hparams)
     # Update sample numbers to actual value
     hparams['data']['n_trn_samples'] = trn_datagen.dataset.n_sample
     hparams['data']['n_vld_samples'] = vld_datagen.dataset.n_sample
