@@ -63,7 +63,7 @@ if __name__ == '__main__':
         print("    Checking input files...")
         name_chk = []  # INIT VAR
         for f in args.file:
-            if os.path.isfile(f) and f.endswith(('.sig', '.pkl' '.pklz')):
+            if os.path.isfile(f) and f.endswith(('.sig', '.pkl', '.pklz')):
                 src_lst.append(f.replace('\\', '/'))
                 # Get file parts
                 base, name = os.path.split(f)
@@ -91,11 +91,11 @@ if __name__ == '__main__':
         for d in args.dirs:
             if os.path.isdir(d):
                 src_lst += [os.path.join(d, f).replace('\\', '/')
-                            for f in os.listdir(d) if f.endswith(('.sig', '.pkl' '.pklz'))]
+                            for f in os.listdir(d) if f.endswith(('.sig', '.pkl', '.pklz'))]
                 # Get directory path and name
                 if out_dir is None:
                     dst_lst += [os.path.join(d, 'inf_' + f).replace('\\', '/')
-                                for f in os.listdir(d) if f.endswith(('.sig', '.pkl' '.pklz'))]
+                                for f in os.listdir(d) if f.endswith(('.sig', '.pkl', '.pklz'))]
                 else:
                     base, name = os.path.split(d.rstrip('/\\'))
                     # Check name conflicts

@@ -3,16 +3,88 @@
 import sys
 import os
 from datetime import datetime
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
-__all__ = ["PyScriptExec", "path_selector"]
+__all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole',
+           'path_selector', 'table_loader', 'selection_operator']
 """
 Class list:
+  CellCheckbox(identifier=None, func=None): Table checkbox class.
+  CellData(val, aln='c', emp=None, clr=None): Data selection table cell data class.
   PyScriptExec: Execute Python script as a subprocess, with its console displayed.
+  ProcConsole: GUI process console control combo class.
 Functon list:
   path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialogue.
+  table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None): Path item to table.
+  selection_operator(select, mode): Item selection checkbox group operation.
 """
+
+
+class CellCheckbox(QtWidgets.QWidget):
+    def __init__(self, identifier=None, func=None):
+        """ Table checkbox class.
+
+        Args:
+            identifier: Instance identifier
+            func (function | None): Checkbox clicked connect function
+        """
+        super(CellCheckbox, self).__init__()
+        # Initialize a pre-checked checkbox
+        self.chkbox = QtWidgets.QCheckBox()
+        self.chkbox.setChecked(True)
+        self.id = identifier
+        # Link function
+        if func is not None:
+            self.chkbox.clicked.connect(func)
+        # Set layout
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.addWidget(self.chkbox)
+        self.layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+    def isChecked(self):
+        """ Return checked status of checkbox. """
+        return self.chkbox.isChecked()
+
+    def setChecked(self, status: bool):
+        """ Set checked status of checkbox. """
+        self.chkbox.setChecked(status)
+        return status
+
+
+class CellData(QtWidgets.QTableWidgetItem):
+    def __init__(self, val, aln='c', emp=None, clr=None):
+        """ Data selection table cell data class.
+
+        Args:
+            val:Value to fill in the cell, any type can convert to string
+            aln (str): Alignment method 'c' = centre | 'l' = left |  'r' = right (default: 'c' = centre)
+            emp (str | None): {'b' | 'i' | 'bi' | 'ib'} Text emphasize method 'b' = bold | 'i' = italic (default: None)
+            clr (tuple[int, int, int] | None): Text colour in RGB (default: None)
+        """
+        super(CellData, self).__init__()
+        # Set cell text
+        txt = val if isinstance(val, str) else str(val)
+        self.setText(txt)
+        # Set text emphasize method
+        if emp is not None:
+            font = self.font()
+            if 'b' in emp:
+                font.setBold(True)
+            if 'i' in emp:
+                font.setItalic(True)
+            self.setFont(font)
+        # Set text colour
+        if clr is not None:
+            self.setForeground(QtGui.QColor(*clr))
+        # Set alignment
+        if aln == 'l':
+            self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter)
+        elif aln == 'r':
+            self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
+        else:
+            self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
 
 class PyScriptExec(QtCore.QObject):
@@ -266,6 +338,102 @@ class PyScriptExec(QtCore.QObject):
         self.finished.emit()  # Send process control signal
 
 
+class ProcConsole:
+    def __init__(self, console, btn_clr, btn_cpy, btn_scr, lnk_proc, stat_bar=None, disp_time=True, init_msg=None):
+        """ GUI process console control combo class.
+
+        Args:
+            console (QtWidgets.QTextEdit): Qt rich text widget to display Python script commandline prints
+            btn_clr (QtWidgets.QPushButton): Qt push button to clear console
+            btn_cpy (QtWidgets.QPushButton): Qt push button to copy console texts
+            btn_scr (QtWidgets.QPushButton): Qt push button to switch console auto-scroll feature
+            lnk_proc (list[PyScriptExec]): List of script execution class linked to this console
+            stat_bar (QtWidgets.QStatusBar | None): Status bar for displaying extra info (default: None)
+            disp_time (bool): Print timestamp of commandline (default: True)
+            init_msg (str | None): Message when the console is re-initialized (default: None)
+        """
+        # Initialize attributes
+        self.console = console
+        self.btn_clr = btn_clr
+        self.btn_cpy = btn_cpy
+        self.btn_scr = btn_scr
+        self.stat_bar = stat_bar
+        self.__lnk_proc = lnk_proc
+        self.__disp_time = disp_time
+        self.__init_msg = init_msg
+        self.__auto_scr = True
+
+        # Initialize console
+        self.console_init()
+        self.set_auto_scroll(self.__auto_scr)
+        # Console easy access function control connection
+        self.btn_clr.clicked.connect(self.console_init)
+        self.btn_cpy.clicked.connect(self.console_copy)
+        # Console auto scroll to end features control connection
+        self.btn_scr.clicked.connect(self.__switch_auto_scroll)
+        self.console.verticalScrollBar().sliderPressed.connect(self.__manual_slider_press)
+        self.console.verticalScrollBar().sliderReleased.connect(self.__manual_slider_release)
+
+    def console_init(self):
+        """ Initialize process system console. """
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] if self.__disp_time else ''
+        text = "<span style=\"color:black;font-weight:bold;\">%s</span>" % self.__init_msg
+        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
+        self.console.clear()
+        self.console.append(message)
+        self.console.append('')  # Extra blank line
+        # Show status bar message
+        if self.stat_bar is not None:
+            self.stat_bar.showMessage("Console cleared")
+
+    def console_copy(self):
+        """ Copy all texts in console to clipboard. """
+        pos = self.console.verticalScrollBar().value()
+        # Copy all available messages
+        self.console.selectAll()
+        self.console.copy()
+        # Clear selection
+        tc = self.console.textCursor()
+        tc.clearSelection()
+        self.console.setTextCursor(tc)
+        self.console.verticalScrollBar().setValue(pos)
+        # Show status bar message
+        if self.stat_bar is not None:
+            self.stat_bar.showMessage("Console information successfully copied")
+
+    def set_auto_scroll(self, mode):
+        """ Set console auto scroll to end status.
+
+        Args:
+            mode (bool): Auto scroll to end status
+        """
+        self.__auto_scr = mode
+        # Set auto scroll button features
+        self.btn_scr.setChecked(mode)
+        if mode:
+            self.btn_scr.setStyleSheet('QPushButton{color:green;}')
+            self.btn_scr.setText("Auto Scroll\nON")
+        else:
+            self.btn_scr.setStyleSheet('QPushButton{color:red;}')
+            self.btn_scr.setText("Auto Scroll\nOFF")
+        # Set connected process auto scroll functions
+        for p in self.__lnk_proc:
+            p.set_auto_scroll(mode)
+
+    def __switch_auto_scroll(self):
+        """ Auto scroll button connected function. """
+        self.set_auto_scroll(not self.__auto_scr)
+
+    def __manual_slider_press(self):
+        """ Console vertical slider user PRESSED connected function. """
+        self.set_auto_scroll(False)
+
+    def __manual_slider_release(self):
+        """ Console vertical slider user RELEASED connected function. """
+        if self.console.verticalScrollBar().value() == self.console.verticalScrollBar().maximum():
+            self.set_auto_scroll(True)
+
+
 def path_selector(line, mode=None, caption=None, flt=None, parent=None):
     """ Select signal folder or file dialogue.
 
@@ -290,36 +458,150 @@ def path_selector(line, mode=None, caption=None, flt=None, parent=None):
             line.setText(path)
             return path
         else:
-            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid directory!", btn_ok | btn_re, btn_ok)
-            if reply == btn_ok:
-                line.clear()
-                return None
+            if path:
+                reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid directory!", btn_ok | btn_re, btn_ok)
+                if reply == btn_ok:
+                    line.clear()
+                    return None
+                else:
+                    path_selector(line, mode, caption, flt, parent)  # Retry self
             else:
-                path_selector(line, mode, caption, flt, parent)  # Retry self
+                # Operation cancelled
+                return None
     elif mode == 'file':
         file, _ = QtWidgets.QFileDialog.getOpenFileName(parent, caption, filter=flt)
         if file and os.path.isfile(file):
             line.setText(file)
             return file
         else:
-            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file!", btn_ok | btn_re, btn_ok)
-            if reply == btn_ok:
-                line.clear()
-                return None
+            if file:
+                reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file!", btn_ok | btn_re, btn_ok)
+                if reply == btn_ok:
+                    line.clear()
+                    return None
+                else:
+                    path_selector(line, mode, caption, flt, parent)  # Retry self
             else:
-                path_selector(line, mode, caption, flt, parent)  # Retry self
+                # Operation cancelled
+                return None
     elif mode == 'list':
         flst, _ = QtWidgets.QFileDialog.getOpenFileNames(parent, caption, filter=flt)
         if flst and all([os.path.isfile(f) for f in flst]):
             line.setText('; '.join(flst))
             return flst
         else:
-            reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file in list!", btn_ok | btn_re, btn_ok)
-            if reply == btn_ok:
-                line.clear()
-                return None
+            if flst:
+                reply = QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid file found!", btn_ok | btn_re, btn_ok)
+                if reply == btn_ok:
+                    line.clear()
+                    return None
+                else:
+                    path_selector(line, mode, caption, flt, parent)  # Retry self
             else:
-                path_selector(line, mode, caption, flt, parent)  # Retry self
+                # Operation cancelled
+                return None
     else:
-        QtWidgets.QMessageBox.warning(parent, "Warning", "Invalid mode", btn_ok)
-        return None
+        raise ValueError("Invalid operation mode, available modes ['path', 'file', 'list']")
+
+
+def table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None):
+    """ Load path item to table.
+
+    Args:
+        table (QtWidgets.QTableWidget): Path item view table widget
+        record (list[str]): Table item records for checking duplications
+        select (list[CellCheckbox]): Table item selection checkboxes
+        mode (str | None): {'path' | 'file'} File dialog mode (default: None = open path)
+        caption (str | None): Window caption
+        flt (str | None): Selector filter (default: None)
+        func (function | None): Checkbox clicked connected function (default: None)
+        parent (QtWidgets.QWidget | None): Parent Qt object
+
+    Returns:
+        tuple[str, list[str], list[CellCheckbox]]: Loading status and updated [record] and [select] list
+    """
+    mode = 'path' if mode is None else mode
+    caption = '' if caption is None else caption
+
+    if mode == 'path':
+        path = QtWidgets.QFileDialog.getExistingDirectory(parent, caption)
+        if path and os.path.isdir(path):
+            path = path.rstrip('\\/').replace('\\', '/')  # Unifying path
+            if path not in record:
+                record.append(path)
+                # Get current data
+                curr_row = table.rowCount()
+                curr_chk = CellCheckbox(identifier=path, func=func)
+                select.append(curr_chk)
+                # Set cell values
+                table.insertRow(curr_row)
+                table.setCellWidget(curr_row, 0, curr_chk)
+                table.setItem(curr_row, 1, CellData('DIRS', aln='c', emp='b', clr=(152, 110, 172)))
+                table.setItem(curr_row, 2, CellData(path, aln='l'))
+                # Return: path added
+                return "Selected folder added to table", record, select
+            else:
+                # Return: nothing to add
+                return "Selected folder already exist in table", record, select
+        if path:
+            # Return: invalid path
+            return "Invalid folder", record, select
+        else:
+            # Return: cancelled
+            return "No folder selected", record, select
+    elif mode == 'file':
+        flst, _ = QtWidgets.QFileDialog.getOpenFileNames(parent, caption, filter=flt)
+        if flst:
+            n = 0  # Counter
+            for f in flst:
+                f = f.replace('\\', '/')  # Unifying path
+                if os.path.isfile(f) and (f not in record):
+                    record.append(f)
+                    n += 1
+                    # Get current data
+                    curr_row = table.rowCount()
+                    curr_chk = CellCheckbox(identifier=f, func=func)
+                    select.append(curr_chk)
+                    # Set cell values
+                    table.insertRow(curr_row)
+                    table.setCellWidget(curr_row, 0, curr_chk)
+                    table.setItem(curr_row, 1, CellData('FILE', aln='c', emp='b', clr=(92, 174, 99)))
+                    table.setItem(curr_row, 2, CellData(f, aln='l'))
+            if n == 0:
+                # Return: noting to add
+                return "All selected file(s) found duplicated or invalid", record, select
+            elif len(flst) == n:
+                # Return: all file add
+                return "All selected file(s) added to table", record, select
+            else:
+                # Return: some file add
+                return "Some duplicated or invalid file(s) not added", record, select
+        else:
+            # Return: cancelled
+            return "No data file selected", record, select
+    else:
+        raise ValueError("Invalid operation mode, available modes ['path', 'file']")
+
+
+def selection_operator(select, mode):
+    """ Item selection checkbox group operation.
+
+    Args:
+        select (list[CellCheckbox]): Table item selection checkboxes
+        mode (str): {'all' | 'non' | 'inv'} Operation mode 'all' = all | 'non' = none | 'inv' = invert
+
+    Returns:
+        str: Operation report
+    """
+    if mode == 'all':
+        [cb.setChecked(True) for cb in select]
+        return "Select all data items"
+    elif mode == 'non':
+        [cb.setChecked(False) for cb in select]
+        return "Deselect all data items"
+    elif mode == 'inv':
+        [cb.setChecked(not cb.isChecked()) for cb in select]
+        return "Data selection has been inverted"
+    else:
+        # Error not raised to bypass [mode]
+        return "Invalid operation"

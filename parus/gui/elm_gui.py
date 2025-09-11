@@ -15,17 +15,19 @@ mpl.use('QtAgg')
 
 __package__ = 'parus.gui'
 from .. import pkg_data
-from ..scripts import gen_sim, gen_sta
+from ..scripts import gen_sim, gen_sta, mod_inf
 from .desg_genctrl import Ui_ParusGenWindow
+from .desg_modinf import Ui_ParusInfWindow
 from .desg_wfmsel import Ui_WfmSelWindow
 from .desg_resver import Ui_ParusResWindow
-from .elm_proc import PyScriptExec, path_selector
+from .elm_proc import PyScriptExec, ProcConsole, path_selector, table_loader, selection_operator
 from .elm_plot import ResPltLoader
 
-__all__ = ['ParusGen', 'WfmSel', 'ParusRes']
+__all__ = ['ParusGen', 'ParusInf', 'WfmSel', 'ParusRes']
 """
 Class list:
   ParusGen(parent=None): Parus simulated signal generation window.
+  ParusInf(parent=None): Parus data inference window.
   WfmSel(key, raw, parent=None): Result waveform channel selection window.
   ParusRes(file, parent=None): Parus inference results viewing and validation window.
 """
@@ -66,6 +68,11 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Process control button extra settings
         self.genSimButton.clicked.connect(self.__switch_gen_sim)
         self.genStaButton.clicked.connect(self.__switch_gen_sta)
+        # Initialize console
+        self._console = ProcConsole(console=self.procConsole,
+                                    btn_clr=self.procConClear, btn_cpy=self.procConCopy, btn_scr=self.procConScroll,
+                                    lnk_proc=[self._sim_proc, self._sta_proc], stat_bar=self.statBar, disp_time=True,
+                                    init_msg="Parus Signal Generation GUI ready!")
 
         # Set data variable defaults
         self.arc_dir = None
@@ -134,17 +141,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Reset controls
         self.clrSetButton.clicked.connect(self.reset_all)
 
-        # Initialize console
-        self.console_init()
-        self.set_auto_scroll(self.__auto_scr)
-        # Console easy access function control connection
-        self.procConClear.clicked.connect(self.console_init)
-        self.procConCopy.clicked.connect(self.console_copy)
-        # Console auto scroll to end features control connection
-        self.procConScroll.clicked.connect(self.__switch_auto_scroll)
-        self.procConsole.verticalScrollBar().sliderPressed.connect(self.__manual_slider_press)
-        self.procConsole.verticalScrollBar().sliderReleased.connect(self.__manual_slider_release)
-
         # Load previous execution parameters
         self.__load_params()
         # System standby
@@ -209,6 +205,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
     def set_gensim_args(self):
         """ Set arguments for simulated signal generation. """
         if (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0):
+            self.genSimButton.setEnabled(False)
             self._sim_proc.reset_arguments()
         else:
             # Check signal grouping
@@ -227,6 +224,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
                     self.min_gap + self.max_gap + grouping + self.no_rat + self.sig_fac + self.noi_fac +
                     baseline + self.num_eg + self.set_typ)
             self._sim_proc.set_arguments(args)
+            self.genSimButton.setEnabled(True)
 
     def __switch_gen_sim(self):
         """ ParusGenSim button connected function. """
@@ -403,9 +401,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.arc_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
 
     def __set_sig_dir(self):
         """ Select archived signal file (*.arc) folder line edit connection. """
@@ -418,9 +413,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.statBar.showMessage("Archival signal folder is invalid!")
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
         # Execute timer
         if self.__timer_val != -1:
             self.killTimer(self.__timer_val)
@@ -433,9 +425,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.noi_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
 
     def __set_noi_dir(self):
         """ Select archived noise file (*.noi) folder line edit connection. """
@@ -448,9 +437,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.statBar.showMessage("Archival noise folder is invalid!")
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
         # Execute timer
         if self.__timer_val != -1:
             self.killTimer(self.__timer_val)
@@ -463,9 +449,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.out_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
 
     def __set_out_dir(self):
         """ Select generation output folder line edit connection. """
@@ -478,9 +461,6 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.statBar.showMessage("Generation output folder is invalid!")
         # Update process arguments
         self.set_gensim_args()
-        # Set availability of generation start button
-        flag = (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0)
-        self.genSimButton.setEnabled(not flag)
         # Execute timer
         if self.__timer_val != -1:
             self.killTimer(self.__timer_val)
@@ -659,63 +639,259 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self._sta_proc.reset_arguments()
             self.genStaButton.setEnabled(False)
 
-    # Console related functions -------------------------------------------------------------------------------------- #
-    def console_init(self):
-        """ Initialize process system console. """
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        text = "<span style=\"color:black;font-weight:bold;\">Parus Signal Generation GUI ready!</span>"
-        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
-        self.procConsole.clear()
-        self.procConsole.append(message)
-        self.procConsole.append('')  # Extra blank line
-        # Show status bar message
-        self.statBar.showMessage("Console cleared")
 
-    def console_copy(self):
-        """ Copy all texts in console to clipboard. """
-        pos = self.procConsole.verticalScrollBar().value()
-        # Copy all available messages
-        self.procConsole.selectAll()
-        self.procConsole.copy()
-        # Clear selection
-        tc = self.procConsole.textCursor()
-        tc.clearSelection()
-        self.procConsole.setTextCursor(tc)
-        self.procConsole.verticalScrollBar().setValue(pos)
-        # Show status bar message
-        self.statBar.showMessage("Console information successfully copied")
-
-    def set_auto_scroll(self, mode):
-        """ Set console auto scroll to end status.
+class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
+    def __init__(self, parent=None):
+        """ Parus data inference window.
 
         Args:
-            mode (bool): Auto scroll to end status
+            parent: Parent window or widget
         """
-        self.__auto_scr = mode
-        # Set auto scroll button features
-        self.procConScroll.setChecked(mode)
-        if mode:
-            self.procConScroll.setStyleSheet('QPushButton{color:green;}')
-            self.procConScroll.setText("Auto Scroll\nON")
+        # Initialize GUI
+        super(ParusInf, self).__init__(parent)
+        self.setupUi(self)
+        self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+        # Set file table view
+        self.inputTable.setColumnWidth(0, 50)
+        self.inputTable.setColumnWidth(1, 50)
+        self.inputTable.horizontalHeader().setStretchLastSection(True)
+        # Set control variable defaults
+        self.__auto_scr = True
+        self.__proc_run = False
+
+        # Set inference process
+        self._proc = PyScriptExec(script=mod_inf, console=self.procConsole, trigger=self.procButton,
+                                  name="Parus [Data Inference]", disp_time=True, clr_con=False,
+                                  trig_txt=("Initiate Data Inference", "Stop Process"))
+        self._proc.set_auto_scroll(self.__auto_scr)
+        self._proc.started.connect(self.__proc_start)
+        self._proc.finished.connect(self.__proc_finish)
+        # Initialize console
+        self._console = ProcConsole(console=self.procConsole,
+                                    btn_clr=self.procConClear, btn_cpy=self.procConCopy, btn_scr=self.procConScroll,
+                                    lnk_proc=[self._proc], stat_bar=self.statBar, disp_time=True,
+                                    init_msg="Parus Data Inference GUI ready!")
+
+        # Control variables
+        self.lst_file = []
+        self._sel_file = []
+        self.lst_dirs = []
+        self._sel_dirs = []
+        self.ckpt = None
+        self.ovlp = self.__set_ovlp_len()
+        self.btsz = self.__set_bat_size()
+        self.clvl = self.__set_comp_lvl()
+        self.out_path = []
+
+        # Connect buttons
+        self.addFileButton.clicked.connect(self.__set_data_file)
+        self.addPathButton.clicked.connect(self.__set_data_path)
+        self.selAllButton.clicked.connect(lambda: self.__set_selc('all'))
+        self.selNonButton.clicked.connect(lambda: self.__set_selc('non'))
+        self.selInvButton.clicked.connect(lambda: self.__set_selc('inv'))
+        self.ckptButton.clicked.connect(self.__sel_mod_ckpt)
+        self.ckptLine.textChanged.connect(self.__set_mod_ckpt)
+        self.ovlpSpinbox.valueChanged.connect(self.__set_ovlp_len)
+        self.btszSpinbox.valueChanged.connect(self.__set_bat_size)
+        self.clvlCombo.currentIndexChanged.connect(self.__set_comp_lvl)
+        self.outputButton.clicked.connect(self.__sel_out_path)
+        self.outputLine.textChanged.connect(self.__set_out_path)
+
+        # Load previous execution parameters
+        self.__load_params()
+        # System standby
+        self.statBar.showMessage("System standby")
+
+    def ctrl_enable(self, enable=True):
+        """ Set enable status of controls.
+
+        Args:
+            enable (bool): Enable status of controls (default: True)
+        """
+        self.addFileButton.setEnabled(enable)
+        self.addPathButton.setEnabled(enable)
+        self.selAllButton.setEnabled(enable)
+        self.selNonButton.setEnabled(enable)
+        self.selInvButton.setEnabled(enable)
+        self.ckptLine.setEnabled(enable)
+        self.ckptButton.setEnabled(enable)
+        self.ovlpSpinbox.setEnabled(enable)
+        self.btszSpinbox.setEnabled(enable)
+        self.clvlCombo.setEnabled(enable)
+        self.outputLine.setEnabled(enable)
+        self.outputButton.setEnabled(enable)
+        # Disable table selection checkboxes
+        for cb in self._sel_file + self._sel_dirs:
+            cb.setEnabled(enable)
+
+    # Process related functions -------------------------------------------------------------------------------------- #
+    def set_proc_args(self):
+        """ Set arguments for model inference. """
+        # Get process path lists
+        flst = [s.id for s in self._sel_file if s.isChecked()]
+        dlst = [s.id for s in self._sel_dirs if s.isChecked()]
+        # Set arguments
+        if (self.ckpt is None) or (len(flst + dlst) == 0):
+            self.procButton.setEnabled(False)
+            self._proc.reset_arguments()
         else:
-            self.procConScroll.setStyleSheet('QPushButton{color:red;}')
-            self.procConScroll.setText("Auto Scroll\nOFF")
-        # Set connected process auto scroll functions
-        self._sim_proc.set_auto_scroll(mode)
-        self._sta_proc.set_auto_scroll(mode)
+            flst = ['-f'] + flst if flst else []
+            dlst = ['-d'] + dlst if dlst else []
+            args = (self.ckpt + flst + dlst + self.out_path + self.ovlp + self.btsz + self.clvl)
+            self._proc.set_arguments(args)
+            self.procButton.setEnabled(True)
 
-    def __switch_auto_scroll(self):
-        """ Auto scroll button connected function. """
-        self.set_auto_scroll(not self.__auto_scr)
+    def __switch_proc_btn(self):
+        """ ParusModInf button connected function. """
+        if self.__proc_run:
+            self.procButton.setStyleSheet('QPushButton {color: red}')
+        else:
+            self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
-    def __manual_slider_press(self):
-        """ Console vertical slider user PRESSED connected function. """
-        self.set_auto_scroll(False)
+    def __proc_start(self):
+        """ ParusModInf process STARTED connected function. """
+        self.__proc_run = True
+        self.__switch_proc_btn()
+        self.ctrl_enable(False)
+        self.statBar.showMessage("Parus data inference started")
 
-    def __manual_slider_release(self):
-        """ Console vertical slider user RELEASED connected function. """
-        if self.procConsole.verticalScrollBar().value() == self.procConsole.verticalScrollBar().maximum():
-            self.set_auto_scroll(True)
+    def __proc_finish(self):
+        """ ParusModInf process FINISHED connected function. """
+        # Reset button
+        self.__proc_run = False
+        self.ctrl_enable(True)
+        self.__switch_proc_btn()
+        # Display status
+        if self._proc.fin_stop:
+            # Save current successful execution params
+            self.__save_params()
+            self.statBar.showMessage("Data inference successfully finished")
+        else:
+            self.statBar.showMessage("Data inference terminated")
+
+    # Control element related functions ------------------------------------------------------------------------------ #
+    def __load_params(self):
+        """ Load GUI settings from previous execution. """
+        par_json = os.path.join(pkg_data, '_inf_params.json')
+        if os.path.isfile(par_json):
+            # Load previous settings
+            with open(par_json, 'r') as fp:
+                pars = json.load(fp)
+            # Set to current controls
+            self.ckptLine.setText(pars['model_checkpoint'])
+            self.ovlpSpinbox.setValue(pars['overlap_length'])
+            self.btszSpinbox.setValue(pars['batch_size'])
+            self.clvlCombo.setCurrentIndex(pars['compression_level'])
+
+    def __save_params(self):
+        """ Save GUI settings of current execution. """
+        pars = {}  # INIT VAR
+        # Read current controls
+        pars['model_checkpoint'] = self.ckptLine.text()
+        pars['overlap_length'] = self.ovlpSpinbox.value()
+        pars['batch_size'] = self.btszSpinbox.value()
+        pars['compression_level'] = self.clvlCombo.currentIndex()
+        # Save to file
+        with open(os.path.join(pkg_data, '_inf_params.json'), 'w') as fp:
+            json.dump(pars, fp, indent=2)
+
+    def __set_data_file(self):
+        """ Add file(s) to file selection table. """
+        stat, self.lst_file, self._sel_file = table_loader(
+            self.inputTable, self.lst_file, self._sel_file, mode='file', caption="Select Data File(s)",
+            flt="Signal Files (*.sig *.pkl *.pklz)", func=self.set_proc_args, parent=self)
+        self.statBar.showMessage(stat)
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_data_path(self):
+        """ Add directory to file selection table. """
+        stat, self.lst_dirs, self._sel_dirs = table_loader(
+            self.inputTable, self.lst_dirs, self._sel_dirs, mode='path', caption="Select Data Folder",
+            func=self.set_proc_args, parent=self)
+        self.statBar.showMessage(stat)
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_selc(self, mode):
+        """ Selection quick access buttons attached function. """
+        stat = selection_operator(self._sel_file + self._sel_dirs, mode)
+        self.statBar.showMessage(stat)
+        # Update process arguments
+        self.set_proc_args()
+
+    def __sel_mod_ckpt(self):
+        """ Select model trained weight file (*.ckpt). """
+        mta = path_selector(self.ckptLine, mode='file', caption="Select Model Trained Weights",
+                            flt="Checkpoint (*.ckpt)", parent=self)
+        if mta is None:
+            self.ckpt = None
+            self.statBar.showMessage("Model trained weights file selection cancelled")
+        else:
+            self.ckpt = [mta]
+            self.statBar.showMessage("Model trained weights file selected")
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_mod_ckpt(self):
+        """ Set model trained weight file (*.ckpt). """
+        mta = self.ckptLine.text()
+        if os.path.isfile(mta):
+            self.ckpt = [mta]
+            self.statBar.showMessage("Model trained weights file set")
+        else:
+            self.ckpt = None
+            self.statBar.showMessage("Model trained weights file is invalid!")
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_ovlp_len(self):
+        """ Set sample overlapping length. """
+        ovlp = self.ovlpSpinbox.value()
+        self.ovlp = ['-lp', str(ovlp)]
+        # Update process arguments
+        self.set_proc_args()
+        return self.ovlp
+
+    def __set_bat_size(self):
+        """ Set model process batch size. """
+        btsz = self.btszSpinbox.value()
+        self.btsz = ['-bs', str(btsz)]
+        # Update process arguments
+        self.set_proc_args()
+        return self.btsz
+
+    def __set_comp_lvl(self):
+        """ Set output file data compression level. """
+        clvl = self.clvlCombo.currentIndex()
+        self.clvl = ['-cp', str(clvl)]
+        # Update process arguments
+        self.set_proc_args()
+        return self.clvl
+
+    def __sel_out_path(self):
+        """ Select result output directory. """
+        otp = path_selector(self.outputLine, mode='path', caption="Select Output Directory", parent=self)
+        if otp is None:
+            self.out_path = []
+            self.statBar.showMessage("Output path selection cancelled")
+        else:
+            self.out_path = ['-o', otp]
+            self.statBar.showMessage("Output path selected")
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_out_path(self):
+        """ Set result output directory.  """
+        otp = self.outputLine.text()
+        if os.path.isdir(otp):
+            self.out_path = ['-o', otp]
+            self.statBar.showMessage("Output path set")
+        else:
+            self.out_path = []
+            self.statBar.showMessage("Output path is invalid!")
+        # Update process arguments
+        self.set_proc_args()
 
 
 class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
