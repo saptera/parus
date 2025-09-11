@@ -16,7 +16,7 @@ mpl.use('QtAgg')
 __package__ = 'parus.gui'
 from .. import pkg_data
 from ..scripts import gen_sim, gen_sta, mod_inf
-from .desg_genctrl import Ui_ParusGenWindow
+from .desg_genctl import Ui_ParusGenWindow
 from .desg_modinf import Ui_ParusInfWindow
 from .desg_wfmsel import Ui_WfmSelWindow
 from .desg_resver import Ui_ParusResWindow
