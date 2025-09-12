@@ -83,13 +83,15 @@ class InferenceDataset(Dataset):
             self.pad = (total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - total
             self.n_sample = (total - overlap - 1) // (seq_len - overlap) + 1
         # Set input array
-        self.sig = np.pad(self.raw, ((0, 0), (0, self.pad)), mode='constant', constant_values=0).flatten(order='C')
+        self.sig = np.pad(self.raw, ((0, 0), (0, self.pad)), mode='constant', constant_values=0)
 
     def __len__(self):
         return self.n_sample * self.n_ch
 
     def __getitem__(self, index):
-        # Not converting in __init__ to avoid memory issues
-        init = index * self.step
+        # Get channel and index position
+        c, i = divmod(index, self.n_sample)
+        init = i * self.step
         stop = init + self.seq_len
-        return torch.from_numpy(self.sig[init:stop]).type(torch.FloatTensor).view(1, self.seq_len)
+        # Not converting in [__init__] to avoid memory issues
+        return torch.from_numpy(self.sig[c, init:stop]).type(torch.FloatTensor).view(1, self.seq_len)

@@ -1038,6 +1038,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.xrangeSpinBox.keyPressEvent = self.__keybypass_xrange
         self.yminSpinBox.keyPressEvent = self.__keybypass_ymin
         self.ymaxSpinBox.keyPressEvent = self.__keybypass_ymax
+        self.actchnComboBox.keyPressEvent = self.__keybypass_actchn
         self.actanoComboBox.keyPressEvent = self.__keybypass_actano
 
     class SaveResThread(QtCore.QThread):
@@ -1189,6 +1190,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         if self.keyPressEvent(event):
             QtWidgets.QDoubleSpinBox.keyPressEvent(self.ymaxSpinBox, event)
 
+    def __keybypass_actchn(self, event):
+        """ Override function for [actchnComboBox] keyPressEvent. """
+        if self.keyPressEvent(event):
+            QtWidgets.QComboBox.keyPressEvent(self.actanoComboBox, event)
+
     def __keybypass_actano(self, event):
         """ Override function for [actanoComboBox] keyPressEvent. """
         if self.keyPressEvent(event):
@@ -1234,7 +1240,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.signalScrollBar.setPageStep(0)
             self.signalScrollBar.setEnabled(False)
         else:
-            self.signalScrollBar.setMaximum(int((self.__t_all - self.xrangeSpinBox.value() / 1000) * 1000 + 50))
+            self.signalScrollBar.setMaximum(int((self.__t_all - self.xrangeSpinBox.value() / 1000) * 1000 + 1))
             self.signalScrollBar.setSingleStep(int(self.xrangeSpinBox.value() * 0.5))
             self.signalScrollBar.setPageStep(int(self.xrangeSpinBox.value()))
             self.signalScrollBar.setEnabled(True)

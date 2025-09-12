@@ -445,7 +445,9 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Connect to Qt backend
         super(ResPltLoader, self).__init__(self.fig)
         # Connect to BlitManager
-        key_wpm = {k: {c: list(self.data['pos'][k][c].keys()) for c in self.data['pos'][k]} for k in self.data['pos']}
+        key_wpm = {
+            k: {c: list(self.data['pos'][k][c].keys()) for c in self.data['pos'][k]} for k in self.data['pos']
+        } if 'pos' in self.data else {}
         self._wpm = WfmPosMarker(self.fig.canvas, self.ax, self.t, key_wpm)
         self._wpm.set_chn(self.__ch)
 

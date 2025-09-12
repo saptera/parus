@@ -119,7 +119,7 @@ def inference(model, datagen, channel, device):
         np.ndarray: {3D-float32 (Index, Channel, Sample)} Inference results
     """
     bs = datagen.batch_size
-    shape = (datagen.dataset.n_sample, channel, datagen.dataset.seq_len)
+    shape = (len(datagen.dataset), channel, datagen.dataset.seq_len)
     # Initialize return
     spk = np.zeros(shape, dtype=np.float32)
     # Inference
