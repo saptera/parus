@@ -175,7 +175,11 @@ if __name__ == '__main__':
                 shuffle=False,
                 num_workers=hparams['data']['n_worker'])
             res = inference(model, inf_datagen, model_hparams['output_channels'], device)
-            spk = {g: sig_merge(res[:, c, :], args.overlap, inf_dataset.pad) for c, g in enumerate(spk_grp)}
+            # Merge output
+            spk = {}  # INIT VAR
+            for c, g in enumerate(spk_grp):
+                arr = res[:, c, :].reshape((inf_dataset.n_ch, inf_dataset.n_sample, inf_dataset.seq_len), order='C')
+                spk[g] = np.asarray([sig_merge(arr[n], args.overlap, inf_dataset.pad) for n in range(inf_dataset.n_ch)])
             # CLI print
             t_proc = time.time()  # Process time
             print("    Data [%s] processed in %.4f seconds (%d/%d)" % (src, t_proc - t_init, i + 1, tot_len))
@@ -184,7 +188,7 @@ if __name__ == '__main__':
             fp = h5.File(dst, 'w')
             fp.create_dataset(name='src', data=src, dtype=h5.string_dtype(encoding='utf-8', length=None))
             fp.create_dataset(name='frq', data=np.asarray(inf_dataset.frq, dtype=np.float32))
-            fp.create_dataset(name='inp', data=inf_dataset.raw[0], compression="gzip", compression_opts=args.cmp_lvl)
+            fp.create_dataset(name='inp', data=inf_dataset.raw, compression="gzip", compression_opts=args.cmp_lvl)
             grp = fp.create_group('spk')
             for g in spk:
                 grp.create_dataset(name=g, data=spk[g], compression="gzip", compression_opts=args.cmp_lvl)

@@ -994,11 +994,13 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Update to curren class
         self.data = self._result.data
         self.fileLine.setText(file.replace('\\', '/'))
+        # Set valid channel names
+        [self.actchnComboBox.addItem("CH-%04d" % i) for i in range(self._result.nch)]
         # Set valid position names
         pos_key = sum([[k + ' - ' + p for p in self._result.pos[k]] for k in self._result.pos], [])
         [self.actanoComboBox.addItem(k) for k in pos_key]
 
-        # Set up channel selection window
+        # Set up waveform selection window
         wfm_key = [k for k in self._result.wfm]
         wfm_raw = ['RAW' in k for k in wfm_key]
         self.__wfm_sel_win = WfmSel(wfm_key, wfm_raw, self)
@@ -1015,10 +1017,10 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.xrangeSpinBox.setMaximum(min(self.__t_all, 10) * 1000)  # Max 10 seconds
         self.__update_scroll_bar()
         # Set amplitude controls
-        self.yminSpinBox.setMinimum(self._result.ax[0].get_ybound()[0])
-        self.yminSpinBox.setValue(self._result.ax[0].get_ybound()[0])
-        self.ymaxSpinBox.setMaximum(self._result.ax[0].get_ybound()[1])
-        self.ymaxSpinBox.setValue(self._result.ax[0].get_ybound()[1])
+        self.yminSpinBox.setMinimum(self._result.ax[0].get_ylim()[0])
+        self.yminSpinBox.setValue(self._result.ax[0].get_ylim()[0])
+        self.ymaxSpinBox.setMaximum(self._result.ax[0].get_ylim()[1])
+        self.ymaxSpinBox.setValue(self._result.ax[0].get_ylim()[1])
 
         # Set control connection
         self.toolbarBox.clicked.connect(self.__ctrl_mode_switch)
@@ -1026,6 +1028,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.xrangeSpinBox.valueChanged.connect(self.__update_plot_rng)
         self.yminSpinBox.valueChanged.connect(self.__update_plot_amp)
         self.ymaxSpinBox.valueChanged.connect(self.__update_plot_amp)
+        self.actchnComboBox.currentIndexChanged.connect(self.__set_act_chn)
         self.actanoComboBox.currentIndexChanged.connect(self.__set_act_pos)
         self.lnkAnoBox.clicked.connect(self.__toggle_lnk_ano)
         self.wfmselButton.clicked.connect(self.__wfm_sel_win.show)
@@ -1060,12 +1063,12 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             # Save corrected positions
             grp = fp.create_group('pos')
             for k in self.data['pos']:
-                if isinstance(self.data['pos'][k], dict):
-                    ctp = grp.create_group(k)
-                    for p in self.data['pos'][k]:
-                        ctp.create_dataset(name=p, data=self.data['pos'][k][p], compression="gzip", compression_opts=9)
-                else:
-                    grp.create_dataset(name=k, data=self.data['pos'][k], compression="gzip", compression_opts=9)
+                skg = grp.create_group(k)
+                for c in self.data['pos'][k]:
+                    chg = skg.create_group(c)
+                    for p in self.data['pos'][k][c]:
+                        new_pos = self.data['pos'][k][c][p]
+                        chg.create_dataset(name=p, data=new_pos, compression="gzip", compression_opts=9)
             # Close file
             fp.close()
 
@@ -1267,6 +1270,26 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         if self.__timer_val != -1:
             self.killTimer(self.__timer_val)
         self.__timer_val = self.startTimer(50)
+
+    def __set_act_chn(self):
+        """ Plot selected data channel. """
+        # Reset active position
+        self.actanoComboBox.setCurrentIndex(0)
+        # Update plot
+        chn = self.actchnComboBox.currentIndex()
+        self._result.plt_ch(chn)
+        # Update annotation list
+        self.actanoComboBox.clear()
+        pos_key = sum([[k + ' - ' + p for p in self._result.pos[k]] for k in self._result.pos], ['NONE'])
+        [self.actanoComboBox.addItem(k) for k in pos_key]
+        # Update amplitude controls
+        self.yminSpinBox.setMinimum(self._result.ax[0].get_ylim()[0])
+        self.yminSpinBox.setValue(self._result.ax[0].get_ylim()[0])
+        self.ymaxSpinBox.setMaximum(self._result.ax[0].get_ylim()[1])
+        self.ymaxSpinBox.setValue(self._result.ax[0].get_ylim()[1])
+        # Set active waveform back to [RAW]
+        self.__act_wfm = 'RAW'
+        self._result.set_act_wfm(self.__act_wfm)
 
     def __set_act_pos(self):
         """ Set active spike position to verify. """

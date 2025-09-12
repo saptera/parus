@@ -18,7 +18,7 @@ class Ui_ParusResWindow(object):
     def setupUi(self, ParusResWindow):
         if not ParusResWindow.objectName():
             ParusResWindow.setObjectName(u"ParusResWindow")
-        ParusResWindow.resize(1018, 745)
+        ParusResWindow.resize(1218, 745)
         self.centralWidget = QWidget(ParusResWindow)
         self.centralWidget.setObjectName(u"centralWidget")
         self.centralLayout = QVBoxLayout(self.centralWidget)
@@ -30,7 +30,7 @@ class Ui_ParusResWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.signalFrame.sizePolicy().hasHeightForWidth())
         self.signalFrame.setSizePolicy(sizePolicy)
-        self.signalFrame.setMinimumSize(QSize(1000, 600))
+        self.signalFrame.setMinimumSize(QSize(1200, 600))
         self.signalFrame.setFrameShape(QFrame.Shape.StyledPanel)
         self.signalFrame.setFrameShadow(QFrame.Shadow.Sunken)
         self.signalLayout = QVBoxLayout(self.signalFrame)
@@ -61,6 +61,24 @@ class Ui_ParusResWindow(object):
 
 
         self.pltctrlLayout.addLayout(self.fileLayout)
+
+        self.actchnLayout = QVBoxLayout()
+        self.actchnLayout.setSpacing(3)
+        self.actchnLayout.setObjectName(u"actchnLayout")
+        self.actchnLabel = QLabel(self.centralWidget)
+        self.actchnLabel.setObjectName(u"actchnLabel")
+
+        self.actchnLayout.addWidget(self.actchnLabel)
+
+        self.actchnComboBox = QComboBox(self.centralWidget)
+        self.actchnComboBox.setObjectName(u"actchnComboBox")
+        self.actchnComboBox.setMinimumSize(QSize(120, 22))
+        self.actchnComboBox.setMaximumSize(QSize(120, 22))
+
+        self.actchnLayout.addWidget(self.actchnComboBox)
+
+
+        self.pltctrlLayout.addLayout(self.actchnLayout)
 
         self.pltCtrlSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -272,6 +290,7 @@ class Ui_ParusResWindow(object):
         self.centralLayout.addLayout(self.corExLayout)
 
         ParusResWindow.setCentralWidget(self.centralWidget)
+        QWidget.setTabOrder(self.actchnComboBox, self.actanoComboBox)
         QWidget.setTabOrder(self.actanoComboBox, self.xrangeSpinBox)
         QWidget.setTabOrder(self.xrangeSpinBox, self.yminSpinBox)
         QWidget.setTabOrder(self.yminSpinBox, self.ymaxSpinBox)
@@ -292,6 +311,7 @@ class Ui_ParusResWindow(object):
 #if QT_CONFIG(tooltip)
         self.fileLine.setToolTip(QCoreApplication.translate("ParusResWindow", u"File name of current plot", None))
 #endif // QT_CONFIG(tooltip)
+        self.actchnLabel.setText(QCoreApplication.translate("ParusResWindow", u"Current Channel", None))
         self.xrangeLabel.setText(QCoreApplication.translate("ParusResWindow", u"Time Range", None))
 #if QT_CONFIG(tooltip)
         self.xrangeSpinBox.setToolTip(QCoreApplication.translate("ParusResWindow", u"Set the time range of the plot", None))

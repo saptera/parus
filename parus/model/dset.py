@@ -71,11 +71,11 @@ class InferenceDataset(Dataset):
         # Get features
         self.frq = data['frq']
         self.raw = data['sig'][np.newaxis, :] if data['sig'].ndim == 1 else data['sig'].copy()
+        self.n_ch, total = self.raw.shape[:2]
         self.seq_len = seq_len
         self.overlap = overlap
         self.step = seq_len - overlap
         # Check padding length
-        total = len(data['sig'])
         if total < seq_len:
             self.pad = seq_len - total
             self.n_sample = 1
@@ -83,10 +83,10 @@ class InferenceDataset(Dataset):
             self.pad = (total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - total
             self.n_sample = (total - overlap - 1) // (seq_len - overlap) + 1
         # Set input array
-        self.sig = np.pad(data['sig'], (0, self.pad), mode='constant', constant_values=0)
+        self.sig = np.pad(self.raw, ((0, 0), (0, self.pad)), mode='constant', constant_values=0).flatten(order='C')
 
     def __len__(self):
-        return self.n_sample
+        return self.n_sample * self.n_ch
 
     def __getitem__(self, index):
         # Not converting in __init__ to avoid memory issues

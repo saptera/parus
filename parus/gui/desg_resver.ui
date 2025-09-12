@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1018</width>
+    <width>1218</width>
     <height>745</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>1000</width>
+        <width>1200</width>
         <height>600</height>
        </size>
       </property>
@@ -90,6 +90,36 @@
           </property>
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="actchnLayout">
+        <property name="spacing">
+         <number>3</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="actchnLabel">
+          <property name="text">
+           <string>Current Channel</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="actchnComboBox">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>22</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>22</height>
+           </size>
           </property>
          </widget>
         </item>
@@ -542,6 +572,7 @@ QScrollBar::sub-line:horizontal {
   </widget>
  </widget>
  <tabstops>
+  <tabstop>actchnComboBox</tabstop>
   <tabstop>actanoComboBox</tabstop>
   <tabstop>xrangeSpinBox</tabstop>
   <tabstop>yminSpinBox</tabstop>
