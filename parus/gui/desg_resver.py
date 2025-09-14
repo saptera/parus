@@ -278,6 +278,14 @@ class Ui_ParusResWindow(object):
 
         self.corExLayout.addItem(self.cxModeSpacerA)
 
+        self.cxSvasButton = QPushButton(self.centralWidget)
+        self.cxSvasButton.setObjectName(u"cxSvasButton")
+        self.cxSvasButton.setMinimumSize(QSize(120, 30))
+        self.cxSvasButton.setMaximumSize(QSize(120, 30))
+        self.cxSvasButton.setFont(font2)
+
+        self.corExLayout.addWidget(self.cxSvasButton)
+
         self.cxSaveButton = QPushButton(self.centralWidget)
         self.cxSaveButton.setObjectName(u"cxSaveButton")
         self.cxSaveButton.setMinimumSize(QSize(120, 30))
@@ -298,7 +306,8 @@ class Ui_ParusResWindow(object):
         QWidget.setTabOrder(self.lnkAnoBox, self.wfmselButton)
         QWidget.setTabOrder(self.wfmselButton, self.toolbarBox)
         QWidget.setTabOrder(self.toolbarBox, self.cxDiscardButton)
-        QWidget.setTabOrder(self.cxDiscardButton, self.cxSaveButton)
+        QWidget.setTabOrder(self.cxDiscardButton, self.cxSvasButton)
+        QWidget.setTabOrder(self.cxSvasButton, self.cxSaveButton)
 
         self.retranslateUi(ParusResWindow)
 
@@ -340,6 +349,10 @@ class Ui_ParusResWindow(object):
         self.cxDiscardButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
 #endif // QT_CONFIG(tooltip)
         self.cxDiscardButton.setText(QCoreApplication.translate("ParusResWindow", u"Discard && Exit", None))
+#if QT_CONFIG(tooltip)
+        self.cxSvasButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
+#endif // QT_CONFIG(tooltip)
+        self.cxSvasButton.setText(QCoreApplication.translate("ParusResWindow", u"Save As", None))
 #if QT_CONFIG(tooltip)
         self.cxSaveButton.setToolTip(QCoreApplication.translate("ParusResWindow", u"Select displaying channel(s)", None))
 #endif // QT_CONFIG(tooltip)

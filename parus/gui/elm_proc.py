@@ -6,7 +6,7 @@ from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
-__all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole',
+__all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole', 'ProgBusyDialog',
            'path_selector', 'table_loader', 'selection_operator']
 """
 Class list:
@@ -14,12 +14,15 @@ Class list:
   CellData(val, aln='c', emp=None, clr=None): Data selection table cell data class.
   PyScriptExec: Execute Python script as a subprocess, with its console displayed.
   ProcConsole: GUI process console control combo class.
+  ProgBusyDialog(parent=None, message="Please wait.."): Non-interactive, application-modal busy dialog.
 Functon list:
-  path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialogue.
+  path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialog.
   table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None): Path item to table.
   selection_operator(select, mode): Item selection checkbox group operation.
 """
 
+
+# Classes ------------------------------------------------------------------------------------------------------------ #
 
 class CellCheckbox(QtWidgets.QWidget):
     def __init__(self, identifier=None, func=None):
@@ -434,8 +437,39 @@ class ProcConsole:
             self.set_auto_scroll(True)
 
 
+class ProgBusyDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, message="Busy\nPlease wait.."):
+        """ Non-interactive, application-modal busy dialog.
+
+        Args:
+            parent (QtCore.QObject | None): Parent Qt object
+            message (str): Messagebox message, support HTML formatting (default: "Please wait...")
+        """
+        super().__init__(parent)
+        self.allow_close = False  # Avoid user close [Alt+F4] and early programmatic close
+        # Set window feature
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowCloseButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowMinimizeButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowMaximizeButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowContextHelpButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint, True)
+        self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
+        # Set UI feature
+        lbl = QtWidgets.QLabel(message)
+        lbl.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(lbl)
+        self.setLayout(layout)
+        self.setFixedSize(200, 90)
+
+    def closeEvent(self, event):
+        event.accept() if self.allow_close else event.ignore()
+
+
+# Functions ---------------------------------------------------------------------------------------------------------- #
+
 def path_selector(line, mode=None, caption=None, flt=None, parent=None):
-    """ Select signal folder or file dialogue.
+    """ Select signal folder or file dialog.
 
     Args:
         line (QtWidgets.QLineEdit): Text line edit for showing and editing the path

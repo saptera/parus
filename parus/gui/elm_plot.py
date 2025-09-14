@@ -132,8 +132,9 @@ class WfmPosMarker(BlitManager):
         """
         # Get index search constants
         self.t = t
+        self.lim = len(t) - 1
         self.__t_ini = t[0].item()
-        self.__t_fac = 0 if t[-1] == t[0] else (len(t) - 1) / (t[-1].item() - t[0].item())
+        self.__t_fac = 0 if t[-1] == t[0] else self.lim / (t[-1].item() - t[0].item())
         self.idx = None  # Current plot index
         # Set data arrays
         self._wfm = wfm
@@ -343,6 +344,7 @@ class WfmPosMarker(BlitManager):
                 a.set_xdata([event.xdata, event.xdata])
             # Set plot markers
             self.idx = self.find_nearest(event.xdata)
+            self.idx = self.lim if self.idx > self.lim else self.idx  # Avoid IndexError
             if self._wfm is not None:
                 self.__wfm_mkr.set_ydata([self._wfm[self.idx], self._wfm[self.idx]])
             if self._pos is not None:
@@ -398,10 +400,9 @@ class ResPltLoader(FigureCanvasQTAgg):
             clst (str | None): Matplotlib colour maps to plot
         """
         # Load result data
-        with h5.File(file, 'r') as fp:
-            self.data = h5_load_dat(fp)
-        self.nch = self.data['inp'].shape[0]
-        self.t = np.arange(self.data['inp'][0].size) / self.data['frq']
+        self.fp = h5.File(file, 'r')
+        self.nch, sig_len = self.fp['inp'].shape[:2]
+        self.t = np.arange(sig_len) / self.fp['frq'][()]
         # Initialize data attributes
         self.wfm = {}  # Waveforms in the data
         self.pos = {}  # Detected spike positions
@@ -417,7 +418,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         clst = ['#377eb8', '#ff7f00', '#4daf4a', '#f781bf',
                 '#a65628', '#984ea3', '#e41a1c', '#dede00'] if clst is None else clst
         cmap = LoopedColormap(clst, name='ParusResCmap')
-        self._cdct = {k: cmap(i) for i, k in enumerate(self.data['spk'])} if 'spk' in self.data else {}
+        self._cdct = {k: cmap(i) for i, k in enumerate(self.fp['spk'])} if 'spk' in self.fp else {}
         # Initialize figure
         self.fig, self.ax = plt.subplots(2, 1, sharex='all', sharey='none', height_ratios=(5, 1))
         self.fig.set_layout_engine(layout='tight', h_pad=-0.6)
@@ -446,10 +447,15 @@ class ResPltLoader(FigureCanvasQTAgg):
         super(ResPltLoader, self).__init__(self.fig)
         # Connect to BlitManager
         key_wpm = {
-            k: {c: list(self.data['pos'][k][c].keys()) for c in self.data['pos'][k]} for k in self.data['pos']
-        } if 'pos' in self.data else {}
+            k: {c: list(self.fp['pos'][k][c].keys()) for c in self.fp['pos'][k]} for k in self.fp['pos']
+        } if 'pos' in self.fp else {}
         self._wpm = WfmPosMarker(self.fig.canvas, self.ax, self.t, key_wpm)
         self._wpm.set_chn(self.__ch)
+
+    def close(self):
+        """ Object close function. """
+        self.fp.close()
+        plt.close(self.fig)
 
     def set_time(self, start, stop):
         """ Set x-axis (time) range.
@@ -499,7 +505,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         ch = 0 if ch < 0 else ch if ch < self.nch else self.nch - 1
         self.__ch = ch
         # Get amplitude limits based on raw data
-        raw = self.data['inp'][self.__ch]
+        raw = self.fp['inp'][self.__ch]
         self._y_min = np.round(np.min(raw) - 50, decimals=-2).item()  # Round down to hundreds
         self._y_max = np.round(np.max(raw) + 50, decimals=-2).item()  # Round up to hundreds
 
@@ -508,32 +514,30 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.set_act_wfm(None)
             self.set_act_pos(None, None)
             # Update waveforms
-            self.wfm['RAW'].set_data(self.t, self.data['inp'][self.__ch])
-            if 'spk' in self.data:
-                for k in self.data['spk']:
-                    self.wfm[k].set_data(self.t, self.data['spk'][k][self.__ch])
+            self.wfm['RAW'].set_data(self.t, raw)
+            if 'spk' in self.fp:
+                for k in self.fp['spk']:
+                    self.wfm[k].set_data(self.t, self.fp['spk'][k][self.__ch])
             # Always remove previous positions
             for k in self.pos:
                 for p in self.pos[k]:
                     self.pos[k][p]['plt'].remove()
             self.pos = {}  # RESET VAR
-            # Inform marker manager
-            self._wpm.set_chn(self.__ch)
         else:
             # Plot raw data
-            self.wfm['RAW'], = self.ax[0].plot(self.t, self.data['inp'][self.__ch], color='k', alpha=0.8, label="RAW")
+            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='k', alpha=0.8, label="RAW")
             # Plot spike waveforms
-            if 'spk' in self.data:
-                for k in self.data['spk']:
-                    self.wfm[k], = self.ax[0].plot(self.t, self.data['spk'][k][self.__ch], color=self._cdct[k], label=k)
+            if 'spk' in self.fp:
+                for k in self.fp['spk']:
+                    self.wfm[k], = self.ax[0].plot(self.t, self.fp['spk'][k][self.__ch], color=self._cdct[k], label=k)
 
         # Plot position
         cnt = 0  # Position data counter
-        if 'pos' in self.data:
-            for k in self.data['pos']:
+        if 'pos' in self.fp:
+            for k in self.fp['pos']:
                 self.pos[k] = {}
-                for p in self.data['pos'][k][str(self.__ch)]:
-                    pos = np.nonzero(self.data['pos'][k][str(self.__ch)][p])[0]
+                for p in self.fp['pos'][k][str(self.__ch)]:
+                    pos = np.nonzero(self.fp['pos'][k][str(self.__ch)][p][()])[0]
                     sct = self.ax[1].scatter(self.t[pos], [cnt] * len(pos), color=self._cdct[k])
                     self.pos[k][p] = {'plt': sct, 'idx': cnt}
                     cnt += 1  # Counter
@@ -547,11 +551,17 @@ class ResPltLoader(FigureCanvasQTAgg):
         ano = sum([list(self.pos[k].keys()) for k in self.pos], [])
         self.ax[1].set_yticks(np.arange(len(ano)))
         self.ax[1].set_yticklabels(ano)
-        # Set flag
-        self.__plt_init = True
+
         # Force figure update
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        if self.__plt_init:
+            self._wpm.set_chn(-1)  # Hide all markers
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+            self._wpm.set_chn(self.__ch)  # Inform marker manager
+        else:
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+            self.__plt_init = True
 
     def sel_wfm(self, sel, lnk_pos=True):
         """ Select waveform(s) to be visible.
@@ -614,9 +624,9 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.__act_leg = None
         else:
             if wfm_key == 'RAW':
-                self._wpm.set_wfm(self.data['inp'][self.__ch])
+                self._wpm.set_wfm(self.fp['inp'][self.__ch])
             else:
-                self._wpm.set_wfm(self.data['spk'][wfm_key][self.__ch])
+                self._wpm.set_wfm(self.fp['spk'][wfm_key][self.__ch])
             # Add new legend
             self.__act_leg = Legend(self.ax[0], [self.wfm[wfm_key]], [wfm_key], title="Active Trace", loc='upper left',
                                     fontsize=8, title_fontsize=8, facecolor='green')
@@ -637,8 +647,8 @@ class ResPltLoader(FigureCanvasQTAgg):
             if wfm_key == 'RAW':
                 self.set_act_wfm(wfm_key)
         else:
-            pos_grp = self.data['pos'][wfm_key][str(self.__ch)]
-            self._wpm.set_pos(pos_grp[pos_key], self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
+            pos_dat = self.fp['pos'][wfm_key][str(self.__ch)][pos_key][()]
+            self._wpm.set_pos(pos_dat, self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
             # Force the active waveform to be associated with spike position records
             if self.wfm[wfm_key].get_visible():
                 self.set_act_wfm(wfm_key)
@@ -652,18 +662,19 @@ class ResPltLoader(FigureCanvasQTAgg):
     def make_correction(self):
         """ Set all manual corrected position to current data. """
         cor = self._wpm.get_cor()
-        for k in self.data['pos']:
-            for c in self.data['pos'][k]:
-                for p in self.data['pos'][k][c]:
+        p_bin = h5_load_dat(self.fp['pos'])
+        for k in p_bin:
+            for c in p_bin[k]:
+                for p in p_bin[k][c]:
                     # Set new position data
-                    self.data['pos'][k][c][p] += cor[k][c][p]
+                    p_bin[k][c][p] += cor[k][c][p]
                     # Update plot
                     if c == str(self.__ch):
-                        pos = np.nonzero(self.data['pos'][k][c][p])[0]
-                        self.pos[k][p]['plt'].set_offsets(np.c_[self.t[pos], [self.pos[k][p]['idx']] * len(pos)])
+                        p_idx = np.nonzero(p_bin[k][c][p])[0]
+                        self.pos[k][p]['plt'].set_offsets(np.c_[self.t[p_idx], [self.pos[k][p]['idx']] * len(p_idx)])
         # Reset all corrections
         self._wpm.reset_cor()
         # Force figure update
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
-        return self.data
+        return p_bin
