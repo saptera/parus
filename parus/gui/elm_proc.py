@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
@@ -538,7 +539,7 @@ def path_selector(line, mode=None, caption=None, flt=None, parent=None):
         raise ValueError("Invalid operation mode, available modes ['path', 'file', 'list']")
 
 
-def table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None):
+def table_loader(table, record, select, mode=None, caption=None, flt=None, listdir=False, func=None, parent=None):
     """ Load path item to table.
 
     Args:
@@ -547,7 +548,8 @@ def table_loader(table, record, select, mode=None, caption=None, flt=None, func=
         select (list[CellCheckbox]): Table item selection checkboxes
         mode (str | None): {'path' | 'file'} File dialog mode (default: None = open path)
         caption (str | None): Window caption
-        flt (str | None): Selector filter (default: None)
+        flt (str | None): Selector filter, valid for file and path-listdir mode (default: None)
+        listdir (bool): List all files in selected path, valid for path mode (default: False)
         func (function | None): Checkbox clicked connected function (default: None)
         parent (QtWidgets.QWidget | None): Parent Qt object
 
@@ -557,26 +559,51 @@ def table_loader(table, record, select, mode=None, caption=None, flt=None, func=
     mode = 'path' if mode is None else mode
     caption = '' if caption is None else caption
 
+    def __load_row(itm: str, typ: str, clr: tuple[int, int, int]):
+        """ Helper function to load table row. """
+        record.append(itm)
+        # Get current data
+        curr_row = table.rowCount()
+        curr_chk = CellCheckbox(identifier=itm, func=func)
+        select.append(curr_chk)
+        # Set cell values
+        table.insertRow(curr_row)
+        table.setCellWidget(curr_row, 0, curr_chk)
+        table.setItem(curr_row, 1, CellData(typ, aln='c', emp='b', clr=clr))
+        table.setItem(curr_row, 2, CellData(itm, aln='l'))
+
     if mode == 'path':
         path = QtWidgets.QFileDialog.getExistingDirectory(parent, caption)
         if path and os.path.isdir(path):
-            path = path.rstrip('\\/').replace('\\', '/')  # Unifying path
-            if path not in record:
-                record.append(path)
-                # Get current data
-                curr_row = table.rowCount()
-                curr_chk = CellCheckbox(identifier=path, func=func)
-                select.append(curr_chk)
-                # Set cell values
-                table.insertRow(curr_row)
-                table.setCellWidget(curr_row, 0, curr_chk)
-                table.setItem(curr_row, 1, CellData('DIRS', aln='c', emp='b', clr=(152, 110, 172)))
-                table.setItem(curr_row, 2, CellData(path, aln='l'))
-                # Return: path added
-                return "Selected folder added to table", record, select
+            if listdir:
+                # Get file extension from [flt]
+                ext = re.search(r'\((?!\*\.\*\))([^)]+?)\)', flt)
+                ext = '' if ext is None else tuple(ext.group(1).replace('*', '').split(' '))
+                # Scan and load file(s) in selected path
+                flst = [os.path.join(path, f).replace('\\', '/') for f in os.listdir(path) if f.endswith(ext)]
+                n = 0  # Counter
+                for f in flst:
+                    if f not in record:
+                        __load_row(f, typ='LIST', clr=(255, 127, 0))
+                        n += 1
+                if n == 0:
+                    # Return: noting to add from path
+                    return "All file(s) in selected directory are duplicated or invalid", record, select
+                elif len(flst) == n:
+                    # Return: all file add from path
+                    return "All file(s) in selected directory added to table", record, select
+                else:
+                    # Return: some file add from path
+                    return "Some duplicated or invalid file(s) in selected directory not added", record, select
             else:
-                # Return: nothing to add
-                return "Selected folder already exist in table", record, select
+                path = path.rstrip('\\/').replace('\\', '/')  # Unifying path
+                if path not in record:
+                    __load_row(path, typ='DIRS', clr=(152, 110, 172))
+                    # Return: path added
+                    return "Selected folder added to table", record, select
+                else:
+                    # Return: nothing to add
+                    return "Selected folder already exist in table", record, select
         if path:
             # Return: invalid path
             return "Invalid folder", record, select
@@ -590,17 +617,8 @@ def table_loader(table, record, select, mode=None, caption=None, flt=None, func=
             for f in flst:
                 f = f.replace('\\', '/')  # Unifying path
                 if os.path.isfile(f) and (f not in record):
-                    record.append(f)
+                    __load_row(f, typ='FILE', clr=(92, 174, 99))
                     n += 1
-                    # Get current data
-                    curr_row = table.rowCount()
-                    curr_chk = CellCheckbox(identifier=f, func=func)
-                    select.append(curr_chk)
-                    # Set cell values
-                    table.insertRow(curr_row)
-                    table.setCellWidget(curr_row, 0, curr_chk)
-                    table.setItem(curr_row, 1, CellData('FILE', aln='c', emp='b', clr=(92, 174, 99)))
-                    table.setItem(curr_row, 2, CellData(f, aln='l'))
             if n == 0:
                 # Return: noting to add
                 return "All selected file(s) found duplicated or invalid", record, select

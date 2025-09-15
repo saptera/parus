@@ -10,16 +10,16 @@
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLineEdit, QPushButton, QSizePolicy, QSpacerItem, QSpinBox, QStatusBar, QTableWidget,
-                               QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFrame, QGridLayout, QGroupBox, QHBoxLayout,
+                               QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem, QSpinBox, QStatusBar,
+                               QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget)
 
 
 class Ui_ParusInfWindow(object):
     def setupUi(self, ParusInfWindow):
         if not ParusInfWindow.objectName():
             ParusInfWindow.setObjectName(u"ParusInfWindow")
-        ParusInfWindow.resize(1168, 981)
+        ParusInfWindow.resize(1168, 916)
         self.centralWidget = QWidget(ParusInfWindow)
         self.centralWidget.setObjectName(u"centralWidget")
         self.centralLayout = QVBoxLayout(self.centralWidget)
@@ -89,7 +89,7 @@ class Ui_ParusInfWindow(object):
 
         self.infFrame = QFrame(self.centralWidget)
         self.infFrame.setObjectName(u"infFrame")
-        self.infFrame.setMinimumSize(QSize(1150, 625))
+        self.infFrame.setMinimumSize(QSize(1150, 560))
         self.infFrame.setFrameShape(QFrame.Shape.Box)
         self.infFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.infFrameLayout = QVBoxLayout(self.infFrame)
@@ -257,9 +257,20 @@ class Ui_ParusInfWindow(object):
 
         self.horizontalLayout.addLayout(self.ovlpLayout)
 
-        self.optSpacerL = QSpacerItem(271, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.optSpacerL = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.optSpacerL)
+
+        self.tmemCheckbox = QCheckBox(self.optGroup)
+        self.tmemCheckbox.setObjectName(u"tmemCheckbox")
+        self.tmemCheckbox.setMinimumSize(QSize(115, 25))
+        self.tmemCheckbox.setFont(font4)
+
+        self.horizontalLayout.addWidget(self.tmemCheckbox)
+
+        self.optSpacerM = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.optSpacerM)
 
         self.btszLayout = QHBoxLayout()
         self.btszLayout.setSpacing(0)
@@ -287,7 +298,7 @@ class Ui_ParusInfWindow(object):
 
         self.horizontalLayout.addLayout(self.btszLayout)
 
-        self.optSpacerR = QSpacerItem(271, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.optSpacerR = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.optSpacerR)
 
@@ -325,33 +336,6 @@ class Ui_ParusInfWindow(object):
 
 
         self.infFrameLayout.addWidget(self.optGroup)
-
-        self.outputGroup = QGroupBox(self.infFrame)
-        self.outputGroup.setObjectName(u"outputGroup")
-        self.outputGroup.setMinimumSize(QSize(1000, 70))
-        self.outputGroup.setMaximumSize(QSize(16777215, 70))
-        self.outputGroup.setFont(font2)
-        self.outputLayout = QHBoxLayout(self.outputGroup)
-        self.outputLayout.setSpacing(20)
-        self.outputLayout.setObjectName(u"outputLayout")
-        self.outputLine = QLineEdit(self.outputGroup)
-        self.outputLine.setObjectName(u"outputLine")
-        self.outputLine.setMinimumSize(QSize(350, 25))
-        self.outputLine.setMaximumSize(QSize(16777215, 25))
-        self.outputLine.setFont(font6)
-
-        self.outputLayout.addWidget(self.outputLine)
-
-        self.outputButton = QPushButton(self.outputGroup)
-        self.outputButton.setObjectName(u"outputButton")
-        self.outputButton.setMinimumSize(QSize(150, 25))
-        self.outputButton.setMaximumSize(QSize(150, 25))
-        self.outputButton.setFont(font5)
-
-        self.outputLayout.addWidget(self.outputButton)
-
-
-        self.infFrameLayout.addWidget(self.outputGroup)
 
 
         self.centralLayout.addWidget(self.infFrame)
@@ -410,6 +394,11 @@ class Ui_ParusInfWindow(object):
 "Increase value will capture features better at a cost of longer process time", None))
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
+        self.tmemCheckbox.setToolTip(QCoreApplication.translate("ParusInfWindow", u"Load whole file to system memory\n"
+"Enable this to accelerate process at risk of RAM overflow", None))
+#endif // QT_CONFIG(tooltip)
+        self.tmemCheckbox.setText(QCoreApplication.translate("ParusInfWindow", u"Load to Memory", None))
+#if QT_CONFIG(tooltip)
         self.btszLabel.setToolTip(QCoreApplication.translate("ParusInfWindow", u"Processing batch size\n"
 "Greater value will make process faster at a cost of larger VRAM usage", None))
 #endif // QT_CONFIG(tooltip)
@@ -438,9 +427,6 @@ class Ui_ParusInfWindow(object):
         self.clvlCombo.setToolTip(QCoreApplication.translate("ParusInfWindow", u"Output file compression level\n"
 "Higher level make smaller file at a cost of longer compression time", None))
 #endif // QT_CONFIG(tooltip)
-        self.outputGroup.setTitle(QCoreApplication.translate("ParusInfWindow", u"Results Output Path", None))
-        self.outputLine.setPlaceholderText(QCoreApplication.translate("ParusInfWindow", u"Results stored at the same directory as inputs if undefined", None))
-        self.outputButton.setText(QCoreApplication.translate("ParusInfWindow", u"Select Folder", None))
         self.procButton.setText(QCoreApplication.translate("ParusInfWindow", u"Initiate Data Inference", None))
     # retranslateUi
 

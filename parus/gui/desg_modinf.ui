@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1168</width>
-    <height>981</height>
+    <height>916</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -167,7 +167,7 @@
       <property name="minimumSize">
        <size>
         <width>1150</width>
-        <height>625</height>
+        <height>560</height>
        </size>
       </property>
       <property name="frameShape">
@@ -614,7 +614,43 @@ Increase value will capture features better at a cost of longer process time</st
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>271</width>
+              <width>100</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="tmemCheckbox">
+            <property name="minimumSize">
+             <size>
+              <width>115</width>
+              <height>25</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>Load whole file to system memory
+Enable this to accelerate process at risk of RAM overflow</string>
+            </property>
+            <property name="text">
+             <string>Load to Memory</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="optSpacerM">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>100</width>
               <height>20</height>
              </size>
             </property>
@@ -701,7 +737,7 @@ Greater value will make process faster at a cost of larger VRAM usage</string>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>271</width>
+              <width>100</width>
               <height>20</height>
              </size>
             </property>
@@ -821,86 +857,6 @@ Higher level make smaller file at a cost of longer compression time</string>
              </widget>
             </item>
            </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="outputGroup">
-         <property name="minimumSize">
-          <size>
-           <width>1000</width>
-           <height>70</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>70</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="title">
-          <string>Results Output Path</string>
-         </property>
-         <layout class="QHBoxLayout" name="outputLayout">
-          <property name="spacing">
-           <number>20</number>
-          </property>
-          <item>
-           <widget class="QLineEdit" name="outputLine">
-            <property name="minimumSize">
-             <size>
-              <width>350</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="placeholderText">
-             <string>Results stored at the same directory as inputs if undefined</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="outputButton">
-            <property name="minimumSize">
-             <size>
-              <width>150</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>150</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Select Folder</string>
-            </property>
-           </widget>
           </item>
          </layout>
         </widget>

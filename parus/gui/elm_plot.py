@@ -401,7 +401,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         """
         # Load result data
         self.fp = h5.File(file, 'r')
-        self.nch, sig_len = self.fp['inp'].shape[:2]
+        self.nch, sig_len = self.fp['raw'].shape[:2]
         self.t = np.arange(sig_len) / self.fp['frq'][()]
         # Initialize data attributes
         self.wfm = {}  # Waveforms in the data
@@ -505,7 +505,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         ch = 0 if ch < 0 else ch if ch < self.nch else self.nch - 1
         self.__ch = ch
         # Get amplitude limits based on raw data
-        raw = self.fp['inp'][self.__ch]
+        raw = self.fp['raw'][self.__ch]
         self._y_min = np.round(np.min(raw) - 50, decimals=-2).item()  # Round down to hundreds
         self._y_max = np.round(np.max(raw) + 50, decimals=-2).item()  # Round up to hundreds
 
@@ -624,7 +624,7 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.__act_leg = None
         else:
             if wfm_key == 'RAW':
-                self._wpm.set_wfm(self.fp['inp'][self.__ch])
+                self._wpm.set_wfm(self.fp['raw'][self.__ch])
             else:
                 self._wpm.set_wfm(self.fp['spk'][wfm_key][self.__ch])
             # Add new legend

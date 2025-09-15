@@ -91,20 +91,12 @@ if __name__ == '__main__':
 
     # Build data loaders class
     print("Building data generators...")
-    data_hprams = hparams['data'].copy()  # Make a copy of data hyperparameters, do not store further changes
-    # Check multiprocessing context
-    try:
-        torch.multiprocessing.set_start_method('fork')
-    except ValueError:
-        torch.multiprocessing.set_start_method('spawn')
-        data_hprams['n_worker'] = 0  # Disable multiprocess, keep original settings, inference not affected
-        print("    Unable to multiprocess DataLoader, data will be loaded in the main process")
     # Creat all needed classes
     trn_datagen, vld_datagen, tst_datagen = load_all_datasets(
         dataset_dir=args.dat_dir,
         seq_len=hparams['model']['sequence_length'],
         batch_size=hparams['train']['batch_size'],
-        data_hparams=data_hprams,
+        data_hparams=hparams['data']
     )
     print("    -> Success!")
 

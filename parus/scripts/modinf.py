@@ -1,6 +1,5 @@
 import os
 import time
-import h5py as h5
 import numpy as np
 import torch
 import torch.nn as nn
@@ -11,7 +10,6 @@ import warnings
 __package__ = 'parus.scripts'
 from ..model import EncoderTransformer, InferenceDataset, load_hparams, load_model, inference
 from ..data import sig_merge
-from ..util import make_outdir
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -26,14 +24,14 @@ pg_io.add_argument('-f', '--file', dest='file', nargs='+', type=str, default=arg
                    help="List of files (*.sig, *.pkl, *.pklz) to inference")
 pg_io.add_argument('-d', '--dirs', dest='dirs', nargs='+', type=str, default=argparse.SUPPRESS, metavar="[str]",
                    help="List of directories containing signals (*.sig, *.pkl, *.pklz) to inference")
-pg_io.add_argument('-o', '--out', dest='out', type=str, default=argparse.SUPPRESS, metavar="[str]",
-                   help="Output directory, store at the same directory as the input files if undefined")
 # Data process arguments (optional)
 pg_dt = parser.add_argument_group("Data process arguments")
 pg_dt.add_argument('-lp', '--overlap', dest='overlap', type=int, default=10, metavar="[int]",
                    help="Overlapping size between each sample step (default: %(default)s)")
+pg_dt.add_argument('-tm', '--memory', dest='to_mem', default=False, action='store_true',
+                   help="Load whole file to memory, accelerate process at risk of RAM overflow (default: %(default)s)")
 pg_dt.add_argument('-bs', '--batch', dest='bat_sz', type=int, default=2048, metavar="[int]",
-                   help="Processing batch size, greater value will make process faster at a cost of larger VRAM usage "
+                   help="Processing batch size, greater value will accelerate process at a cost of larger VRAM usage "
                         "(default: %(default)s)")
 pg_dt.add_argument('-cp', '--compress', dest='cmp_lvl', type=int, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], default=4,
                    metavar="[int(0-9)]", help="Output file compression level (default: %(default)s)")
@@ -43,43 +41,19 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Parus model inference script initialized at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S'))
+    print("Parus model inference script initialized at %s" % time.strftime('%Y-%m-%d %H:%M:%S'))
 
     # Get IO items --------------------------------------------------------------------------------------------------- #
-    print("Preparing IO files and directories:")
-    # Get output directory
-    if 'out' in args:
-        print("    Creating defined output directory....")
-        out_dir = make_outdir(args.out, err_msg="    Creating output directory failed!")
-        print("        -> Results output directory successfully created")
-    else:
-        out_dir = None
-    # Initialize IO list
-    src_lst = []
-    dst_lst = []
+    print("Checking input files and directories:")
+    src_lst = [] # Initialize item
 
     # Get list of input files
     if 'file' in args:
         print("    Checking input files...")
         name_chk = []  # INIT VAR
         for f in args.file:
-            if os.path.isfile(f) and f.endswith(('.sig', '.pkl', '.pklz')):
+            if os.path.isfile(f) and f.endswith(('.hdf', '.h5', '.hdf5', '.he5')):
                 src_lst.append(f.replace('\\', '/'))
-                # Get file parts
-                base, name = os.path.split(f)
-                name, ext = os.path.splitext(name)
-                # Get output file name
-                if out_dir is None:
-                    dst_lst.append(os.path.join(base, 'inf_' + name + '.h5').replace('\\', '/'))
-                else:
-                    # Check name conflicts
-                    n = 0
-                    while name in name_chk:
-                        n += 1
-                        name += '_%03d' % n
-                    # Update lists
-                    name_chk.append(name)
-                    dst_lst.append(os.path.join(out_dir, 'inf_' + name+ '.h5').replace('\\', '/'))
             else:
                 warnings.warn("File [%s] is invalid for process" % f, RuntimeWarning, stacklevel=1)
         print("        -> All valid files have been added to process")
@@ -91,30 +65,14 @@ if __name__ == '__main__':
         for d in args.dirs:
             if os.path.isdir(d):
                 src_lst += [os.path.join(d, f).replace('\\', '/')
-                            for f in os.listdir(d) if f.endswith(('.sig', '.pkl', '.pklz'))]
-                # Get directory path and name
-                if out_dir is None:
-                    dst_lst += [os.path.join(d, 'inf_' + f).replace('\\', '/')
-                                for f in os.listdir(d) if f.endswith(('.sig', '.pkl', '.pklz'))]
-                else:
-                    base, name = os.path.split(d.rstrip('/\\'))
-                    # Check name conflicts
-                    n = 0
-                    while name in name_chk:
-                        n += 1
-                        name += '_%03d' % n
-                    name_chk.append(name)
-                    # Get output target
-                    od = make_outdir(os.path.join(out_dir, name), err_msg="        Failed to make folder [%s]" % name)
-                    dst_lst += [os.path.join(od, 'inf_' + os.path.splitext(f)[0] + '.h5').replace('\\', '/')
-                                for f in os.listdir(d) if f.endswith(('.sig', '.pkl' '.pklz'))]
+                            for f in os.listdir(d) if f.endswith(('.hdf', '.h5', '.hdf5', '.he5'))]
             else:
                 warnings.warn("Cannot locate directory [%s]" % d, RuntimeWarning, stacklevel=1)
         print("        -> All valid directories and their files have been added to process")
 
     # Check number of input files
     if src_lst:
-        print("Files have been located successfully\n")
+        print("Files have been located successfully")
     else:
         print("No valid files to process, system out!")
         exit(0)
@@ -158,17 +116,17 @@ if __name__ == '__main__':
     model = load_model(args.ckpt, model)
     model.to(device)
     print("        -> Model [%s] successfully built" % model_hparams['model_name'])
-    print("Model is ready for inference\n")
+    print("Model is ready for inference")
 
     # Process -------------------------------------------------------------------------------------------------------- #
     print("Inferencing data:")
     tot_len = len(src_lst)
     model.eval()
     with torch.no_grad():
-        for i, (src, dst) in enumerate(zip(src_lst, dst_lst)):
+        for i, src in enumerate(src_lst):
             # Model inference
             t_init = time.time()  # Start time
-            inf_dataset = InferenceDataset(src, model_hparams['sequence_length'], overlap=args.overlap)
+            inf_dataset = InferenceDataset(src, model_hparams['sequence_length'], args.overlap, to_mem=args.to_mem)
             inf_datagen = data.DataLoader(
                 dataset=inf_dataset,
                 batch_size=args.bat_sz,
@@ -185,17 +143,16 @@ if __name__ == '__main__':
             print("    Data [%s] processed in %.4f seconds (%d/%d)" % (src, t_proc - t_init, i + 1, tot_len))
 
             # Save outputs
-            fp = h5.File(dst, 'w')
-            fp.create_dataset(name='src', data=src, dtype=h5.string_dtype(encoding='utf-8', length=None))
-            fp.create_dataset(name='frq', data=np.asarray(inf_dataset.frq, dtype=np.float32))
-            fp.create_dataset(name='inp', data=inf_dataset.raw, compression="gzip", compression_opts=args.cmp_lvl)
+            fp = inf_dataset.mode_rw()
+            if 'spk' in fp:
+                del fp['spk']
             grp = fp.create_group('spk')
             for g in spk:
                 grp.create_dataset(name=g, data=spk[g], compression="gzip", compression_opts=args.cmp_lvl)
-            fp.close()
+            inf_dataset.close()
             # CLI print
             t_save = time.time()  # File writing time
-            print("        -> Results saved to [%s] in %.4f seconds" % (dst, t_save - t_proc))
+            print("        -> Results saved in %.4f seconds" % (t_save - t_proc))
 
-    print("Inference successful completed\n")
+    print("Inference successful completed")
     print("Parus data inference finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

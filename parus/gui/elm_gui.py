@@ -679,6 +679,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self._sel_dirs = []
         self.ckpt = None
         self.ovlp = self.__set_ovlp_len()
+        self.tmem = self.__set_to_mem()
         self.btsz = self.__set_bat_size()
         self.clvl = self.__set_comp_lvl()
         self.out_path = []
@@ -692,10 +693,9 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.ckptButton.clicked.connect(self.__sel_mod_ckpt)
         self.ckptLine.textChanged.connect(self.__set_mod_ckpt)
         self.ovlpSpinbox.valueChanged.connect(self.__set_ovlp_len)
+        self.tmemCheckbox.clicked.connect(self.__set_to_mem)
         self.btszSpinbox.valueChanged.connect(self.__set_bat_size)
         self.clvlCombo.currentIndexChanged.connect(self.__set_comp_lvl)
-        self.outputButton.clicked.connect(self.__sel_out_path)
-        self.outputLine.textChanged.connect(self.__set_out_path)
 
         # Load previous execution parameters
         self.__load_params()
@@ -716,10 +716,9 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.ckptLine.setEnabled(enable)
         self.ckptButton.setEnabled(enable)
         self.ovlpSpinbox.setEnabled(enable)
+        self.tmemCheckbox.setEnabled(enable)
         self.btszSpinbox.setEnabled(enable)
         self.clvlCombo.setEnabled(enable)
-        self.outputLine.setEnabled(enable)
-        self.outputButton.setEnabled(enable)
         # Disable table selection checkboxes
         for cb in self._sel_file + self._sel_dirs:
             cb.setEnabled(enable)
@@ -737,7 +736,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         else:
             flst = ['-f'] + flst if flst else []
             dlst = ['-d'] + dlst if dlst else []
-            args = (self.ckpt + flst + dlst + self.out_path + self.ovlp + self.btsz + self.clvl)
+            args = (self.ckpt + flst + dlst + self.out_path + self.ovlp + self.tmem + self.btsz + self.clvl)
             self._proc.set_arguments(args)
             self.procButton.setEnabled(True)
 
@@ -780,6 +779,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
             # Set to current controls
             self.ckptLine.setText(pars['model_checkpoint'])
             self.ovlpSpinbox.setValue(pars['overlap_length'])
+            self.tmemCheckbox.setChecked(pars['to_memory'])
             self.btszSpinbox.setValue(pars['batch_size'])
             self.clvlCombo.setCurrentIndex(pars['compression_level'])
 
@@ -789,6 +789,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Read current controls
         pars['model_checkpoint'] = self.ckptLine.text()
         pars['overlap_length'] = self.ovlpSpinbox.value()
+        pars['to_memory'] = self.tmemCheckbox.isChecked()
         pars['batch_size'] = self.btszSpinbox.value()
         pars['compression_level'] = self.clvlCombo.currentIndex()
         # Save to file
@@ -799,7 +800,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         """ Add file(s) to file selection table. """
         stat, self.lst_file, self._sel_file = table_loader(
             self.inputTable, self.lst_file, self._sel_file, mode='file', caption="Select Data File(s)",
-            flt="Signal Files (*.sig *.pkl *.pklz)", func=self.set_proc_args, parent=self)
+            flt="Signal Files (*.hdf *.h5 *.hdf5 *.he5)", func=self.set_proc_args, parent=self)
         self.statBar.showMessage(stat)
         # Update process arguments
         self.set_proc_args()
@@ -853,6 +854,13 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.set_proc_args()
         return self.ovlp
 
+    def __set_to_mem(self):
+        """ Set to load whole file directly to system memory. """
+        self.tmem = ['-tm'] if self.tmemCheckbox.isChecked() else []
+        # Update process arguments
+        self.set_proc_args()
+        return self.tmem
+
     def __set_bat_size(self):
         """ Set model process batch size. """
         btsz = self.btszSpinbox.value()
@@ -868,30 +876,6 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Update process arguments
         self.set_proc_args()
         return self.clvl
-
-    def __sel_out_path(self):
-        """ Select result output directory. """
-        otp = path_selector(self.outputLine, mode='path', caption="Select Output Directory", parent=self)
-        if otp is None:
-            self.out_path = []
-            self.statBar.showMessage("Output path selection cancelled")
-        else:
-            self.out_path = ['-o', otp]
-            self.statBar.showMessage("Output path selected")
-        # Update process arguments
-        self.set_proc_args()
-
-    def __set_out_path(self):
-        """ Set result output directory.  """
-        otp = self.outputLine.text()
-        if os.path.isdir(otp):
-            self.out_path = ['-o', otp]
-            self.statBar.showMessage("Output path set")
-        else:
-            self.out_path = []
-            self.statBar.showMessage("Output path is invalid!")
-        # Update process arguments
-        self.set_proc_args()
 
 
 class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):

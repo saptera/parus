@@ -1,19 +1,18 @@
 # Data loader classes for model
 
-import h5py as h5
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 import warnings
 
 __package__ = 'parus.model'
-from ..fio import sim_args_read, sim_data_read, pklz_read
+from ..fio import H5PklFile, sim_args_read, sim_data_read
 
 __all__ = ['TrainingDataset', 'InferenceDataset']
 """
 Class list:
   TrainingDataset(file, n_sample, seq_len): Load simulated dataset for model training.
-  InferenceDataset(file, seq_len, overlap=10): Load raw recording data for model inference.
+  InferenceDataset(file, seq_len, overlap=10, to_mem=False): Load raw recording data for model inference.
 """
 
 
@@ -26,7 +25,7 @@ class TrainingDataset(Dataset):
             n_sample (int): Number of samples to load
             seq_len (int): Model sequence length
         """
-        self.__fp = h5.File(file, 'r')
+        self.__fp = H5PklFile(file, 'r')
         self.meta = sim_args_read(self.__fp)
         self.grp_num = len(self.meta['grp_str'])
         # Check [n_samples] input
@@ -58,32 +57,37 @@ class TrainingDataset(Dataset):
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, file, seq_len, overlap=10):
+    def __init__(self, file, seq_len, overlap=10, to_mem=False):
         """ Load raw recording data for model inference.
 
         Args:
-            file (str): Path to raw recording file (PKLZ format)
+            file (str): Path to raw recording file (HDF5 format)
             seq_len (int): Model sequence length
             overlap (int): Sample overlapping length
+            to_mem (bool): Load all data into memory, accelerate speed at the risk of memory overflow (default: False)
         """
+        # Open and validate dataset file
+        self.__fp = H5PklFile(file, 'r')
+        if self.__fp['raw'].ndim != 2:
+            self.__fp.close()
+            raise ValueError("Input array must be 2D (channels, samples).")
         # Load data
-        data = pklz_read(file)
+        self.__read_only = True  # File R/W flag
+        self.data = self.__fp['raw'][()] if to_mem else self.__fp['raw']
         # Get features
-        self.frq = data['frq']
-        self.raw = data['sig'][np.newaxis, :] if data['sig'].ndim == 1 else data['sig'].copy()
-        self.n_ch, total = self.raw.shape[:2]
+        self.n_ch, self.total = self.data.shape
         self.seq_len = seq_len
         self.overlap = overlap
         self.step = seq_len - overlap
         # Check padding length
-        if total < seq_len:
-            self.pad = seq_len - total
+        if self.total < seq_len:
+            self.pad = seq_len - self.total
             self.n_sample = 1
         else:
-            self.pad = (total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - total
-            self.n_sample = (total - overlap - 1) // (seq_len - overlap) + 1
-        # Set input array
-        self.sig = np.pad(self.raw, ((0, 0), (0, self.pad)), mode='constant', constant_values=0)
+            self.pad = (self.total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - self.total
+            self.n_sample = (self.total - overlap - 1) // (seq_len - overlap) + 1
+        # Create a pad array for the last sample of each channel
+        self.__pad_arr = np.zeros(self.pad, dtype=self.data.dtype)
 
     def __len__(self):
         return self.n_sample * self.n_ch
@@ -93,5 +97,31 @@ class InferenceDataset(Dataset):
         c, i = divmod(index, self.n_sample)
         init = i * self.step
         stop = init + self.seq_len
-        # Not converting in [__init__] to avoid memory issues
-        return torch.from_numpy(self.sig[c, init:stop]).type(torch.FloatTensor).view(1, self.seq_len)
+        # Get sample, pad if too short
+        sample = self.data[c, init:stop]
+        if stop > self.total:
+            sample = np.concatenate((sample, self.__pad_arr))
+        # Converting to PyTorch tensor
+        return torch.from_numpy(sample).type(torch.FloatTensor).view(1, self.seq_len)
+
+    def mode_ro(self):
+        """ Set dataset HDF5 file to read-only mode. """
+        if not self.__read_only:
+            file = self.__fp.filename
+            self.__fp.close()
+            self.__fp = H5PklFile(file, 'r')
+            self.__read_only = True
+        return self.__fp
+
+    def mode_rw(self):
+        """ Set dataset HDF5 file to read-write mode. """
+        if self.__read_only:
+            file = self.__fp.filename
+            self.__fp.close()
+            self.__fp = H5PklFile(file, 'r+')
+            self.__read_only = False
+        return self.__fp
+
+    def close(self):
+        """ Close dataset HDF5 file. """
+        self.__fp.close()
