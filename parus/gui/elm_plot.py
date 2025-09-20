@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 
 __package__ = 'parus.gui'
 from ..fio import h5_load_dat
+from . import sys_dark
+sys_dark and plt.style.use('dark_background')
 
 __all__ = ['LoopedColormap', 'BlitManager', 'WfmPosMarker', 'ResPltLoader']
 """
@@ -147,11 +149,12 @@ class WfmPosMarker(BlitManager):
         self.cor_dot = None  # Active spike position on select
         self.__pos_on = False
         # Retrieve cursor lines for all axes
+        c_cl = 'azure' if sys_dark else 'darkslategray'
         self._csr_ln = []
         for ax in axes:
-            self._csr_ln.append(ax.axvline(x=self.__t_ini, linewidth=0.5, color='darkslategray'))
+            self._csr_ln.append(ax.axvline(x=self.__t_ini, linewidth=0.5, color=c_cl))
         # Retrieve data markers
-        self.__wfm_mkr = axes[0].axhline(y=0, linewidth=0.5, color='darkslategray')
+        self.__wfm_mkr = axes[0].axhline(y=0, linewidth=0.5, color=c_cl)
         self.__pos_mkr, = axes[1].plot([None], [None], marker='o', ms=12, mec='r', mfc='none', mew=2, alpha=0.8)
         self._ano_mk = [self.__wfm_mkr, self.__pos_mkr]
         # Active spike position background indicator
@@ -392,12 +395,12 @@ class WfmPosMarker(BlitManager):
 
 
 class ResPltLoader(FigureCanvasQTAgg):
-    def __init__(self, file, clst=None):
+    def __init__(self, file, cplt=None):
         """ Load Parus analysis results for manual inspection.
 
         Args:
             file (str): Parus analysis result HDF5 file
-            clst (str | None): Matplotlib colour maps to plot
+            cplt (str | None): List of colour HEX codes for plotting
         """
         # Load result data
         self.fp = h5.File(file, 'r')
@@ -415,9 +418,10 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.__act_leg = None  # Active trace legend
 
         # Get plot colour dictionary
-        clst = ['#377eb8', '#ff7f00', '#4daf4a', '#f781bf',
-                '#a65628', '#984ea3', '#e41a1c', '#dede00'] if clst is None else clst
-        cmap = LoopedColormap(clst, name='ParusResCmap')
+        cplt = [
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#bcbd22', '#17becf'
+        ] if cplt is None else cplt
+        cmap = LoopedColormap(cplt, name='ParusResCmap')
         self._cdct = {k: cmap(i) for i, k in enumerate(self.fp['spk'])} if 'spk' in self.fp else {}
         # Initialize figure
         self.fig, self.ax = plt.subplots(2, 1, sharex='all', sharey='none', height_ratios=(5, 1))
@@ -525,7 +529,7 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.pos = {}  # RESET VAR
         else:
             # Plot raw data
-            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='k', alpha=0.8, label="RAW")
+            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='w' if sys_dark else 'k', alpha=0.8, label="RAW")
             # Plot spike waveforms
             if 'spk' in self.fp:
                 for k in self.fp['spk']:
@@ -545,7 +549,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Update signal Y axis limits
         self.set_amp(self._y_min, self._y_max)
         # Update position Y axis
-        plbl, pclr = ("No Spike", 'r') if cnt == 0 else ("Spike", 'k')
+        plbl, pclr = ("No Spike", 'r') if cnt == 0 else ("Spike", 'w' if sys_dark else 'k')
         self.ax[1].set_ylabel(plbl, fontsize=14, fontweight='bold', color=pclr)
         self.ax[1].set_ylim(-1, cnt + 1)
         ano = sum([list(self.pos[k].keys()) for k in self.pos], [])

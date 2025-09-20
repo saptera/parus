@@ -7,6 +7,9 @@ from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
+__package__ = 'parus.gui'
+from . import sys_dark
+
 __all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole', 'ProgBusyDialog',
            'path_selector', 'table_loader', 'selection_operator']
 """
@@ -221,7 +224,7 @@ class PyScriptExec(QtCore.QObject):
     def _get_timestamp():
         """ Get current timestamp. """
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        return "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time
+        return "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if sys_dark else 'blue', time)
 
     def __append_message(self, message):
         """ Append message to the console display.
@@ -254,7 +257,8 @@ class PyScriptExec(QtCore.QObject):
             # Prepare console
             self._console.clear() if self.cmd_rclr else None
             time = self._get_timestamp() if self.cmd_time else ''
-            message = time + "<span style=\"color:green;font-weight:bold;\">%s started...</span>" % self.name
+            message = time + "<span style=\"color:%s;font-weight:bold;\">%s started...</span>" % (
+                'lightgreen' if sys_dark else 'green', self.name)
             self.__append_message(message)
             # Set trigger texts
             self._trigger.setText(self.trig_ts)
@@ -275,7 +279,8 @@ class PyScriptExec(QtCore.QObject):
             # Notify in console
             self.__newline_flag = True
             time = self._get_timestamp() if self.cmd_time else ''
-            message = time + "<span style=\"color:purple;font-weight:bold;\">Process manually stopped!</span>"
+            message = time + "<span style=\"color:%s;font-weight:bold;\">Process manually stopped!</span>" % (
+                'violet' if sys_dark else 'purple')
             self.__append_message(message)
             # Send process control signal
             self.cancelled.emit()
@@ -331,7 +336,8 @@ class PyScriptExec(QtCore.QObject):
             self.__append_message(message)
         # Notify in console
         time = self._get_timestamp() if self.cmd_time else ''
-        message = time + "<span style=\"color:green;font-weight:bold;\">%s finished!</span>" % self.name
+        message = time + "<span style=\"color:%s;font-weight:bold;\">%s finished!</span>" % (
+            'lightgreen' if sys_dark else 'green', self.name)
         self.__append_message(message)
         self.__append_message('')  # Extra blank line
         # Set trigger texts
@@ -380,9 +386,12 @@ class ProcConsole:
 
     def console_init(self):
         """ Initialize process system console. """
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] if self.__disp_time else ''
-        text = "<span style=\"color:black;font-weight:bold;\">%s</span>" % self.__init_msg
-        message = "<span style=\"color:blue;white-space:pre;\">[%s] </span>" % time + text
+        if self.__disp_time:
+            time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            time = "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if sys_dark else 'blue', time)
+        else:
+            time = ''
+        message = time + "<span style=\"font-weight:bold;\">%s</span>" % self.__init_msg
         self.console.clear()
         self.console.append(message)
         self.console.append('')  # Extra blank line
@@ -415,10 +424,10 @@ class ProcConsole:
         # Set auto scroll button features
         self.btn_scr.setChecked(mode)
         if mode:
-            self.btn_scr.setStyleSheet('QPushButton{color:green;}')
+            self.btn_scr.setStyleSheet('QPushButton{color:%s;}' % ('lightgreen' if sys_dark else 'green'))
             self.btn_scr.setText("Auto Scroll\nON")
         else:
-            self.btn_scr.setStyleSheet('QPushButton{color:red;}')
+            self.btn_scr.setStyleSheet('QPushButton{color:%s;}' % ('coral' if sys_dark else 'red'))
             self.btn_scr.setText("Auto Scroll\nOFF")
         # Set connected process auto scroll functions
         for p in self.__lnk_proc:
