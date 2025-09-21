@@ -6,16 +6,14 @@ from datetime import datetime
 import shutil
 import json
 import h5py as h5
-import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PySide6 import QtCore, QtWidgets
-mpl.use('QtAgg')
 
 __package__ = 'parus.gui'
 from .. import pkg_data
 from ..scripts import gen_sim, gen_sta, mod_inf
-from . import sys_dark
+from . import cs_dark
 from .desg_genctl import Ui_ParusGenWindow
 from .desg_modinf import Ui_ParusInfWindow
 from .desg_wfmsel import Ui_WfmSelWindow
@@ -43,7 +41,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Initialize main UI
         super(ParusGen, self).__init__(parent)
         self.setupUi(self)
-        if sys_dark:
+        if cs_dark():
             self.genSimButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             self.genStaButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
         else:
@@ -235,7 +233,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         if self.__sim_run:
             self.genSimButton.setStyleSheet('QPushButton {color: red}')
         else:
-            if sys_dark:
+            if cs_dark():
                 self.genSimButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             else:
                 self.genSimButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
@@ -271,7 +269,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         if self.__sta_run:
             self.genStaButton.setStyleSheet('QPushButton {color: red}')
         else:
-            if sys_dark:
+            if cs_dark():
                 self.genStaButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             else:
                 self.genStaButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
@@ -328,7 +326,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         if notify:
             # Inform console
             time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            time = "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if sys_dark else 'blue', time)
+            time = "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if cs_dark() else 'blue', time)
             message = time + "<span style=\"font-weight:bold;\">All parameters reset to defaults!</span>"
             self.procConsole.append(message)
             # Inform status bar
@@ -656,7 +654,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Initialize GUI
         super(ParusInf, self).__init__(parent)
         self.setupUi(self)
-        if sys_dark:
+        if cs_dark():
             self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
         else:
             self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
@@ -754,7 +752,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         if self.__proc_run:
             self.procButton.setStyleSheet('QPushButton {color: red}')
         else:
-            if sys_dark:
+            if cs_dark():
                 self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             else:
                 self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
@@ -973,7 +971,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         super(ParusRes, self).__init__(parent)
         self.setupUi(self)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
-        sys_dark and self.signalScrollBar.setStyleSheet('')
+        cs_dark() and self.signalScrollBar.setStyleSheet('')
         self.file = file
         # Timer initialization
         self.__timer_val = -1

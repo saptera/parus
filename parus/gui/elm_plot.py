@@ -15,8 +15,7 @@ import matplotlib.pyplot as plt
 
 __package__ = 'parus.gui'
 from ..fio import h5_load_dat
-from . import sys_dark
-sys_dark and plt.style.use('dark_background')
+from . import cs_dark
 
 __all__ = ['LoopedColormap', 'BlitManager', 'WfmPosMarker', 'ResPltLoader']
 """
@@ -149,7 +148,7 @@ class WfmPosMarker(BlitManager):
         self.cor_dot = None  # Active spike position on select
         self.__pos_on = False
         # Retrieve cursor lines for all axes
-        c_cl = 'azure' if sys_dark else 'darkslategray'
+        c_cl = 'azure' if cs_dark() else 'darkslategray'
         self._csr_ln = []
         for ax in axes:
             self._csr_ln.append(ax.axvline(x=self.__t_ini, linewidth=0.5, color=c_cl))
@@ -529,7 +528,7 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.pos = {}  # RESET VAR
         else:
             # Plot raw data
-            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='w' if sys_dark else 'k', alpha=0.8, label="RAW")
+            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='w' if cs_dark() else 'k', alpha=0.8, label="RAW")
             # Plot spike waveforms
             if 'spk' in self.fp:
                 for k in self.fp['spk']:
@@ -549,7 +548,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         # Update signal Y axis limits
         self.set_amp(self._y_min, self._y_max)
         # Update position Y axis
-        plbl, pclr = ("No Spike", 'r') if cnt == 0 else ("Spike", 'w' if sys_dark else 'k')
+        plbl, pclr = ("No Spike", 'r') if cnt == 0 else ("Spike", 'w' if cs_dark() else 'k')
         self.ax[1].set_ylabel(plbl, fontsize=14, fontweight='bold', color=pclr)
         self.ax[1].set_ylim(-1, cnt + 1)
         ano = sum([list(self.pos[k].keys()) for k in self.pos], [])
