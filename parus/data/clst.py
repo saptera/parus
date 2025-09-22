@@ -3,18 +3,43 @@
 import numpy as np
 from sklearn.cluster import MeanShift, estimate_bandwidth
 
-__all__ = ['cls_pk_val', 'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg', 'post_cls_chk']
+__all__ = [
+    'cls_pk_val', 'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',
+    'pos_ripple_flt', 'post_cls_chk'
+]
 """
 Function list:
   cls_pk_val(sig, pos, bw=None): Clustering spikes with peak height only.
-  cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5): Clustering spikes by cosine and amplitude similarity, block mode.
-  cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2): Clustering spikes by combining cosine and amplitude similarity, progressive mode.
+  cls_cosamp_blk(sig, pos, asp, psp, k=0.6): Clustering spikes by cosine and amplitude similarity, block mode.
+  cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2): Clustering spikes by cos/amp similarity, progressive mode.
   cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
-  cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson correlation coefficient, progressive mode.
+  cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson crs-cor, progressive mode.
+  pos_ripple_flt(sig, pos, lim=3, neg=True): Filter out ripples from one-hot spike position array.
   post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
 Protected functions:
+  _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0): Create a Gaussian weight vector centered at peak index.
   _get_wfm_smp(sig, pos, asp, psp): Get waveform samples for clustering algorithms.
 """
+
+
+def _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0):
+    """ Create a Gaussian weight vector centered at peak index.
+
+    Args:
+        asp (int): {>0} Anterior samples to consider
+        psp (int): {>0} Posterior samples to consider
+        sigma (float): {>0} Standard deviation of Gaussian in samples (default: None = 0.05 sample length)
+        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
+
+    Returns:
+        np.ndarray: {1D-float32} Gaussian weight
+    """
+    num = asp + psp + 1
+    sigma = sigma if sigma > 0 else num * 0.05
+    dv = np.linspace(-asp / sigma, psp / sigma, num=num, endpoint=True, dtype=np.float32)  # dv = x / sigma
+    wt = np.exp(-0.25 * dv ** 2) / np.sqrt(epsilon, dtype=np.float32)  # w = sqrt(Gaussian(x) / epsilon)
+    wt[asp] = 1  # Normalize, peak value was emphasized with value of 2 in Gaussian
+    return wt
 
 
 def _get_wfm_smp(sig, pos, asp, psp):
@@ -40,7 +65,7 @@ def _get_wfm_smp(sig, pos, asp, psp):
     loc = np.nonzero(pos)[0]
     # Get required index
     idx = np.repeat(loc, num) + np.tile(blk, len(loc))
-    idx = np.clip(idx, a_min=0, a_max=len(sig))
+    idx = np.clip(idx, a_min=0, a_max=len(sig) - 1)
     # Get data
     smp = sig[idx].reshape(-1, num)
     return smp, loc
@@ -75,7 +100,7 @@ def cls_pk_val(sig, pos, bw=None):
     return res
 
 
-def cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5):
+def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
     """ Clustering spikes by combining cosine and amplitude similarity, block mode.
 
     The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
@@ -91,27 +116,39 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5):
         asp (int): {>0} Anterior samples to consider
         psp (int): {>0} Posterior samples to consider
         k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        **kwargs: See below
+
+    Keyword Args:
         beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
+        sigma (float): {>0} Standard deviation of Gaussian in samples (default: 0.05 sample length)
+        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
     """
+    # Get keyword arguments
+    beta = kwargs.get('beta', 0.5)
+    sigma = kwargs.get('sigma', 0.0)
+    epsilon = kwargs.get('epsilon', 2.0)
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Get Gaussian weight
+    wt = _gaussian_weight(asp, psp, sigma, epsilon)
     # Initialize process variables
     stp = np.arange(len(loc))
     res = []
     avg = []
     # COS-AMP composite accuracy
     nrm = np.linalg.norm(smp, ord=2, axis=1)  # 2nd order norm
+    wnm = np.linalg.norm(smp * wt, ord=2, axis=1)  # 2nd order weighted norm
     while len(stp) > 0:
         # Compute result components
         dot = smp[stp] @ smp[stp[0]]
         mag = nrm[stp] * nrm[stp[0]]
-        les = np.where(nrm[stp] < nrm[stp[0]], nrm[stp], nrm[stp[0]]) * 2
-        acc = nrm[stp] + nrm[stp[0]]
+        les = np.where(wnm[stp] < wnm[stp[0]], wnm[stp], wnm[stp[0]]) * 2
+        acc = wnm[stp] + wnm[stp[0]]
         # Assign results
         var = (dot / mag) * (les / acc) ** beta
         grp = np.where(var >= k)[0]
@@ -122,7 +159,7 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.6, beta=0.5):
     return res, avg
 
 
-def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2):
+def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2, **kwargs):
     """ Clustering spikes by combining cosine and amplitude similarity, progressive mode.
 
     The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
@@ -138,29 +175,41 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2):
         asp (int): {>0} Anterior samples to consider
         psp (int): {>0} Posterior samples to consider
         k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
-        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
         delta (float | None): {[0, 1]} Weight for new samples
+        **kwargs: See below
+
+    Keyword Args:
+        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
+        sigma (float): {>0} Standard deviation of Gaussian in samples (default: 0.05 sample length)
+        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
     """
+    # Get keyword arguments
+    beta = kwargs.get('beta', 0.5)
+    sigma = kwargs.get('sigma', 0.0)
+    epsilon = kwargs.get('epsilon', 2.0)
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
+    # Get Gaussian weight
+    wt = _gaussian_weight(asp, psp, sigma, epsilon)
     # Initialize clustering history variables
     hst = smp[np.newaxis, 0]
     res = [np.array([loc[0]])]
     avg = [smp[0]]
     # Progressive COS-AMP composite accuracy
     nrm = np.linalg.norm(hst, ord=2, axis=1)
+    wnm = np.linalg.norm(hst * wt, ord=2, axis=1)
     for i, s in zip(loc[1:], smp[1:]):
         nc = np.linalg.norm(s, ord=2)
         # Compute results
         dot = hst @ s
         mag = nrm * nc
-        les = np.where(nrm < nc, nrm, nc) * 2
-        acc = nrm + nc
+        les = np.where(wnm < nc, wnm, nc) * 2
+        acc = wnm + nc
         var =  (dot / mag) * (les / acc) ** beta
         # Check and assign results
         grp = np.argmax(var)
@@ -179,6 +228,7 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, beta=0.5, delta=0.2):
                 hst[grp] = hst[grp] * (1 - delta) + s * delta  # Weighted average for signal drifting
         # Update history norm
         nrm = np.linalg.norm(hst, ord=2, axis=1)
+        wnm = np.linalg.norm(hst * wt, ord=2, axis=1)
     return res, [avg[_] / len(res[_]) for _ in range(len(res))]
 
 
@@ -285,6 +335,32 @@ def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
         hsf = (hst.T - np.mean(hst, axis=1)).T
         hss = np.sum(hsf ** 2, axis=1)
     return res, [avg[_] / len(res[_]) for _ in range(len(res))]
+
+
+def pos_ripple_flt(sig, pos, lim=3, neg=True):
+    """ Filter out ripples from one-hot spike position array.
+
+    Args:
+        sig (np.ndarray): {1D-Scalar} Input signal
+        pos (np.ndarray): {1D-int} One-hot spike position
+        lim (int): Minimum index difference required (default: 3)
+        neg (bool): Search direction (default: True = negative peak)
+
+    Returns:
+        np.ndarray: {1D-int} Filtered one-hot spike position
+    """
+    # Find consecutive indices from position
+    pos = pos.copy()  # Avoid overwrite
+    loc = np.nonzero(pos)[0]
+    chk = [i for i in np.split(loc, np.where(np.ediff1d(loc) > lim)[0] + 1) if i.size > 1]
+    # Filtering
+    for i in chk:
+        # Find actual location
+        val = i[np.argmin(sig[i])] if neg else i[np.argmax(sig[i])]
+        # Set position data
+        pos[i] = 0
+        pos[val] = 1
+    return pos
 
 
 def post_cls_chk(avg, mode='cosamp', beta=0.5):

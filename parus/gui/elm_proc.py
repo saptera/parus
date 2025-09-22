@@ -15,7 +15,7 @@ __all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole', 'ProgBusyD
 """
 Class list:
   CellCheckbox(identifier=None, func=None): Table checkbox class.
-  CellData(val, aln='c', emp=None, clr=None): Data selection table cell data class.
+  CellData(val, aln='c', emp=None, clr=None, bkg=None, ro=False): Data selection table cell data class.
   PyScriptExec: Execute Python script as a subprocess, with its console displayed.
   ProcConsole: GUI process console control combo class.
   ProgBusyDialog(parent=None, message="Please wait.."): Non-interactive, application-modal busy dialog.
@@ -61,7 +61,7 @@ class CellCheckbox(QtWidgets.QWidget):
 
 
 class CellData(QtWidgets.QTableWidgetItem):
-    def __init__(self, val, aln='c', emp=None, clr=None):
+    def __init__(self, val, aln='c', emp=None, clr=None, bkg=None, ro=False):
         """ Data selection table cell data class.
 
         Args:
@@ -69,6 +69,8 @@ class CellData(QtWidgets.QTableWidgetItem):
             aln (str): Alignment method 'c' = centre | 'l' = left |  'r' = right (default: 'c' = centre)
             emp (str | None): {'b' | 'i' | 'bi' | 'ib'} Text emphasize method 'b' = bold | 'i' = italic (default: None)
             clr (tuple[int, int, int] | None): Text colour in RGB (default: None)
+            bkg (tuple[int, int, int] | None): Background colour in RGB (default: None)
+            ro (bool): Item read-only flag (default: False)
         """
         super(CellData, self).__init__()
         # Set cell text
@@ -85,6 +87,9 @@ class CellData(QtWidgets.QTableWidgetItem):
         # Set text colour
         if clr is not None:
             self.setForeground(QtGui.QColor(*clr))
+        # Set background colour
+        if bkg is not None:
+            self.setBackground(QtGui.QColor(*bkg))
         # Set alignment
         if aln == 'l':
             self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignVCenter)
@@ -92,6 +97,9 @@ class CellData(QtWidgets.QTableWidgetItem):
             self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
         else:
             self.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        # Set read-only mode
+        if ro:
+            self.setFlags(~QtCore.Qt.ItemFlag.ItemIsEditable)
 
 
 class PyScriptExec(QtCore.QObject):

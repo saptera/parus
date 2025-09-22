@@ -10,7 +10,8 @@ __all__ = [
     'noise_white', 'noise_freq_decr', 'noise_freq_incr', 'bsl_sft_lin', 'bsl_sft_sin',
     'neuron_sig_slc', 'sig_split', 'sig_merge',
     'loc_ext_1d', 'sig_peak_zsc', 'sig_peak_fwd', 'peak_extremum',
-    'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
+    'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_isi', 'tpt_spk_isi',
+    'bin_spk_cv', 'tpt_spk_cv', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
 ]
 """
 Function list:
@@ -29,16 +30,26 @@ Function list:
     neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.
     sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
-  # Feature process functions:
+  # Peak process functions:
     loc_ext_1d(arr, allow_plateau=True): Detect local extrema of given 1D list or array.
     sig_peak_zsc(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
     sig_peak_fwd(prd, th, neg=True): Signal peak detection using forward difference.
     peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
+  # Feature process functions:
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
     tpt_spk_frq(spk, t=None, g=None, org=0, end=None): Compute average firing frequency for timestamp spikes.
-    bin_spk_cv2(spk, fs, t=None, g=None): Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
-    tpt_spk_cv2(spk, t=None, g=None, org=0, end=None): Compute squared coefficient of variation for timestamp spikes.
+    bin_spk_isi(spk, fs, t=None, g=None, lst=False): Compute inter spike interval (ISI) for binary (one-hot) spikes.
+    tpt_spk_isi(spk, t=None, g=None, org=0, end=None, lst=False): Compute ISI for timestamp spikes.
+    bin_spk_cv(spk, fs, t=None, g=None, ddof=0): Compute coefficient of variation (CV) for binary (one-hot) spikes.
+    tpt_spk_cv(spk, t=None, g=None, org=0, end=None, ddof=0): Compute CV for timestamp spikes.
+    bin_spk_cv2(spk, fs, t=None, g=None): Compute 2-point coefficient of variation (CV2) for binary (one-hot) spikes.
+    tpt_spk_cv2(spk, t=None, g=None, org=0, end=None): Compute 2-point coefficient of variation for timestamp spikes.
     tpt_kde_frq(spk, bw=None, **kwargs): Estimate timestamp spike firing rate using Gaussian kernels.
+Private functions:
+  # Feature process functions:
+    __bin_smp(spk, fs, t, g=None): Time window sampling function for binary (one-hot) spikes.
+    __tpt_rng(spk, org=0, end=None): Set time range for timestamp spikes.
+    __tpt_smp(tpt, t, g, org, end): Time window sampling function for timestamp spikes.
 """
 
 
@@ -461,7 +472,7 @@ def sig_merge(src, overlap=10, trim=0):
     return dst[:tot_len-trim]
 
 
-# Feature process functions ------------------------------------------------------------------------------------------ #
+# Peak process functions --------------------------------------------------------------------------------------------- #
 
 def loc_ext_1d(arr, allow_plateau=True):
     """ Detect local extrema of given 1D list or array.
@@ -571,6 +582,71 @@ def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
         return np.array(pos, dtype=int), smp
 
 
+# Feature process functions ------------------------------------------------------------------------------------------ #
+
+def __bin_smp(spk, fs, t, g=None):
+    """ Time window sampling function for binary (one-hot) spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+        t (int | float): Time window to compute feature
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+
+    Returns:
+        list[np.ndarray]: Samples
+    """
+    win = round(fs * t, ndigits=None)
+    stp = win if g is None else round(fs * g, ndigits=None)
+    smp = np.lib.stride_tricks.sliding_window_view(spk, win)[::stp]
+    pos = [np.nonzero(smp[i])[0] for i in range(smp.shape[0])]
+    return pos
+
+
+def __tpt_rng(spk, org=0, end=None):
+    """ Set time range for timestamp spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)
+        end (int | float | None): The end time of timestamps (default: None = use last value of [spk])
+
+    Returns:
+        tuple[np.ndarray, int | float, int | float]: Sampled spike event and time range
+    """
+    # Sort timestamps for valid results
+    tpt = np.sort(spk, kind='stable')
+    # Get time range
+    org = tpt[0].item() if org is None else org
+    end = tpt[-1].item() if end is None else end
+    if end <= org:
+        raise ValueError("Timestamp origin must be LESS than end.")
+    # Limit timestamps between [org, end)
+    idx = np.where((tpt >= org) & (tpt < end))[0]
+    return tpt[idx], org, end
+
+
+def __tpt_smp(tpt, t, g, org, end):
+    """ Time window sampling function for timestamp spikes.
+
+    Args:
+        tpt (np.ndarray): {1D-SORTED} Spike event data by timestamp
+        t (int | float): Time window to compute feature
+        g (int | float | None): Time sampling step to compute feature
+        org (int | float): Beginning of timestamps
+        end (int | float): The end time of timestamps
+
+    Returns:
+        list[np.ndarray]: Samples
+    """
+    stp = t if g is None else g
+    wini = np.arange(org, end, stp)
+    wstp = wini + t
+    wstp[-1] = wstp[-1] + 0.0001  # Make sure the last timestamp is included
+    pos = [tpt[np.where((tpt >= wini[i]) & (tpt < wstp[i]))[0]] for i in range(len(wini))]
+    return pos
+
+
 def bin_spk_frq(spk, fs, t=None, g=None):
     """ Compute average firing frequency for binary (one-hot) spikes.
 
@@ -583,18 +659,12 @@ def bin_spk_frq(spk, fs, t=None, g=None):
     Returns:
         float | list[float]: Average firing frequency (Hz) of spike data
     """
-    if len(spk) < 2:
-        warnings.warn("Size too small to compute frequency, NaN returned.", RuntimeWarning, stacklevel=2)
-        return float('nan')
+    if t is None:
+        pos = np.nonzero(spk)[0]
+        return pos.size / len(spk) * fs
     else:
-        if t is None:
-            pos = np.where(spk > 0)[0]
-            return len(pos) / len(spk) * fs
-        else:
-            win = round(fs * t, ndigits=None)
-            stp = win if g is None else round(fs * g, ndigits=None)
-            smp = np.lib.stride_tricks.sliding_window_view(spk, win)[::stp]
-            return (np.sum(smp, axis=-1) / t).tolist()
+        pos = __bin_smp(spk, fs, t, g)
+        return [p.size / t for p in pos]
 
 
 def tpt_spk_frq(spk, t=None, g=None, org=0, end=None):
@@ -610,31 +680,164 @@ def tpt_spk_frq(spk, t=None, g=None, org=0, end=None):
     Returns:
         float | list[float]: Average firing frequency (Hz) of spike data
     """
-    if len(spk) < 2:
-        warnings.warn("Size too small to compute frequency, NaN returned.", RuntimeWarning, stacklevel=2)
-        return float('nan')
-    # Sort timestamps for valid results
-    tpt = np.sort(spk, kind='stable')
-    # Get time range
-    org = tpt[0].item() if org is None else org
-    end = tpt[-1].item() if end is None else end
-    if end <= org:
-        warnings.warn("Timestamp origin must be GREATER than end, NaN returned.", RuntimeWarning, stacklevel=2)
-        return float('nan')
+    # Sort timestamps and get time range
+    tpt, org, end = __tpt_rng(spk, org, end)
     # Compute frequency
     if t is None:
         return tpt.size / (end - org)
     else:
-        stp = t if g is None else g
-        wini = np.arange(org, end, stp)
-        wstp = wini + t
-        wstp[-1] = wstp[-1] + 0.0001  # Make sure the last timestamp is included
-        cnt = [(np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]).size for i in range(len(wini))]
-        return np.divide(cnt, t).tolist()
+        pos = __tpt_smp(tpt, t, g, org, end)
+        return [p.size / t for p in pos]
+
+
+def bin_spk_isi(spk, fs, t=None, g=None, lst=False):
+    """ Compute inter spike interval (ISI) for binary (one-hot) spikes.
+
+    Args:
+        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+        t (int | float | None): Time window to compute (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        lst (bool): Return 2-point ISI list flag, t = None only (default: False)
+
+    Returns:
+        float | list[float]: Inter spike interval (ISI) of spike data
+    """
+    pos = np.nonzero(spk)[0]
+    if pos.size < 2:
+        warnings.warn("Not enough spikes detected to compute ISI, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        if t is None:
+            gap = np.ediff1d(pos) / fs
+            res = gap.tolist() if lst else np.mean(gap).item()
+        else:
+            # Sampling
+            pos = __bin_smp(spk, fs, t, g)
+            # Check and compute
+            res = []  # INIT VAR
+            for p in pos:
+                if p.size < 2:
+                    res.append(float('nan'))
+                else:
+                    gap = np.ediff1d(p) / fs
+                    res.append(np.mean(gap).item())
+        return res
+
+
+def tpt_spk_isi(spk, t=None, g=None, org=0, end=None, lst=False):
+    """ Compute inter spike interval (ISI) for timestamp spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        t (int | float | None): Time window to compute feature (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)
+        end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)
+        lst (bool): Return 2-point ISI list flag, t = None only (default: False)
+
+    Returns:
+        float | list[float]: Inter spike interval (ISI) of spike data
+    """
+    if len(spk) < 2:
+        warnings.warn("Not enough spikes detected to compute ISI, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    # Sort timestamps and get time range
+    tpt, org, end = __tpt_rng(spk, org, end)
+    # Compute ISI
+    if t is None:
+        gap = np.ediff1d(tpt)
+        res = gap.tolist() if lst else np.mean(gap).item()
+    else:
+        # Compute sample locations
+        pos = __tpt_smp(tpt, t, g, org, end)
+        # ISI with samples
+        res = []  # INIT VAR
+        for p in pos:
+            if p.size < 2:
+                res.append(float('nan'))
+            else:
+                gap = np.ediff1d(p)
+                res.append(np.mean(gap).item())
+    return res
+
+
+def bin_spk_cv(spk, fs, t=None, g=None, ddof=0):
+    """ Compute coefficient of variation (CV) for binary (one-hot) spikes.
+
+    Args:
+        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data
+        fs (int | float): Data sampling frequency (Hz)
+        t (int | float | None): Time window to compute (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        ddof (int | float): Means delta degrees of freedom (default: 0)
+
+    Returns:
+        float | list[float]: Coefficient of variation (CV) of spike data
+    """
+    pos = np.nonzero(spk)[0]
+    lim = max(ddof - 1, 2)
+    if pos.size < lim:
+        warnings.warn("Not enough spikes detected to compute CV, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    else:
+        if t is None:
+            gap = np.ediff1d(pos) / fs
+            return np.std(gap, ddof=ddof).item() / np.mean(gap).item()
+        else:
+            # Sampling
+            pos = __bin_smp(spk, fs, t, g)
+            # Check and compute
+            res = []  # INIT VAR
+            for p in pos:
+                if p.size < lim:
+                    res.append(float('nan'))
+                else:
+                    gap = np.ediff1d(p) / fs
+                    res.append(np.std(gap, ddof=ddof).item() / np.mean(gap).item())
+            return res
+
+
+def tpt_spk_cv(spk, t=None, g=None, org=0, end=None, ddof=0):
+    """ Compute coefficient of variation (CV) for timestamp spikes.
+
+    Args:
+        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
+        t (int | float | None): Time window to compute feature (default: None = compute whole trace)
+        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
+        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)
+        end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)
+        ddof (int | float): Means delta degrees of freedom (default: 0)
+
+    Returns:
+        float | list[float]: Coefficient of variation (CV) of spike data
+    """
+    lim = max(ddof - 1, 2)
+    if len(spk) < lim:
+        warnings.warn("Not enough spikes detected to compute CV, NaN returned.", RuntimeWarning, stacklevel=2)
+        return float('nan')
+    # Sort timestamps and get time range
+    tpt, org, end = __tpt_rng(spk, org, end)
+    # Compute CV
+    if t is None:
+        gap = np.ediff1d(tpt)
+        return np.std(gap, ddof=ddof).item() / np.mean(gap).item()
+    else:
+        # Compute sample locations
+        pos = __tpt_smp(tpt, t, g, org, end)
+        # CV with samples
+        res = []  # INIT VAR
+        for p in pos:
+            if p.size < lim:
+                res.append(float('nan'))
+            else:
+                gap = np.ediff1d(p)
+                res.append(np.std(gap, ddof=ddof).item() / np.mean(gap).item())
+        return res
 
 
 def bin_spk_cv2(spk, fs, t=None, g=None):
-    """ Compute squared coefficient of variation (CV2) for binary (one-hot) spikes.
+    """ Compute 2-point coefficient of variation (CV2) for binary (one-hot) spikes.
 
     Args:
         spk (list[int | float] | np.ndarray): {1D} One-hot spike event data
@@ -643,10 +846,10 @@ def bin_spk_cv2(spk, fs, t=None, g=None):
         g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])
 
     Returns:
-        float | list[float]: Squared coefficient of variation (CV2) of spike data
+        float | list[float]: 2-point coefficient of variation (CV2) of spike data
     """
     pos = np.nonzero(spk)[0]
-    if len(pos) < 3:
+    if pos.size < 3:
         warnings.warn("Not enough spikes detected to compute CV2, NaN returned.", RuntimeWarning, stacklevel=2)
         return float('nan')
     else:
@@ -655,14 +858,11 @@ def bin_spk_cv2(spk, fs, t=None, g=None):
             return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
         else:
             # Sampling
-            win = round(fs * t, ndigits=None)
-            stp = win if g is None else round(fs * g, ndigits=None)
-            smp = np.lib.stride_tricks.sliding_window_view(spk, win)[::stp]
-            pos = [np.nonzero(smp[i])[0] for i in range(smp.shape[0])]
+            pos = __bin_smp(spk, fs, t, g)
             # Check and compute
             res = []  # INIT VAR
             for p in pos:
-                if len(p) < 3:
+                if p.size < 3:
                     res.append(float('nan'))
                 else:
                     gap = np.ediff1d(p) / fs
@@ -671,7 +871,7 @@ def bin_spk_cv2(spk, fs, t=None, g=None):
 
 
 def tpt_spk_cv2(spk, t=None, g=None, org=0, end=None):
-    """ Compute squared coefficient of variation (CV2) for timestamp spikes.
+    """ Compute 2-point coefficient of variation (CV2) for timestamp spikes.
 
     Args:
         spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
@@ -681,34 +881,24 @@ def tpt_spk_cv2(spk, t=None, g=None, org=0, end=None):
         end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)
 
     Returns:
-        float | list[float]: Squared coefficient of variation (CV2) of spike data
+        float | list[float]: 2-point coefficient of variation (CV2) of spike data
     """
     if len(spk) < 3:
         warnings.warn("Not enough spikes detected to compute CV2, NaN returned.", RuntimeWarning, stacklevel=2)
         return float('nan')
-    # Sort timestamps for valid results
-    tpt = np.sort(spk, kind='stable')
+    # Sort timestamps and get time range
+    tpt, org, end = __tpt_rng(spk, org, end)
     # Compute CV2
     if t is None:
         gap = np.ediff1d(tpt)
         return 2 * np.mean(np.absolute(np.ediff1d(gap)) / (gap[:-1] + gap[1:])).item()
     else:
-        # Get time range
-        org = tpt[0].item() if org is None else org
-        end = tpt[-1].item() if end is None else end
-        if end <= org:
-            warnings.warn("Timestamp origin must be GREATER than end, NaN returned.", RuntimeWarning, stacklevel=2)
-            return float('nan')
-        # Compute sample windows
-        stp = t if g is None else g
-        wini = np.arange(org, end, stp)
-        wstp = wini + t
-        wstp[-1] = wstp[-1] + 0.0001  # Make sure the last timestamp is included
+        # Compute sample locations
+        pos = __tpt_smp(tpt, t, g, org, end)
         # CV2 with samples
-        pos = [tpt[np.where((tpt >=wini[i]) & (tpt < wstp[i]))[0]] for i in range(len(wini))]
         res = []  # INIT VAR
         for p in pos:
-            if len(p) < 3:
+            if p.size < 3:
                 res.append(float('nan'))
             else:
                 gap = np.ediff1d(p)
