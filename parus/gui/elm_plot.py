@@ -863,9 +863,11 @@ class ResPltLoader(FigureCanvasQTAgg):
             high = self._y_max
         self.ax[0].set_ylim(low, high)
         # Set tick locations
-        step = np.arange(low, high, step=100)
-        major = np.linspace(0, len(step) - 1, 6, endpoint=True, dtype=int)
-        self.ax[0].set_yticks(np.concatenate((step[major], [0])))
+        rn = 1 if (high - low) < 60 else 10
+        span = [round(min(abs(low) / (t + 1e-12), abs(high) / (6 + 1e-12 - t))) // rn * rn for t in range(7)]
+        t = np.argmax(span)
+        step = [(k - t) * span[t] for k in range(7)]
+        self.ax[0].set_yticks(step)
         self.ax[0].yaxis.set_minor_locator(ticker.AutoMinorLocator(5))
         # Force figure update
         self.fig.canvas.draw()
@@ -882,8 +884,8 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.__ch = ch
         # Get amplitude limits based on raw data
         raw = self.fp['raw'][self.__ch]
-        self._y_min = np.round(np.min(raw) - 50, decimals=-2).item()  # Round down to hundreds
-        self._y_max = np.round(np.max(raw) + 50, decimals=-2).item()  # Round up to hundreds
+        self._y_min = np.round(np.min(raw) - 5, decimals=-1).item()  # Round down to tens
+        self._y_max = np.round(np.max(raw) + 5, decimals=-1).item()  # Round up to tens
 
         if self.__plt_init:
             # Disable previous active annotations
