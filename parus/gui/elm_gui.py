@@ -975,6 +975,8 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.file = file
         # Timer initialization
         self.__timer_val = -1
+        # Key sequence recoder for recoding channel selection
+        self.__ch_ks = ''
         # File saving process
         self._save_proc = self.SaveResThread()
         self._save_proc.src = file
@@ -1117,26 +1119,48 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
                 self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 20)
             else:
                 self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 5)
+        # Recording channel selection
+        elif event.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier:
+            num_lst = [
+                QtCore.Qt.Key.Key_0, QtCore.Qt.Key.Key_1, QtCore.Qt.Key.Key_2, QtCore.Qt.Key.Key_3, QtCore.Qt.Key.Key_4,
+                QtCore.Qt.Key.Key_5, QtCore.Qt.Key.Key_6, QtCore.Qt.Key.Key_7, QtCore.Qt.Key.Key_8, QtCore.Qt.Key.Key_9
+            ]
+            if event.key() in num_lst:
+                self.__ch_ks += str(num_lst.index(event.key()))
+        elif event.key() == QtCore.Qt.Key.Key_PageUp:
+            ch_idx = self.actchnComboBox.currentIndex()
+            if ch_idx == 0:
+                QtWidgets.QMessageBox.warning(self, "Warning", "The FIRST recoding channel reached!",
+                                              QtWidgets.QMessageBox.StandardButton.Ok)
+            else:
+                self.actchnComboBox.setCurrentIndex(ch_idx - 1)
+        elif event.key() == QtCore.Qt.Key.Key_PageDown:
+            ch_idx = self.actchnComboBox.currentIndex()
+            if ch_idx == (self.actchnComboBox.count() - 1):
+                QtWidgets.QMessageBox.warning(self, "Warning", "The LAST recoding channel reached!",
+                                              QtWidgets.QMessageBox.StandardButton.Ok)
+            else:
+                self.actchnComboBox.setCurrentIndex(ch_idx + 1)
         # Waveform toggle key combinations
-        elif (event.key() == QtCore.Qt.Key.Key_0) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_0) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(0)
-        elif (event.key() == QtCore.Qt.Key.Key_1) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_1) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(1)
-        elif (event.key() == QtCore.Qt.Key.Key_2) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_2) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(2)
-        elif (event.key() == QtCore.Qt.Key.Key_3) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_3) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(3)
-        elif (event.key() == QtCore.Qt.Key.Key_4) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_4) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(4)
-        elif (event.key() == QtCore.Qt.Key.Key_5) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_5) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(5)
-        elif (event.key() == QtCore.Qt.Key.Key_6) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_6) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(6)
-        elif (event.key() == QtCore.Qt.Key.Key_7) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_7) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(7)
-        elif (event.key() == QtCore.Qt.Key.Key_8) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_8) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(8)
-        elif (event.key() == QtCore.Qt.Key.Key_9) and (event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier):
+        elif (event.key() == QtCore.Qt.Key.Key_9) and (event.modifiers() & QtCore.Qt.KeyboardModifier.ControlModifier):
             self.__wfm_sel_win.toggle_channel(9)
         # Spike annotation keys
         elif event.key() == QtCore.Qt.Key.Key_Escape:
@@ -1165,10 +1189,28 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.__act_pos_key_control(11)
         elif event.key() == QtCore.Qt.Key.Key_F12:
             self.__act_pos_key_control(12)
+        elif event.key() == QtCore.Qt.Key.Key_H:
+            self.help_window()
         else:
             QtWidgets.QMainWindow.keyPressEvent(self, event)
             return True
         return False
+
+    def keyReleaseEvent(self, event):
+        """ Main window keyboard releasing action. """
+        if event.key() == QtCore.Qt.Key.Key_Alt:
+            if self.__ch_ks:
+                ch_idx = int(self.__ch_ks)
+                if ch_idx < self.actchnComboBox.count():
+                    self.actchnComboBox.setCurrentIndex(int(self.__ch_ks))
+                else:
+                    QtWidgets.QMessageBox.warning(
+                        self, "Warning", "Set recoding channel exceeding total channel!\n"
+                        "Input channel is [%d], total available channels [%d]" % (ch_idx, self.actchnComboBox.count()),
+                        QtWidgets.QMessageBox.StandardButton.Ok)
+                self.__ch_ks = ''
+        else:
+            QtWidgets.QMainWindow.keyReleaseEvent(self, event)
 
     def __keybypass_xrange(self, event):
         """ Override function for [xrangeSpinBox] keyPressEvent. """
@@ -1411,3 +1453,17 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         """ Discard all changes and exit. """
         self.__safe_close = False
         self.close()
+
+    def help_window(self):
+        """ Keyboard control help info. """
+        QtWidgets.QMessageBox.information(
+            self, "Keyboard and Mouse Inputs",
+            "[Arrow Left], [A], [Arrow Right] & [D]:    Navigate signal\n        + [Control Modifier]:    Move slower\n"
+            "        + [Shift Modifier]:    Move faster\n        + [Alt Modifier]:    Move fastest\n\n"
+            "[Page Up] & [Page Down]:    Switch to consecutive recording channel\n"
+            "[Alt] + [Number Key] sequence:    Switch to recording channel number\n\n"
+            "[Control] + [Number Key]:    Toggle waveform\n\n"
+            "[F1] ~ [F12]:    Activate annotation index\n        [Left Mouse Button]:    Add spike to annotation\n"
+            "        [Right Mouse Button]:    Remove spike from annotation\n\n"
+            "[H]:    Show this help information"
+        )
