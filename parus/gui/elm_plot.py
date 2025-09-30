@@ -380,6 +380,7 @@ class ClstFeatViewer:
                                 labelleft=False, labeltop=False, labelright=False, labelbottom=False)
             # Figure data
             self.__wfm_lst = []  # Waveform line artists
+            self.__mrk_txt = None  # No spike marker texts
             # Initial plot
             self.plot_fig()
             # Connect to Qt backend
@@ -387,12 +388,16 @@ class ClstFeatViewer:
 
         def __update_axis(self):
             """ Update figure axis. """
+            # Remove previous marker
+            if self.__mrk_txt is not None:
+                self.__mrk_txt.remove()
+                self.__mrk_txt = None
             # Set axis
             self.ax.set_title("Averaged Waveform [%s]" % self.__grp, fontsize=9, fontweight='bold')
             if len(self._cfv.clst[self.__grp][self._cfv.chn]) == 0:
-                self.ax.set_xlim(0, 1)
-                self.ax.set_ylim(0, 1)
-                self.ax.text(0.5, 0.5, "No Spike", size=9, ha='center', va='center')
+                self.ax.set_xbound(0, 1)
+                self.ax.set_ybound(0, 1)
+                self.__mrk_txt = self.ax.text(0.5, 0.5, "No Spike", size=9, ha='center', va='center')
             else:
                 self.ax.set_xlim(0, self._cfv.num[self.__grp] - 1)
                 self.ax.margins(y=0)
