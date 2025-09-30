@@ -411,9 +411,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         else:
             QtWidgets.QMainWindow.keyPressEvent(self, event)
 
-    def close(self):
+    def closeEvent(self, event):
         """ Close function. """
-        self._cfv.close()
+        if self._cfv is not None:
+            self._cfv.close()
 
     def ctrl_enable(self, enable=True):
         """ Set enable status of controls.
@@ -1284,6 +1285,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
                     self.__save_msg.close()  # Close process informing dialog
                     self._result.close()  # Close result plot
                     event.accept()
+            else:
+                self.__save_msg.allow_close = True  # Unblock close lock for dialog
+                self.__save_msg.close()  # Close process informing dialog
+                self._result.close()  # Close result plot
+                event.accept()
         else:
             self.__save_msg.allow_close = True  # Unblock close lock for dialog
             self.__save_msg.close()  # Close process informing dialog
