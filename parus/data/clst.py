@@ -1,15 +1,13 @@
 # Spike clustering functions
 
 import numpy as np
-from sklearn.cluster import MeanShift, estimate_bandwidth
 
 __all__ = [
-    'cls_pk_val', 'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',
+    'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',
     'pos_ripple_flt', 'post_cls_chk'
 ]
 """
 Function list:
-  cls_pk_val(sig, pos, bw=None): Clustering spikes with peak height only.
   cls_cosamp_blk(sig, pos, asp, psp, k=0.6): Clustering spikes by cosine and amplitude similarity, block mode.
   cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2): Clustering spikes by cos/amp similarity, progressive mode.
   cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
@@ -69,35 +67,6 @@ def _get_wfm_smp(sig, pos, asp, psp):
     # Get data
     smp = sig[idx].reshape(-1, num)
     return smp, loc
-
-
-def cls_pk_val(sig, pos, bw=None):
-    """ Clustering spikes with peak height only.
-
-    Args:
-        sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        bw (int | float | None): Bandwidth used in the flat kernel (default: None = estimate from data)
-
-    Returns:
-        dict[int, list[int]]: Clustered spikes indices
-    """
-    # Get peak value
-    idx = np.argwhere(pos == 1).flatten()
-    pk = sig[idx].reshape(-1, 1)
-    # Assess bandwidth
-    if (bw is None) or (bw <= 0):
-        bw = estimate_bandwidth(pk, quantile=0.5)
-        bw = 0.01 if bw <= 0 else bw  # Check the estimation
-    # Fit values
-    ms = MeanShift(bandwidth=bw, bin_seeding=True)
-    ms.fit(pk)
-    # Arrange data
-    lbl = ms.labels_
-    res = {}  # INIT VAR
-    for l in np.unique(lbl):
-        res[l.item()] = idx[lbl == l].tolist()
-    return res
 
 
 def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):

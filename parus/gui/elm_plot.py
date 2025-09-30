@@ -1,5 +1,6 @@
 # Parus GUI plotting module
 
+import weakref
 from typing import Iterable
 import numpy as np
 import h5py as h5
@@ -126,25 +127,27 @@ class ClstFeatViewer:
 
         Args:
             raw (np.ndarray): {2D-float32} Raw signal data
-            spk (np.ndarray): {2D-float32} Spike signal data
+            spk (dict[str, np.ndarray]): {2D-float32} Spike signal data
             t (np.ndarray): {1D-float32} Time data
-            clst (list[list[np.ndarray]]): {1D-int64} Cluster indices
-            asp (int): Total number of anterior samples
-            psp (int): Total number of posterior samples
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices
+            asp (dict[str, int]): Total number of anterior samples
+            psp (dict[str, int]): Total number of posterior samples
             min_cnt (int): Minimum cluster element number (default: 50)
             cmap (LoopedColormap): Plotting colormap (default: None)
         """
         # Get inputs
         self.raw = raw
         self.spk = spk
+        self.clst = clst
         self.t = t
         # Set sampling features
-        self.num = asp + psp + 1
-        self.blk = np.arange(-asp, psp + 1, step=1, dtype=int)
+        self.fs = (len(t) - 1) / t[-1].item()
+        self.num = {w: asp.get(w, 5) + psp.get(w, 5) + 1 for w in spk}
+        self.blk = {w: np.arange(-asp.get(w, 5), psp.get(w, 5) + 1, step=1, dtype=int) for w in spk}
         self.min_cnt = min_cnt
         # Channel control
-        self.__max_ch = raw.shape[0] - 1
-        self.__ch = 0
+        self.max_ch = raw.shape[0] - 1
+        self.chn = 0
 
         # Create plot colour map
         self.cmap = LoopedColormap(
@@ -153,103 +156,165 @@ class ClstFeatViewer:
              '#feae7c', '#ffc8c3', '#bdbbef', '#bdf2ff', '#fffc43', '#65ffc8'], name='ParusClstCmap'
         ) if cmap is None else cmap
 
-        # Create protected classes
-        self.chn_feat = self._ChnFeat(raw, spk, t, clst, self.num, self.blk, min_cnt, self.cmap)
-        self.grp_feat = self._GrpFeat(spk, clst, self.num, self.blk, self.min_cnt, self.cmap)
+        # Create internal classes
+        self.chn_feat = self._ChnFeat(self)
+        self.grp_feat = self._GrpFeat(self)
 
     class _ChnFeat(FigureCanvasQTAgg):
-        def __init__(self, raw, spk, t, clst, num, blk, min_cnt, cmap):
+        def __init__(self, parent):
             """ Cluster channel feature plots.
 
             Args:
-                raw (np.ndarray): {2D-float32} Raw signal data
-                spk (np.ndarray): {2D-float32} Spike signal data
-                t (np.ndarray): {1D-float32} Time data
-                clst (list[list[np.ndarray]]): {1D-int64} Cluster indices
-                num (int): Total number of waveform samples
-                blk (np.ndarray): {1D-int64} Waveform sample indices
-                min_cnt (int): Minimum cluster element number
-                cmap (LoopedColormap): Plotting colormap
+                parent (ClstFeatViewer): Parent class
             """
             # Get inputs
-            self.raw = raw
-            self.spk = spk
-            self.t = t
-            self.clst = [[n.copy() for n in c] for c in clst]
-            self.num = num
-            self.blk = blk
-            self.min_cnt = min_cnt
-            self.cmap = cmap
-            # Channel control
-            self.__max_ch = raw.shape[0] - 1
-            self.__ch = 0
-
+            self._cfv = parent
+            # Flatten clusters
+            self.ftc = sum([self._cfv.clst[w][self._cfv.chn] for w in self._cfv.clst], [])
+            self.isc = np.concatenate(self.ftc) if self.ftc else []
+            # Flatten inference results
+            con = np.asarray([self._cfv.spk[w][self._cfv.chn] for w in self._cfv.spk])
+            sel = np.argmax(np.abs(con), axis=0)
+            self.inf = np.take_along_axis(con, sel[np.newaxis, :], axis=0)[0]
             # Initialize figure
             self.fig, self.ax = plt.subplots(2, 1, sharex='none', sharey='none', height_ratios=(1, 3))
             self.fig.set_layout_engine(layout='tight', h_pad=-0.1)
             self.fig.align_ylabels()
             # Setup axes
             for a in self.ax:
-                a.spines[['top', 'bottom', 'left', 'right']].set_visible(False)
-                a.tick_params(axis='both', left=False, top=False, right=False, bottom=False,
-                              labelleft=False, labeltop=False, labelright=False, labelbottom=False)
+                a.spines[['top', 'bottom', 'right']].set_visible(False)
+                a.tick_params(axis='both', left=True, top=False, right=False, bottom=False,
+                              labelleft=True, labeltop=False, labelright=False, labelbottom=True)
             # Figure data
             self.__typ = 'spk'
-            self.__rp = []  # Raw plot artists
-            self.__st = []  # Amplitude scatter artists
-            self.__lt = []  # Waveform line artists
+            self.bkg = self.inf
+            self.src = {w: self._cfv.spk[w][self._cfv.chn] for w in self._cfv.spk}
+            self.__sct_frm = -1
+            self._rp = {}  # Raw plot artists
+            self._st = []  # Amplitude scatter artists
+            self._lt = []  # Waveform line artists
+            self._ac = [len(i) >= self._cfv.min_cnt for i in self.ftc]  # Active cluster list
             self.__rct = None  # Signal position rectangle
             # Initial plot
-            self.plot_fig(self.__typ, reset_axes=True)
+            self.plot_fig(start=0, reset_axes=True)
             # Connect to Qt backend
             super(ClstFeatViewer._ChnFeat, self).__init__(self.fig)
 
-        def plot_fig(self, typ='spk', reset_axes=True):
+        def plot_fig(self, start=0, reset_axes=True):
             """ Plot data to figure.
 
             Args:
-                typ (str): {'raw' | 'spk'} Source data type (default: 'spk')
+                start (int | float): Plot start time (default: 0)
                 reset_axes (bool): Force reset exes features (default: True)
             """
-            # Set data
-            src = self.raw[self.__ch] if typ == 'raw' else self.spk[self.__ch]
-            isc = np.concatenate(self.clst[self.__ch]) if self.clst[self.__ch] else []  # All found positions
-            # Plot background data
-            s = self.ax[0].scatter(self.t[isc], src[isc], s=6, c='gray', alpha=0.5, zorder=1)
-            l, = self.ax[1].plot(self.t, src, c='gray', alpha=0.5, zorder=1)
-            self.__rp = [s, l]
-            # Plot data
-            self.__st = []  # RESET VAR
-            self.__lt = []  # RESET VAR
-            for i, c in enumerate(self.clst[self.__ch]):
-                # Plot amplitude scatter map
-                s = self.ax[0].scatter(self.t[c], src[c], s=4, color=self.cmap[i], alpha=0.8, zorder=2)
-                s.set_visible(len(c) >= self.min_cnt)
-                self.__st.append([s])
-                # Plot waveform
-                idx = np.repeat(c, self.num) + np.tile(self.blk, len(c))
-                idx = np.clip(idx, a_min=0, a_max=len(src) - 1).reshape(self.num, -1, order='F')
-                l = self.ax[1].plot(self.t[idx], src[idx], c=self.cmap[i], alpha=0.8, zorder=2)
-                [_.set_visible(len(c) >= self.min_cnt) for _ in l]
-                self.__lt.append(l)
+            # Get time
+            sct_ti = start // 30 * 30.0
+            sct_te = min(sct_ti + 30, self._cfv.t[-1].item())
+            i_si = round(sct_ti * self._cfv.fs)
+            i_se = round(sct_te * self._cfv.fs)
+            i_li = round(start * self._cfv.fs)
+            i_le = round((start + 0.1) * self._cfv.fs)
+
+            # Plot amplitude scatter background
+            if sct_ti != self.__sct_frm:
+                # Clean up previous data
+                [[s.remove() for s in st] for st in self._st]  # Remove unused plots
+                self._st = []  # RESET VAR
+                # Plot new amplitude scatter background
+                if len(self.isc) > 0:
+                    idx = self.isc[(self.isc >= i_si) & (self.isc < i_se)]
+                    if 's' in self._rp:
+                        self._rp['s'].set_offsets(np.c_[self._cfv.t[idx], self.bkg[idx]])
+                    else:
+                        self._rp['s'] = self.ax[0].scatter(self._cfv.t[idx], self.bkg[idx], s=6, c='gray', zorder=1)
+                self.ax[0].set_xlim(sct_ti, sct_te)  # Set X-axis
+            # Plot waveform background
+            [[l.remove() for l in lt] for lt in self._lt]  # Remove unused plots
+            self._lt = []  # RESET VAR
+            if 'l' in self._rp:
+                self._rp['l'].set_data(self._cfv.t[i_li:i_le], self.bkg[i_li:i_le])
+            else:
+                self._rp['l'], = self.ax[1].plot(self._cfv.t[i_li:i_le], self.bkg[i_li:i_le], c='gray', zorder=1)
+            self.ax[1].set_xlim(start, start + 0.1)  # Set X-axis
+
+            # Plot clusters
+            i = 0  # Index counter
+            for w in self.src:
+                plt_src = self.src[w]
+                for c in self._cfv.clst[w][self._cfv.chn]:
+                    # Plot amplitude scatter map
+                    if sct_ti != self.__sct_frm:
+                        idx = c[(c >= i_si) & (c < i_se)]
+                        s = self.ax[0].scatter(self._cfv.t[idx], plt_src[idx], s=4, color=self._cfv.cmap[i], zorder=2)
+                        s.set_visible(self._ac[i])
+                        self._st.append([s])
+                    # Plot waveform
+                    idx = c[(c >= i_li) & (c < i_le)]
+                    idx = np.repeat(idx, self._cfv.num[w]) + np.tile(self._cfv.blk[w], len(idx))
+                    idx = np.clip(idx, a_min=0, a_max=len(plt_src) - 1).reshape(self._cfv.num[w], -1, order='F')
+                    l = self.ax[1].plot(self._cfv.t[idx], plt_src[idx], c=self._cfv.cmap[i], zorder=2)
+                    [_.set_visible(self._ac[i]) for _ in l]
+                    self._lt.append(l)
+                    # Counter
+                    i += 1
+
             # Reset axes features
             if reset_axes:
-                self.ax[0].set_xlim(self.t[0], self.t[-1])
-                self.ax[1].set_xlim(self.t[0], self.t[0] + 0.1)
                 self.ax[0].set_ylabel("Amplitude", fontsize=8, fontweight='bold')
+                if len(self.isc) > 0:
+                    y_min, y_max = np.min(self.bkg[self.isc]), np.max(self.bkg[self.isc])
+                    y_mag = (y_max - y_min) * 0.05
+                    y_min, y_max = y_min - y_mag, y_max + y_mag
+                else:
+                    y_min, y_max = -5, 5
                 self.ax[1].set_ylabel("Waveform", fontsize=8, fontweight='bold')
+                self.ax[1].set_ylim(min(np.min(self.bkg), -5), max(np.max(self.bkg), 5))
                 # Position marker for amplitude scatter plot
-                y_min, y_max = self.ax[0].get_ylim()
-                self.__rct = Rectangle(xy=(self.t[0].item(), y_min), width=0.1, height=y_max - y_min,
+                self.__rct = Rectangle(xy=(self._cfv.t[0].item(), y_min), width=0.1, height=y_max - y_min,
                                        ec='none', fc='slategray', alpha=0.5, zorder=0)
                 self.ax[0].add_patch(self.__rct)
-            # Set Y-axis margins
-            self.ax[0].margins(y=0.05)
-            self.ax[1].margins(y=0)
+            # Annotations
+            self.ax[0].set_xticks(ticks=[self.ax[0].get_xlim()[1]], labels=["%.0f s" % self.ax[0].get_xlim()[1]])
+            self.ax[0].set_yticks([int(y) for y in self.ax[0].get_ylim()])
+            self.ax[1].set_xticks(ticks=[self.ax[1].get_xlim()[1]], labels=["%.2f s" % self.ax[1].get_xlim()[1]])
+            self.ax[1].set_yticks([int(y) for y in self.ax[1].get_ylim()] + [0])
+
             # Force figure update
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
-            self.__typ = 'raw' if typ == 'raw' else 'spk'
+            # Set control variables
+            self.__sct_frm = sct_ti
+
+        def __clear_fig(self):
+            """ Clear current figure. """
+            # Clear axes
+            self.ax[0].clear()
+            self.ax[1].clear()
+            # Reset figure data variables
+            self.__sct_frm = -1
+            self._rp = {}
+            self._st = []
+            self._lt = []
+            self.__rct = None
+
+        def replot_fig(self):
+            """ Re-plotting figure. """
+            # Flatten inference results
+            con = np.asarray([self._cfv.spk[w][self._cfv.chn] for w in self._cfv.spk])
+            sel = np.argmax(np.abs(con), axis=0)
+            self.inf = np.take_along_axis(con, sel[np.newaxis, :], axis=0)[0]
+            # Set data
+            self.bkg = self.inf if self.__typ == 'spk' else self._cfv.raw[self._cfv.chn]
+            self.src = {w: self._cfv.spk[w][self._cfv.chn] if self.__typ == 'spk' else self._cfv.raw[self._cfv.chn]
+                        for w in self._cfv.spk}
+            # Flatten clusters
+            self.ftc = sum([self._cfv.clst[w][self._cfv.chn] for w in self._cfv.clst], [])
+            self.isc = np.concatenate(self.ftc) if self.ftc else []
+            # Active cluster list
+            self._ac = [len(i) >= self._cfv.min_cnt for i in self.ftc]
+            # Replot figure
+            self.__clear_fig()
+            self.plot_fig(start=0, reset_axes=True)
 
         def switch_fig(self, typ='raw'):
             """ Switch plot data between raw and spike.
@@ -258,111 +323,57 @@ class ClstFeatViewer:
                 typ (str): {'raw' | 'spk'} Source data type (default: 'raw')
             """
             if typ != self.__typ:
-                # Remove previous plots
-                [r.remove() for r in self.__rp]
-                [[s.remove() for s in st] for st in self.__st]
-                [[l.remove() for l in lt] for lt in self.__lt]
-                # Plot new data
-                self.plot_fig(typ, reset_axes=False)
+                self.__typ = typ
+                # Set data
+                self.bkg = self.inf if self.__typ == 'spk' else self._cfv.raw[self._cfv.chn]
+                self.src = {w: self._cfv.spk[w][self._cfv.chn] if self.__typ == 'spk' else self._cfv.raw[self._cfv.chn]
+                            for w in self._cfv.spk}
+                time = self.ax[1].get_xlim()[0]
+                # Replot figure
+                self.__clear_fig()
+                self.plot_fig(start=time, reset_axes=True)
 
-        def set_channel(self, ch):
-            """ Set current plotting channel.
-
-            Args:
-                ch (int): Current active channel
-            """
-            if ch != self.__ch:
-                # Validate input
-                self.__ch = 0 if ch < 0 else ch
-                self.__ch = self.__max_ch if ch > self.__max_ch else ch
-                # Clear axes
-                self.ax[0].clear()
-                self.ax[1].clear()
-                # Plot new data
-                self.plot_fig(self.__typ, reset_axes=True)
-
-        def set_time(self, start, stop):
+        def set_time(self, start):
             """ Set x-axis (time) range.
 
             Args:
                 start (int | float): Start time
-                stop (int | float): Stop time
             """
-            # Set axis bound
-            self.ax[1].set_xlim(start, stop)
             # Set amplitude scatter position marker
             if self.__rct is not None:
                 self.__rct.set_x(start)
-            # Force figure update
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
+            # Plot with new axis bound
+            self.plot_fig(start=start, reset_axes=False)
 
         def set_act_clst(self, idx=None):
             """ Set active cluster in figure.
 
             Args:
-                idx (list[int] | None): Cluster index (default: None = all cluster above [self.min_cnt])
+                idx (list[int] | None): Cluster index (default: None = all cluster above [self._cfv.min_cnt])
             """
-            for i in range(len(self.clst[self.__ch])):
-                flag = (len(self.clst[self.__ch][i]) >= self.min_cnt) if idx is None else (i in idx)
-                [s.set_visible(flag) for s in self.__st[i]]
-                [l.set_visible(flag) for l in self.__lt[i]]
-            # Force figure update
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-
-        def merge_cluster(self, maj, sub):
-            """ Merge cluster and update plot.
-
-            Args:
-                maj (int): Major cluster index
-                sub (list[int]): Sub cluster indices
-            """
-            cm = self.__lt[maj][0].get_color()
-            self.clst[self.__ch][maj] = np.sort(np.concatenate([self.clst[self.__ch][i] for i in [maj] + sub]))
-            for i in reversed(sorted(sub)):
-                # Update figure
-                [s.set_color(cm) for s in self.__st[i]]
-                self.__st[maj] += self.__st[i]
-                [l.set_color(cm) for l in self.__lt[i]]
-                self.__lt[maj] += self.__lt[i]
-                # Remove elements
-                self.clst[self.__ch].pop(i)
-                self.__st.pop(i)
-                self.__lt.pop(i)
+            for i in range(len(self.ftc)):
+                flag = (len(self.ftc[i]) >= self._cfv.min_cnt) if idx is None else (i in idx)
+                self._ac[i] = flag
+                [s.set_visible(flag) for s in self._st[i]]
+                [l.set_visible(flag) for l in self._lt[i]]
             # Force figure update
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 
     class _GrpFeat(FigureCanvasQTAgg):
-        def __init__(self, spk, clst, num, blk, min_cnt, cmap):
+        def __init__(self, parent):
             """ Cluster channel feature plots.
 
             Args:
-                spk (np.ndarray): {2D-float32} Spike signal data
-                clst (list[list[np.ndarray]]): {1D-int64} Cluster indices
-                num (int): Total number of waveform samples
-                blk (np.ndarray): {1D-int64} Waveform sample indices
-                min_cnt (int): Minimum cluster element number
-                cmap (LoopedColormap): Plotting colormap
+                parent (ClstFeatViewer): Parent class
             """
             # Get inputs
-            self.spk = spk
-            self.clst = [[n.copy() for n in c] for c in clst]
-            self.num = num
-            self.blk = blk
-            self.min_cnt = min_cnt
-            self.cmap = cmap
-            # Get cluster mapping
-            self.cls_map = [{k: [k] for k in range(len(c))} for c in clst]
-            # Channel control
-            self.__max_ch = spk.shape[0] - 1
-            self.__ch = 0
+            self._cfv = parent
+            self.__grp = list(self._cfv.spk.keys())[0]
 
             # Initialize figure
             self.fig, self.ax = plt.subplots(1, 1)
             self.fig.set_layout_engine(layout='tight')
-            self.ax.set_title("Averaged Waveform", fontsize=12, fontweight='bold')
             # Setup axes
             self.ax.spines[['top', 'bottom', 'left', 'right']].set_visible(False)
             self.ax.tick_params(axis='both', left=False, top=False, right=False, bottom=False,
@@ -374,53 +385,80 @@ class ClstFeatViewer:
             # Connect to Qt backend
             super(ClstFeatViewer._GrpFeat, self).__init__(self.fig)
 
-        def plot_fig(self):
-            """ Plot data to figure. """
-            self.__wfm_lst = []  # RESET VAR
-            xx = np.arange(self.num)
-            for i, c in enumerate(self.clst[self.__ch]):
-                # Sample and stats
-                idx = np.repeat(c, self.num) + np.tile(self.blk, len(c))
-                idx = np.clip(idx, a_min=0, a_max=len(self.spk[self.__ch]) - 1).reshape(self.num, -1, order='F')
-                avg = np.mean(self.spk[self.__ch][idx], axis=1)
-                std = np.std(self.spk[self.__ch][idx], axis=1)
-                # Plot trace
-                y_lo, y_hi = avg - std, avg + std
-                clr, zod = ('gray', 0) if len(c) < self.min_cnt else (self.cmap[i], 2)
-                f = self.ax.fill_between(xx, y1=y_hi, y2=y_lo, fc=clr, ec='none', alpha=0.5, zorder=zod)
-                l, = self.ax.plot(xx, avg, c=clr, zorder=zod + 1)
-                self.__wfm_lst.append({'f': f, 'l': l, 'c': self.cmap[i]})
+        def __update_axis(self):
+            """ Update figure axis. """
             # Set axis
-            self.ax.set_title("Averaged Waveform", fontsize=9, fontweight='bold')
-            self.ax.set_xlim(0, self.num - 1)
-            self.ax.margins(y=0)
+            self.ax.set_title("Averaged Waveform [%s]" % self.__grp, fontsize=9, fontweight='bold')
+            if len(self._cfv.clst[self.__grp][self._cfv.chn]) == 0:
+                self.ax.set_xlim(0, 1)
+                self.ax.set_ylim(0, 1)
+                self.ax.text(0.5, 0.5, "No Spike", size=9, ha='center', va='center')
+            else:
+                self.ax.set_xlim(0, self._cfv.num[self.__grp] - 1)
+                self.ax.margins(y=0)
             # Force figure update
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 
-        def set_channel(self, ch):
-            """ Set current plotting channel.
+        def plot_fig(self):
+            """ Plot data to figure. """
+            self.__wfm_lst = []  # RESET VAR
+            i = 0
+            for w in self._cfv.spk:
+                xx = np.arange(self._cfv.num[w])
+                for c in self._cfv.clst[w][self._cfv.chn]:
+                    # Sample and stats
+                    idx = np.repeat(c, self._cfv.num[w]) + np.tile(self._cfv.blk[w], len(c))
+                    idx = np.clip(idx, a_min=0, a_max=len(self._cfv.spk[w][self._cfv.chn]) - 1).reshape(
+                        self._cfv.num[w], -1, order='F')
+                    avg = np.mean(self._cfv.spk[w][self._cfv.chn][idx], axis=1)
+                    std = np.std(self._cfv.spk[w][self._cfv.chn][idx], axis=1)
+                    # Plot trace
+                    y_lo, y_hi = avg - std, avg + std
+                    clr, zod = ('gray', 0) if len(c) < self._cfv.min_cnt else (self._cfv.cmap[i], 2)
+                    vis = w == self.__grp
+                    f = self.ax.fill_between(xx, y1=y_hi, y2=y_lo, fc=clr, ec='none', alpha=0.5, zorder=zod)
+                    f.set_visible(vis)
+                    l, = self.ax.plot(xx, avg, c=clr, zorder=zod + 1)
+                    l.set_visible(vis)
+                    self.__wfm_lst.append({'f': f, 'l': l, 'c': self._cfv.cmap[i], 'g': w, 'n': len(c)})
+                    # Counter
+                    i += 1
+            # Set axis
+            self.__update_axis()
+
+        def replot_fig(self):
+            """ Re-plotting figure. """
+            # Clear axes
+            self.ax.clear()
+            # Plot new data
+            self.plot_fig()
+
+        def set_spk_grp(self, grp):
+            """ Set plotting spike waveform.
 
             Args:
-                ch (int): Current active channel
+                grp (int): Waveform group index
             """
-            if ch != self.__ch:
-                # Validate input
-                self.__ch = 0 if ch < 0 else ch
-                self.__ch = self.__max_ch if ch > self.__max_ch else ch
-                # Clear axes
-                self.ax.clear()
-                # Plot new data
-                self.plot_fig()
+            grp = list(self._cfv.spk.keys())[grp]
+            if grp != self.__grp:
+                self.__grp = grp
+                # Set artists visibility
+                for i in self.__wfm_lst:
+                    vis = i['g'] == grp
+                    i['f'].set_visible(vis)
+                    i['l'].set_visible(vis)
+                # Set axis
+                self.__update_axis()
 
         def set_act_clst(self, idx=None):
             """ Set active cluster in figure.
 
             Args:
-                idx (list[int] | None): Cluster index (default: None = all cluster above [self.min_cnt])
+                idx (list[int] | None): Cluster index (default: None = all cluster above [self._cfv.min_cnt])
             """
-            for i in range(len(self.clst[self.__ch])):
-                flag = (len(self.clst[self.__ch][i]) >= self.min_cnt) if idx is None else (i in idx)
+            for i in range(len(self.__wfm_lst)):
+                flag = (self.__wfm_lst[i]['n'] >= self._cfv.min_cnt) if idx is None else (i in idx)
                 c, z = (self.__wfm_lst[i]['c'], 2) if flag else ('gray', 0)
                 self.__wfm_lst[i]['f'].set_color(c)
                 self.__wfm_lst[i]['f'].set_zorder(z)
@@ -430,33 +468,40 @@ class ClstFeatViewer:
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 
-        def merge_cluster(self, maj, sub):
-            """ Merge cluster and update plot.
+    # Main class functions ------------------------------------------------------------------------------------------- #
+    def reload_data(self, raw, spk, t, asp, psp, clst, min_cnt=50):
+        """ Cluster feature plots main class.
 
-            Args:
-                maj (int): Major cluster index
-                sub (list[int]): Sub cluster indices
-            """
-            self.clst[self.__ch][maj] = np.sort(np.concatenate([self.clst[self.__ch][i] for i in [maj] + sub]))
-            # Resample and stats
-            idx = np.repeat(self.clst[self.__ch][maj], self.num) + np.tile(self.blk, len(self.clst[self.__ch][maj]))
-            idx = np.clip(idx, a_min=0, a_max=len(self.spk[self.__ch]) - 1).reshape(self.num, -1, order='F')
-            avg = np.mean(self.spk[self.__ch][idx], axis=1)
-            std = np.std(self.spk[self.__ch][idx], axis=1)
-            # Update figure
-            xx = np.arange(self.num)
-            self.__wfm_lst[maj]['f'] = self.ax.fill_between(xx, y1=avg + std, y2=avg - std,
-                                                            fc=self.__wfm_lst[maj]['c'], ec='none', alpha=0.5, zorder=2)
-            self.__wfm_lst[maj]['l'].set_data(avg)
-            self.__wfm_lst[maj]['l'].set_color(self.__wfm_lst[maj]['c'])
-            self.__wfm_lst[maj]['l'].set_zorder(3)
-            # Remove elements
-            for i in reversed(sorted(sub)):
-                self.clst[self.__ch].pop(i)
-                self.__wfm_lst.pop(i)
-            # Force figure update
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
+        Args:
+            raw (np.ndarray): {2D-float32} Raw signal data
+            spk (np.ndarray): {2D-float32} Spike signal data
+            t (np.ndarray): {1D-float32} Time data
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices
+            asp (dict[str, int]): Total number of anterior samples
+            psp (dict[str, int]): Total number of posterior samples
+            min_cnt (int): Minimum cluster element number (default: 50)
+        """
+        # Get inputs
+        self.raw = raw
+        self.spk = spk
+        self.t = t
+        self.clst = clst
+        # Set sampling features
+        self.fs = (len(t) - 1) / t[-1].item()
+        self.num = {w: asp.get(w, 5) + psp.get(w, 5) + 1 for w in spk}
+        self.blk = {w: np.arange(-asp.get(w, 5), psp.get(w, 5) + 1, step=1, dtype=int) for w in spk}
+        self.min_cnt = min_cnt
+        # Channel control
+        self.max_ch = raw.shape[0] - 1
+        self.chn = 0
+        # Replot figures
+        self.chn_feat.replot_fig()
+        self.grp_feat.replot_fig()
+
+    def close(self):
+        """ Close function. """
+        plt.close(self.chn_feat.fig)
+        plt.close(self.grp_feat.fig)
 
     def set_channel(self, ch):
         """ Set current plotting channel for all plots.
@@ -464,13 +509,13 @@ class ClstFeatViewer:
         Args:
             ch (int): Current active channel
         """
-        if ch != self.__ch:
+        if ch != self.chn:
             # Validate input
-            self.__ch = 0 if ch < 0 else ch
-            self.__ch = self.__max_ch if ch > self.__max_ch else ch
+            self.chn = 0 if ch < 0 else ch
+            self.chn = self.max_ch if ch > self.max_ch else ch
             # Update figure
-            self.chn_feat.set_channel(self.__ch)
-            self.grp_feat.set_channel(self.__ch)
+            self.chn_feat.replot_fig()
+            self.grp_feat.replot_fig()
 
     def set_act_clst(self, idx):
         """ Set active cluster in figure.
@@ -481,15 +526,16 @@ class ClstFeatViewer:
         self.chn_feat.set_act_clst(idx)
         self.grp_feat.set_act_clst(idx)
 
-    def merge_cluster(self, maj, sub):
-        """ Merge cluster and update plot.
+    def update_cluster(self, clst):
+        """  Update plot after merge.
 
         Args:
-            maj (int): Major cluster index
-            sub (list[int]): Sub cluster indices
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Updated cluster indices
         """
-        self.chn_feat.merge_cluster(maj, sub)
-        self.grp_feat.merge_cluster(maj, sub)
+        self.clst = clst
+        # Replot figures
+        self.chn_feat.replot_fig()
+        self.grp_feat.replot_fig()
 
 
 class WfmPosMarker(BlitManager):

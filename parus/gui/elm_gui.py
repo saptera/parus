@@ -5,27 +5,36 @@ import re
 from datetime import datetime
 import shutil
 import json
+import numpy as np
 import h5py as h5
+import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PySide6 import QtCore, QtWidgets
+import warnings
 
 __package__ = 'parus.gui'
 from .. import pkg_data
+from ..fio import h5_load_dat
+from ..data import (sig_peak_fwd, cls_cosamp_blk, cls_crscor_blk, pos_ripple_flt, post_cls_chk,
+                    tpt_spk_frq, tpt_spk_isi, tpt_spk_cv, tpt_spk_cv2)
 from ..scripts import gen_sim, gen_sta, mod_inf
 from . import cs_dark
 from .desg_genctl import Ui_ParusGenWindow
 from .desg_modinf import Ui_ParusInfWindow
+from .desg_spksrt import Ui_ParusSrtWindow
 from .desg_wfmsel import Ui_WfmSelWindow
 from .desg_resver import Ui_ParusResWindow
-from .elm_proc import PyScriptExec, ProcConsole, ProgBusyDialog, path_selector, table_loader, selection_operator
-from .elm_plot import ResPltLoader
+from .elm_proc import (CellCheckbox, CellData, PyScriptExec, ProcConsole, ProgBusyDialog,
+                       path_selector, table_loader, selection_operator)
+from .elm_plot import LoopedColormap, ClstFeatViewer, ResPltLoader
 
-__all__ = ['ParusGen', 'ParusInf', 'WfmSel', 'ParusRes']
+__all__ = ['ParusGen', 'ParusInf', 'ParusSrt', 'WfmSel', 'ParusRes']
 """
 Class list:
   ParusGen(parent=None): Parus simulated signal generation window.
   ParusInf(parent=None): Parus data inference window.
+  ParusSrt(parent=None): Parus spike sorting window.
   WfmSel(key, raw, parent=None): Result waveform channel selection window.
   ParusRes(file, parent=None): Parus inference results viewing and validation window.
 """
@@ -627,9 +636,9 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.set_typ
 
     def __sel_stat_path(self):
-        """ Select archived noise file (*.noi) folder button connection. """
-        path = path_selector(self.statFilePath, mode='file', caption="Select Generation Statistic File",
-                             flt="Generation Statistic File (*.cjh)", parent=self)
+        """ Select generation statistic file (*.cjh) button connection. """
+        path_selector(self.statFilePath, mode='file', caption="Select Generation Statistic File",
+                      flt="Generation Statistic File (*.cjh)", parent=self)
 
     def __set_stat_path(self):
         """ Set defined generation statistics file. """
@@ -654,6 +663,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Initialize GUI
         super(ParusInf, self).__init__(parent)
         self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
         else:
@@ -886,6 +896,805 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Update process arguments
         self.set_proc_args()
         return self.clvl
+
+
+class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
+    def __init__(self, parent=None):
+        """ Parus spike sorting window.
+
+        Args:
+            parent: Parent window or widget
+        """
+        # Initialize GUI
+        super(ParusSrt, self).__init__(parent)
+        self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        cs_dark() and self.signalScrollBar.setStyleSheet('')
+        # Timer initialization
+        self.__timer_val = -1
+        # Set file table view
+        self.inputTable.setColumnWidth(0, 50)
+        self.inputTable.setColumnWidth(1, 50)
+        self.inputTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+        # Set cell table view
+        self.spkCidTable.setColumnWidth(0, 40)
+        self.spkCidTable.setColumnWidth(1, 70)
+        self.spkCidTable.setColumnWidth(2, 60)
+        self.spkCidTable.setColumnWidth(3, 40)
+        self.spkCidTable.setColumnWidth(4, 60)
+        self.spkCidTable.setColumnWidth(5, 60)
+        self.spkCidTable.setColumnWidth(6, 60)
+        self.spkCidTable.setColumnWidth(7, 60)
+        self.spkCidTable.setColumnWidth(8, 60)
+        self.spkCidTable.setColumnWidth(9, 40)
+        self.spkCidTable.setColumnWidth(10, 60)
+        self.spkCidTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+
+        # File control variables
+        self.lst_file = []
+        self._sel_file = []
+        self._act_file = None
+        # Data variables
+        self.raw = None
+        self.spk = None
+        self.t = None
+        # Process variables
+        self.meth = {}  # Clustering method
+        self.th = {}  # Detection threshold
+        self.k = {}  # Grouping K value
+        self.asp = {}  # Anterior samples
+        self.psp = {}  # Posterior samples
+        self.beta = {}  # Peak component beta factor
+        self.min_cnt = self.minCutSpinbox.value()  # Minimum spikes required to save
+        # Results variables
+        self.clst = {}  # Spike clusters
+        self.avgw = {}  # Spike mean waveform
+        # Process control variables
+        self._sel_cid = []  # Selected cluster
+        self._mrg_cid = []  # Merge cluster
+        self._cmp_cid = []  # Compare cluster
+        self.__igrp = []  # Index to group mapping
+        self.__arg_set = False
+
+        # Data process variables
+        self.__single = True  # Single file mode flag
+        self.__save = False  # Single file save mode flag
+        self.__avg_cor_table = []  # Averaged cluster waveform correlation table widget references
+        # Data process thread
+        self._proc_thread = self._DataProcThread(self)
+        self._proc_thread.finished.connect(self.__proc_finalize)
+        # Disable process related control
+        self.clsMethBox.setEnabled(False)
+        self.detThSpinbox.setEnabled(False)
+        self.kValSlider.setEnabled(False)
+        self.kValSpinbox.setEnabled(False)
+        self.sampAntSpinbox.setEnabled(False)
+        self.sampPstSpinbox.setEnabled(False)
+        self.betaSpinbox.setEnabled(False)
+        self.actProcButton.setEnabled(False)
+        self.actSaveButton.setEnabled(False)
+        self.spkMrgButton.setEnabled(False)
+
+        # Create plot colour map
+        cplt = ['#ebac23', '#b80058', '#008cf9', '#006e00', '#00bbad', '#d163e6', '#b24502', '#ff9287', '#5954d6',
+                '#00c6f8', '#878500', '#00a76c', '#f6da9c', '#ff5caa', '#8accff', '#4bff4b', '#6efff4', '#edc1f5',
+                '#feae7c', '#ffc8c3', '#bdbbef', '#bdf2ff', '#fffc43', '#65ffc8']
+        self.cmap = LoopedColormap(cplt, name='ParusClstCmap')
+        # Plot control variables
+        self._ch = 0
+        self.__ch_t = 0
+        self._cfv = None  # Feature plot main class
+
+        # Control connections
+        self.prbButton.clicked.connect(self.__sel_prb)
+        self.prbLine.textChanged.connect(self.__set_prb)
+        self.addFileButton.clicked.connect(self.__set_data_file)
+        self.addPathButton.clicked.connect(self.__set_data_path)
+        self.selAllButton.clicked.connect(lambda: self.__set_selc('all'))
+        self.selNonButton.clicked.connect(lambda: self.__set_selc('non'))
+        self.selInvButton.clicked.connect(lambda: self.__set_selc('inv'))
+        self.inputTable.itemSelectionChanged.connect(self.__set_highlight_idx)
+        self.actFileBox.currentIndexChanged.connect(self.__set_highlight_row)
+        self.spkWfmBox.currentIndexChanged.connect(self.__set_spk_wfm)
+        self.clsMethBox.currentIndexChanged.connect(self.__set_clst_meth)
+        self.detThSpinbox.valueChanged.connect(self.__set_det_th)
+        self.kValSlider.valueChanged.connect(self.__set_kval_sld)
+        self.kValSpinbox.valueChanged.connect(self.__set_kval_spb)
+        self.sampAntSpinbox.valueChanged.connect(self.__set_ant_samp)
+        self.sampPstSpinbox.valueChanged.connect(self.__set_pst_samp)
+        self.betaSpinbox.valueChanged.connect(self.__set_amp_beta)
+        self.minCutSpinbox.valueChanged.connect(self.__set_min_cut)
+        self.spkMrgButton.clicked.connect(self.__spk_merge)
+        self.actProcButton.clicked.connect(self.__proc_actfile_spksrt)
+        self.actSaveButton.clicked.connect(self.__proc_actfile_save)
+        self.allPrsvButton.clicked.connect(self.__proc_selfile)
+        self.actChnBox.currentIndexChanged.connect(self.__set_act_chn)
+        self.spkCidTable.itemSelectionChanged.connect(self.__set_act_cid)
+        self.avgCorTab.currentChanged.connect(self.__set_wfm_grp)
+        self.signalScrollBar.valueChanged.connect(self.__signal_scroll)
+        self.sigTypButton.clicked.connect(self.__signal_switch)
+
+    def timerEvent(self, event):
+        """ Timer event for canvas updating. """
+        self.killTimer(self.__timer_val)
+        self.__timer_val = -1
+        if self._cfv is not None:
+            self._cfv.chn_feat.set_time(self.__ch_t)
+
+    def keyPressEvent(self, event):
+        """ Main window keyboard inputs. """
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.spkCidTable.clearSelection()
+        else:
+            QtWidgets.QMainWindow.keyPressEvent(self, event)
+
+    def close(self):
+        """ Close function. """
+        self._cfv.close()
+
+    def ctrl_enable(self, enable=True):
+        """ Set enable status of controls.
+
+        Args:
+            enable (bool): Enable status of controls (default: True)
+        """
+        self.addFileButton.setEnabled(enable)
+        self.addPathButton.setEnabled(enable)
+        self.selAllButton.setEnabled(enable)
+        self.selNonButton.setEnabled(enable)
+        self.selInvButton.setEnabled(enable)
+        self.prbLine.setEnabled(enable)
+        self.prbButton.setEnabled(enable)
+        self.spkWfmBox.setEnabled(enable)
+        self.clsMethBox.setEnabled(enable)
+        self.detThSpinbox.setEnabled(enable)
+        self.kValSlider.setEnabled(enable)
+        self.kValSpinbox.setEnabled(enable)
+        self.sampAntSpinbox.setEnabled(enable)
+        self.sampPstSpinbox.setEnabled(enable)
+        self.betaSpinbox.setEnabled(enable)
+        self.minCutSpinbox.setEnabled(enable)
+        self.actProcButton.setEnabled(enable)
+        self.actSaveButton.setEnabled(enable)
+        self.allPrsvButton.setEnabled(enable)
+        # Disable table selection checkboxes
+        for cb in self._sel_file + self._sel_cid + self._mrg_cid + self._cmp_cid:
+            cb.setEnabled(enable)
+
+    # Data process members ------------------------------------------------------------------------------------------- #
+    class _DataProcThread(QtCore.QThread):
+        single = True  # Single file mode flag
+        save = False  # Single file save mode flag
+
+        def __init__(self, parent):
+            """ Data process independent thread.
+
+            Args:
+                parent (ParusSrt):
+            """
+            super(ParusSrt._DataProcThread, self).__init__(parent)
+            self.parent = parent
+
+        def run(self):
+            if self.save:
+                self.proc_save()
+            elif self.single:
+                self.proc_single()
+            else:
+                self.proc_multi()
+
+        def proc_single(self):
+            """ Process spike sorting on active file. """
+            # Validate file
+            file = self.parent.inputTable.item(self.parent.inputTable.currentRow(), 2).text()
+            if not os.path.isfile(file):
+                return
+            self.parent._act_file = file
+            # Load data
+            with h5.File(file, 'r') as fp:
+                data = h5_load_dat(fp)
+            self.parent.raw = data['raw']
+            self.parent.spk = data['spk']
+            self.parent.t = np.arange(len(self.parent.raw[0])) / data['frq']
+            self.parent._ch = 0
+
+            # Spike sorting
+            self.parent.clst = {}  # RESET VAR
+            self.parent.avgw = {}  # RESET VAR
+            for w in self.parent.spk:
+                # Get arguments
+                meth = self.parent.meth.get(w, 0)
+                th = self.parent.th.get(w, -50)
+                asp = self.parent.asp.get(w, 5)
+                psp = self.parent.psp.get(w, 5)
+                k = self.parent.k.get(w, 0.8)
+                beta = self.parent.beta.get(w, 0.5)
+                # Set variable
+                self.parent.clst[w] = []
+                self.parent.avgw[w] = []
+                for i in self.parent.spk[w]:
+                    # Detect and cluster spikes
+                    pos = sig_peak_fwd(i, th)
+                    pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
+                    if meth == 0:
+                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, beta=beta)
+                    else:
+                        cls, avg = cls_crscor_blk(i, pos, asp, psp, k=k)
+                    # Sort clusters by size
+                    sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
+                    self.parent.clst[w].append([cls[i] for i in sid])
+                    self.parent.avgw[w].append([avg[i] for i in sid])
+
+        def proc_save(self):
+            """ Save result to single file. """
+            fp = h5.File(self.parent._act_file, 'r+')
+            if 'pos' in fp:
+                del fp['pos']
+            grp = fp.create_group('pos')
+            row = 0
+            for w in self.parent.clst:
+                wfm = grp.create_group(w)
+                for c in range(len(self.parent.clst[w])):
+                    chn = wfm.create_group(str(c))
+                    for v in self.parent.clst[w][c]:
+                        if self.parent._sel_cid[row].isChecked():
+                            name = self.parent.spkCidTable.item(row, 1).text()
+                            dat = np.zeros_like(self.parent.t, dtype=np.int8)
+                            dat[v] = 1
+                            chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
+                        row += 1
+            fp.close()
+
+        def proc_multi(self):
+            """ Process spike sorting and saving on all selected file. """
+            # Load data
+            for cb in self.parent._sel_file:
+                if cb.isChecked():
+                    fp = h5.File(cb.id, 'r+')
+                    data = h5_load_dat(fp)
+                    spk = data['spk']
+
+                    # Spike sorting
+                    clst = {}  # RESET VAR
+                    for w in spk:
+                        # Get arguments
+                        meth = self.parent.meth.get(w, 0)
+                        th = self.parent.th.get(w, -50)
+                        asp = self.parent.asp.get(w, 5)
+                        psp = self.parent.psp.get(w, 5)
+                        k = self.parent.k.get(w, 0.8)
+                        beta = self.parent.beta.get(w, 0.5)
+                        # Set variable
+                        clst[w] = []
+                        for i in spk[w]:
+                            # Detect and cluster spikes
+                            pos = sig_peak_fwd(i, th)
+                            pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
+                            if meth == 0:
+                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, beta=beta)
+                            else:
+                                cls, _ = cls_crscor_blk(i, pos, asp, psp, k=k)
+                            # Sort clusters by size
+                            sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
+                            clst[w].append([cls[i] for i in sid if len(cls[i]) >= self.parent.min_cnt])
+
+                    # Write file
+                    if 'pos' in fp:
+                        del fp['pos']
+                    grp = fp.create_group('pos')
+                    for w in clst:
+                        wfm = grp.create_group(w)
+                        for c in range(len(clst[w])):
+                            chn = wfm.create_group(str(c))
+                            for i, v in enumerate(clst[w][c]):
+                                name = '%s_%02d' % (w, i + 1)
+                                dat = np.zeros_like(spk[w][c], dtype=np.int8)
+                                dat[v] = 1
+                                chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
+                    fp.close()
+
+    def __proc_actfile_spksrt(self):
+        """ Process single activated file. """
+        self.__single = True
+        self.__save = False
+        self._proc_thread.single = True
+        self._proc_thread.save = False
+        self.ctrl_enable(False)
+        self._proc_thread.start()
+
+    def __proc_actfile_save(self):
+        """ Save single activated file. """
+        self.__single = True
+        self.__save = True
+        self._proc_thread.single = True
+        self._proc_thread.save = True
+        self.ctrl_enable(False)
+        self._proc_thread.start()
+
+    def __proc_selfile(self):
+        """ Process all selected file. """
+        self.__single = False
+        self.__save = False
+        self._proc_thread.single = False
+        self._proc_thread.save = False
+        self.ctrl_enable(False)
+        self._proc_thread.start()
+
+    def __proc_finalize(self):
+        """ Data process finalized connected function. """
+        self.ctrl_enable(True)
+        if self.__save:
+            self.statBar.showMessage("File [%s] successfully saved" % self._act_file)
+        elif self.__single:
+            # Set GUI items
+            self.actChnBox.blockSignals(True)
+            self.actChnBox.clear()
+            [self.actChnBox.addItem("CH-%03d" % i) for i in range(self.raw.shape[0])]
+            self.actChnBox.blockSignals(False)
+            self.signalScrollBar.blockSignals(True)
+            self.__update_scroll_bar()
+            self.signalScrollBar.setValue(0)
+            self.signalScrollBar.blockSignals(False)
+            self.actSaveButton.setEnabled(True)
+            # Set figures
+            if self._cfv is None:
+                self._cfv = ClstFeatViewer(self.raw, self.spk, self.t, self.asp, self.psp, self.clst,
+                                           self.min_cnt, self.cmap)
+                self.chnFeatLayout.addWidget(self._cfv.chn_feat)
+                self.grpFeatLayout.addWidget(self._cfv.grp_feat)
+            else:
+                self._cfv.reload_data(self.raw, self.spk, self.t, self.asp, self.psp, self.clst, self.min_cnt)
+            # Update tables
+            self.update_spkcid_table()
+            self.update_avgcor_table()
+            # Show message
+            self.statBar.showMessage("File [%s] processed" % self._act_file)
+        else:
+            self.statBar.showMessage("All selected file processed")
+
+    def update_spkcid_table(self, cid_lst=None):
+        """ Update single cell spike information table.
+
+        Args:
+            cid_lst (list[str] | None): Cell IDs
+        """
+        # Clear previous table
+        self.spkCidTable.setRowCount(0)
+        self._sel_cid = []  # RESET VAR
+        self._mrg_cid = []  # RESET VAR
+        self._cmp_cid = []  # RESET VAR
+        self.__igrp = []
+        row = 0
+        # Load new values
+        for n, w in enumerate(self.clst):
+            for i in range(len(self.clst[w][self._ch])):
+                # Compute features
+                tpt = self.t[self.clst[w][self._ch][i]]
+                cnt = self.clst[w][self._ch][i].size
+                amp = abs(np.mean(self.spk[w][self._ch][self.clst[w][self._ch][i]]).item())
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    frq = tpt_spk_frq(tpt, org=self.t[0].item(), end=self.t[-1].item())
+                    isi = tpt_spk_isi(tpt, org=self.t[0].item(), end=self.t[-1].item()) * 1000  # To millisecond
+                    cv = tpt_spk_cv(tpt, org=self.t[0].item(), end=self.t[-1].item())
+                    cv2 = tpt_spk_cv2(tpt, org=self.t[0].item(), end=self.t[-1].item())
+                # Set table
+                cid = "%s_%02d" % (w, i + 1) if cid_lst is None else cid_lst[row]
+                self.spkCidTable.insertRow(row)
+                curr_sel = CellCheckbox(identifier=[cid, w, i], checked=cnt > self.min_cnt)
+                self._sel_cid.append(curr_sel)
+                self.spkCidTable.setCellWidget(row, 0, curr_sel)
+                self.spkCidTable.setItem(row, 1, CellData(cid, aln='c', emp='b'))
+                self.spkCidTable.setItem(row, 2, CellData(str(cnt), aln='c', ro=True))
+                curr_mrg = CellCheckbox(identifier=[cid, w, i, row], checked=False, func=self.__chk_merge)
+                self._mrg_cid.append(curr_mrg)
+                self.spkCidTable.setCellWidget(row, 3, curr_mrg)
+                self.spkCidTable.setItem(row, 4, CellData("%.4f" % amp, aln='r', ro=True))
+                self.spkCidTable.setItem(row, 5, CellData("%.4f" % frq, aln='r', ro=True))
+                self.spkCidTable.setItem(row, 6, CellData("%.4f" % isi, aln='r', ro=True))
+                self.spkCidTable.setItem(row, 7, CellData("%.4f" % cv, aln='r', ro=True))
+                self.spkCidTable.setItem(row, 8, CellData("%.4f" % cv2, aln='r', ro=True))
+                curr_cmp = CellCheckbox(identifier=[cid, w, i], checked=False)
+                self._cmp_cid.append(curr_cmp)
+                self.spkCidTable.setCellWidget(row, 9, curr_cmp)
+                itm_clr = CellData("", bkg=tuple([round(c * 255) for c in self.cmap(row)[:3]]), ro=True)
+                itm_clr.setFlags(~QtCore.Qt.ItemFlag.ItemIsSelectable)
+                self.spkCidTable.setItem(row, 10, itm_clr)
+                self.spkCidTable.setItem(row, 11, CellData("[%s] - %d" % (w, self._ch), aln='c', ro=True))
+                # Counter
+                self.__igrp.append([n, i])
+                row += 1
+
+    def update_avgcor_table(self):
+        """ Update averaged spike waveform correlation table. """
+        self.avgCorTab.blockSignals(True)
+        # Clear previous tab
+        self.avgCorTab.clear()
+        [wdg.deleteLater() for wdg in self.__avg_cor_table]
+        self.__avg_cor_table = []
+        # Set table
+        cmap = mpl.colormaps['viridis']  # Colour-blind safe purple-green colormap
+        for w in self.avgw:
+            # Set new widgets
+            table = QtWidgets.QTableWidget(parent=self.avgCorTab)
+            self.__avg_cor_table.append(table)
+            # Add widgets to UI
+            self.avgCorTab.addTab(table, w)
+            if self.avgw[w][self._ch]:
+                # Compute correlations
+                mat = post_cls_chk(self.avgw[w][self._ch], mode='cosamp')
+                # Set table structure
+                n_row, n_col = mat.shape
+                table.setColumnCount(n_col)
+                if n_col > 10:
+                    table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+                else:
+                    table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+                table.setRowCount(n_row)
+                table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+                # Set table data
+                for r in range(n_row):
+                    for c in range(n_col):
+                        val = mat[r, c]
+                        txt = "%.2f" % abs(val)
+                        clr = (255, 127, 14) if val < 0 else (255, 255, 255)  # Orange for negative value
+                        bkg = tuple([round(i * 255) for i in cmap(val * 0.78125)[:3]])  # 0.78125=200/256, max in green
+                        table.setItem(r, c, CellData(txt, size=9, emp='b', clr=clr, bkg=bkg, ro=True))
+            else:
+                table.setColumnCount(1)
+                table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+                table.setRowCount(1)
+                table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+                table.setItem(0, 0, CellData("No Spike", ro=True))
+        self.avgCorTab.blockSignals(False)
+
+    def __sel_prb(self):
+        """ Select probe file button connected function. """
+        path_selector(self.prbLine, mode='file', caption="Select Probe File", flt="Probe Geometry (*.prb)", parent=self)
+
+    def __set_prb(self):
+        """ Set defined probe geometry file. """
+        prb_file = self.prbLine.text()
+        chk_path = os.path.isfile(prb_file)
+        chk_type = prb_file.endswith('.prb')
+        if chk_path and chk_type:
+            pass
+        else:
+            pass
+
+    def __chk_merge(self):
+        """ Spike merge checkbox linked function, validate merge option. """
+        # Get list
+        chk_lst = []
+        for cb in self._mrg_cid:
+            if cb.isChecked():
+                chk_lst.append(cb.id[1])  # Get group
+        # Check group
+        self.spkMrgButton.setEnabled(len(chk_lst) > 1)
+        if len(set(chk_lst)) > 1:
+            QtWidgets.QMessageBox.warning(self, "Cross Waveform Merge", "Select cells are in different waveform\n"
+                                                                        "Please check if the selections are correct",
+                                          QtWidgets.QMessageBox.StandardButton.Yes)
+
+    def __spk_merge(self):
+        """ Merge spikes. """
+        # Get list
+        new_clst = []
+        len_lst = []
+        mrg_lst = []
+        for cb in self._mrg_cid:
+            if cb.isChecked():
+                clst = self.clst[cb.id[1]][self._ch][cb.id[2]]
+                new_clst.append(clst)
+                len_lst.append(clst.size)
+                mrg_lst.append(cb.id)
+        # Sort and merge cluster
+        idx = np.argsort(len_lst, stable=True)[-1]
+        gw = mrg_lst[idx][1]
+        gi = mrg_lst[idx][2]
+        new_clst = np.sort(np.concatenate(new_clst), stable=True)
+        self.clst[gw][self._ch][gi] = new_clst.copy()
+        # Compute new average, recompute all due to the possible cross waveform merge
+        num = self.asp.get(gw, 5) + self.psp.get(gw, 5) + 1
+        blk = np.arange(-self.asp.get(gw, 5), self.psp.get(gw, 5) + 1, step=1, dtype=int)
+        avg_idx = np.repeat(new_clst, num) + np.tile(blk, len(new_clst))
+        avg_idx = np.clip(avg_idx, a_min=0, a_max=len(self.t) - 1).reshape(-1, num, order='C')
+        self.avgw[gw][self._ch][gi] = np.mean(self.spk[gw][self._ch][avg_idx], axis=0)
+        # Remove merged spikes
+        mrg_lst.pop(idx)
+        for i in reversed(mrg_lst):
+            self.clst[i[1]][self._ch].pop(i[2])
+            self.avgw[i[1]][self._ch].pop(i[2])
+            self._sel_cid.pop(i[3])
+            self._mrg_cid.pop(i[3])
+            self._cmp_cid.pop(i[3])
+            self.spkCidTable.removeRow(i[3])
+        # Reorder checkbox
+        cid_lst = []
+        for i, cb in enumerate(self._mrg_cid):
+            cb.id[3] = i
+            cid_lst.append(self.spkCidTable.item(i, 1).text())
+        # Update widgets
+        self.update_spkcid_table(cid_lst)
+        self.update_avgcor_table()
+        if self._cfv is not None:
+            self._cfv.update_cluster(self.clst)
+
+    # File input table functions ------------------------------------------------------------------------------------- #
+    def __set_data_file(self):
+        """ Add file(s) to file selection table. """
+        stat, self.lst_file, self._sel_file = table_loader(
+            self.inputTable, self.lst_file, self._sel_file, mode='file', caption="Select Data File(s)",
+            flt="Result Files (*.h5)", parent=self)
+        self.statBar.showMessage(stat)
+        # Update active file combobox
+        item = [str(i) for i in range(self.actFileBox.count(), self.inputTable.rowCount() + 1)]
+        self.actFileBox.addItems(item)
+
+    def __set_data_path(self):
+        """ Add directory to file selection table. """
+        stat, self.lst_file, self._sel_file = table_loader(
+            self.inputTable, self.lst_file, self._sel_file, mode='path', caption="Select Data Folder",
+            flt="Result Files (*.h5)", listdir=True, parent=self)
+        self.statBar.showMessage(stat)
+        # Update active file combobox
+        item = [str(i) for i in range(self.actFileBox.count(), self.inputTable.rowCount() + 1)]
+        self.actFileBox.addItems(item)
+
+    def __set_selc(self, mode):
+        """ Selection quick access buttons attached function. """
+        stat = selection_operator(self._sel_file, mode)
+        self.statBar.showMessage(stat)
+
+    def __set_highlight_row(self):
+        """ Set file input table highlight row. """
+        idx = self.actFileBox.currentIndex()
+        if idx == 0:
+            # Clear input table selection
+            self.inputTable.blockSignals(True)
+            self.inputTable.clearSelection()
+            self.inputTable.blockSignals(False)
+            # Clear waveform combobox
+            self.__load_spkwfm_box(clear=True)
+            # Disable button
+            self.actProcButton.setEnabled(False)
+        else:
+            self.inputTable.blockSignals(True)
+            self.inputTable.selectRow(idx - 1)
+            self.inputTable.blockSignals(False)
+            self.actProcButton.setEnabled(True)
+            # Read info
+            self.__load_spkwfm_box(clear=False)
+
+    def __set_highlight_idx(self):
+        """ Set file input table highlight row. """
+        if self.inputTable.selectedItems():
+            self.actFileBox.blockSignals(True)
+            self.actFileBox.setCurrentIndex(self.inputTable.currentRow() + 1)
+            self.actFileBox.blockSignals(False)
+            self.actProcButton.setEnabled(True)
+            # Read info
+            self.__load_spkwfm_box(clear=False)
+        else:
+            # Set file combobox index
+            self.actFileBox.blockSignals(True)
+            self.actFileBox.setCurrentIndex(0)
+            self.actFileBox.blockSignals(False)
+            # Clear waveform combobox
+            self.__load_spkwfm_box(clear=True)
+            # Disable button
+            self.actProcButton.setEnabled(False)
+
+    def __load_spkwfm_box(self, clear=False):
+        """ Load active file information to [spkWfmBox].
+
+        Args:
+            clear (bool): Clear only flag
+        """
+        # Disable linked controls
+        self.clsMethBox.setEnabled(False)
+        self.detThSpinbox.setEnabled(False)
+        self.kValSlider.setEnabled(False)
+        self.kValSpinbox.setEnabled(False)
+        self.sampAntSpinbox.setEnabled(False)
+        self.sampPstSpinbox.setEnabled(False)
+        self.betaSpinbox.setEnabled(False)
+        # Clear indicator
+        self.__set_arg_stat(False)
+        # Load box
+        self.spkWfmBox.blockSignals(True)
+        self.spkWfmBox.clear()
+        if not clear:
+            file = self.inputTable.item(self.inputTable.currentRow(), 2).text()
+            with h5.File(file, 'r') as fp:
+                if 'raw' not in fp:
+                    QtWidgets.QMessageBox.critical(
+                        self, "Invalid Data", "File [%s] missing raw data\nPlease check if the file is correct" % file,
+                        QtWidgets.QMessageBox.StandardButton.Yes)
+                elif 'spk' not in fp:
+                    QtWidgets.QMessageBox.critical(
+                        self, "Raw Data", "File [%s] only containing raw data\nPerform model inference first" % file,
+                        QtWidgets.QMessageBox.StandardButton.Yes)
+                else:
+                    [self.spkWfmBox.addItem(k) for k in fp['spk'].keys()]
+                    # Enable linked controls
+                    self.clsMethBox.setEnabled(True)
+                    self.detThSpinbox.setEnabled(True)
+                    self.kValSlider.setEnabled(True)
+                    self.kValSpinbox.setEnabled(True)
+                    self.sampAntSpinbox.setEnabled(True)
+                    self.sampPstSpinbox.setEnabled(True)
+                    self.betaSpinbox.setEnabled(True)
+        self.spkWfmBox.setCurrentIndex(-1)
+        self.spkWfmBox.blockSignals(False)
+        # Emit signal
+        self.spkWfmBox.setCurrentIndex(0)
+
+    # Spike clustering arguments ------------------------------------------------------------------------------------- #
+    def __set_arg_stat(self, stat=True):
+        """ Set clustering arguments defining status of current spike waveform.
+
+        Args:
+            stat (bool): Status to set
+        """
+        if self.__arg_set == stat:
+            return
+        else:
+            self.__arg_set = stat
+            if stat:
+                self.argStatus.setStyleSheet('QLineEdit {background:#2ca02c; color:#ffffff}')
+                self.argStatus.setText('D')
+                self.argStatus.setToolTip("Clustering arguments definition status\nCurrent: [Using Customized]")
+            else:
+                self.argStatus.setStyleSheet('QLineEdit {background:#bcbd22; color:#000000}')
+                self.argStatus.setText('U')
+                self.argStatus.setToolTip("Clustering arguments definition status\nCurrent: [Using Defaults]")
+
+    def __set_spk_wfm(self):
+        """ Select spike waveform for setting arguments. """
+        w = self.spkWfmBox.currentText()
+        # Set arguments
+        self.detThSpinbox.blockSignals(True)
+        self.detThSpinbox.setValue(self.th.get(w, -50))
+        self.detThSpinbox.blockSignals(False)
+        self.kValSlider.blockSignals(True)
+        self.kValSlider.setValue(round(self.k.get(w, 0.8) * 100))
+        self.kValSlider.blockSignals(False)
+        self.kValSpinbox.blockSignals(True)
+        self.kValSpinbox.setValue(self.k.get(w, 0.8))
+        self.kValSpinbox.blockSignals(False)
+        self.sampAntSpinbox.blockSignals(True)
+        self.sampAntSpinbox.setValue(self.asp.get(w, 5))
+        self.sampAntSpinbox.blockSignals(False)
+        self.sampPstSpinbox.blockSignals(True)
+        self.sampPstSpinbox.setValue(self.psp.get(w, 5))
+        self.sampPstSpinbox.blockSignals(False)
+        self.betaSpinbox.blockSignals(True)
+        self.betaSpinbox.setValue(self.beta.get(w, 0.5))
+        self.betaSpinbox.blockSignals(False)
+        # Check if default has been used
+        self.__set_arg_stat(any([w in self.th, w in self.k, w in self.asp, w in self.psp, w in self.beta]))
+
+    def __set_clst_meth(self):
+        """ Spike clustering method control connected function """
+        w = self.spkWfmBox.currentText()
+        self.meth[w] = self.clsMethBox.currentIndex()
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_det_th(self):
+        """ Set spike detection threshold. """
+        w = self.spkWfmBox.currentText()
+        self.th[w] = self.detThSpinbox.value()
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_kval_sld(self):
+        """ Set k-value with slider. """
+        w = self.spkWfmBox.currentText()
+        self.k[w] = self.kValSlider.value() / 100
+        # Link k-value spinbox
+        self.kValSpinbox.blockSignals(True)
+        self.kValSpinbox.setValue(self.k[w])
+        self.kValSpinbox.blockSignals(False)
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_kval_spb(self):
+        """ Set k-value with spinbox. """
+        w = self.spkWfmBox.currentText()
+        self.k[w] = self.kValSpinbox.value()
+        # Link k-value slider
+        self.kValSlider.blockSignals(True)
+        self.kValSlider.setValue(round(self.k[w] * 100))
+        self.kValSlider.blockSignals(False)
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_ant_samp(self):
+        """ Set anterior sample number. """
+        w = self.spkWfmBox.currentText()
+        self.asp[w] = self.sampAntSpinbox.value()
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_pst_samp(self):
+        """ Set posterior sample number. """
+        w = self.spkWfmBox.currentText()
+        self.psp[w] = self.sampPstSpinbox.value()
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_amp_beta(self):
+        """ Set amplitude beta factor . """
+        w = self.spkWfmBox.currentText()
+        self.beta[w] = self.betaSpinbox.value()
+        # Set indicator
+        self.__set_arg_stat(True)
+
+    def __set_min_cut(self):
+        """ Set minimum number of spike required as valid cell. """
+        self.min_cnt = self.minCutSpinbox.value()
+
+    # Results visualization functions -------------------------------------------------------------------------------- #
+    def __set_act_chn(self):
+        """ Set active channel. """
+        self._ch = self.actChnBox.currentIndex()
+        # Update plots
+        self._cfv.set_channel(self._ch)
+        self.update_spkcid_table()
+        self.update_avgcor_table()
+        # Update signal scroll bar with signal blocked
+        self.signalScrollBar.blockSignals(True)
+        self.signalScrollBar.setValue(0)
+        self.signalScrollBar.blockSignals(False)
+
+    def __set_act_cid(self):
+        """ Set active cells. """
+        if self.spkCidTable.selectedItems():
+            idx = list(set(index.row() for index in self.spkCidTable.selectedIndexes()))
+            grp = set([self.__igrp[i][0] for i in idx])
+            if len(grp) == 1:
+                self.avgCorTab.setCurrentIndex(grp.pop())
+            self._cfv.set_act_clst(idx)
+        else:
+            self._cfv.set_act_clst(None)
+
+    def __set_wfm_grp(self):
+        """ Set waveform group. """
+        self._cfv.grp_feat.set_spk_grp(self.avgCorTab.currentIndex())
+
+    def __update_scroll_bar(self):
+        """ Scroll bar limits and step size updater. """
+        if abs(self.t[-1] - 0.1) <= 0.005:
+            self.signalScrollBar.setMaximum(0)
+            self.signalScrollBar.setSingleStep(0)
+            self.signalScrollBar.setPageStep(0)
+            self.signalScrollBar.setEnabled(False)
+        else:
+            self.signalScrollBar.setMaximum(int((self.t[-1] - 0.1) * 1000 + 1))
+            self.signalScrollBar.setSingleStep(50)
+            self.signalScrollBar.setPageStep(100)
+            self.signalScrollBar.setEnabled(True)
+
+    def __signal_scroll(self):
+        """ Scroll bar motion trigger function. """
+        self.__ch_t = self.signalScrollBar.value() / 1000
+        # Execute timer
+        if self.__timer_val != -1:
+            self.killTimer(self.__timer_val)
+        self.__timer_val = self.startTimer(10)
+
+    def __signal_switch(self):
+        """ Waveform source switch function. """
+        if self._cfv is not None:
+            text = self.sigTypButton.text()
+            if text == 'Raw':
+                self._cfv.chn_feat.switch_fig('spk')
+                self.sigTypButton.setText('Spike')
+            else:
+                self._cfv.chn_feat.switch_fig('raw')
+                self.sigTypButton.setText('Raw')
 
 
 class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):

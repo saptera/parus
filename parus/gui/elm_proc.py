@@ -29,17 +29,18 @@ Functon list:
 # Classes ------------------------------------------------------------------------------------------------------------ #
 
 class CellCheckbox(QtWidgets.QWidget):
-    def __init__(self, identifier=None, func=None):
+    def __init__(self, identifier=None, checked=True, func=None):
         """ Table checkbox class.
 
         Args:
             identifier: Instance identifier
+            checked (bool): Initial check status
             func (function | None): Checkbox clicked connect function
         """
         super(CellCheckbox, self).__init__()
         # Initialize a pre-checked checkbox
         self.chkbox = QtWidgets.QCheckBox()
-        self.chkbox.setChecked(True)
+        self.chkbox.setChecked(checked)
         self.id = identifier
         # Link function
         if func is not None:
@@ -61,11 +62,12 @@ class CellCheckbox(QtWidgets.QWidget):
 
 
 class CellData(QtWidgets.QTableWidgetItem):
-    def __init__(self, val, aln='c', emp=None, clr=None, bkg=None, ro=False):
+    def __init__(self, val, size=None, aln='c', emp=None, clr=None, bkg=None, ro=False):
         """ Data selection table cell data class.
 
         Args:
             val:Value to fill in the cell, any type can convert to string
+            size(int | None): Text point size
             aln (str): Alignment method 'c' = centre | 'l' = left |  'r' = right (default: 'c' = centre)
             emp (str | None): {'b' | 'i' | 'bi' | 'ib'} Text emphasize method 'b' = bold | 'i' = italic (default: None)
             clr (tuple[int, int, int] | None): Text colour in RGB (default: None)
@@ -76,14 +78,18 @@ class CellData(QtWidgets.QTableWidgetItem):
         # Set cell text
         txt = val if isinstance(val, str) else str(val)
         self.setText(txt)
+        font = self.font()
+        # Set text size
+        if size is not None:
+            font.setPointSize(size)
         # Set text emphasize method
         if emp is not None:
-            font = self.font()
             if 'b' in emp:
                 font.setBold(True)
             if 'i' in emp:
                 font.setItalic(True)
-            self.setFont(font)
+        # Set font
+        self.setFont(font)
         # Set text colour
         if clr is not None:
             self.setForeground(QtGui.QColor(*clr))
