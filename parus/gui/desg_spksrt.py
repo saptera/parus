@@ -589,17 +589,17 @@ class Ui_ParusSrtWindow(object):
 
         self.upperLayout.addLayout(self.clsGrpLayout)
 
-        self.elmFeatFrame = QFrame(self.centralWidget)
-        self.elmFeatFrame.setObjectName(u"elmFeatFrame")
-        self.elmFeatFrame.setMinimumSize(QSize(320, 600))
-        self.elmFeatFrame.setFrameShape(QFrame.Shape.StyledPanel)
-        self.elmFeatFrame.setFrameShadow(QFrame.Shadow.Sunken)
-        self.elmFeatLayout = QVBoxLayout(self.elmFeatFrame)
-        self.elmFeatLayout.setSpacing(0)
-        self.elmFeatLayout.setObjectName(u"elmFeatLayout")
-        self.elmFeatLayout.setContentsMargins(0, 0, 0, 0)
+        self.spkFeatFrame = QFrame(self.centralWidget)
+        self.spkFeatFrame.setObjectName(u"spkFeatFrame")
+        self.spkFeatFrame.setMinimumSize(QSize(320, 600))
+        self.spkFeatFrame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.spkFeatFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.spkFeatLayout = QVBoxLayout(self.spkFeatFrame)
+        self.spkFeatLayout.setSpacing(0)
+        self.spkFeatLayout.setObjectName(u"spkFeatLayout")
+        self.spkFeatLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.upperLayout.addWidget(self.elmFeatFrame)
+        self.upperLayout.addWidget(self.spkFeatFrame)
 
         self.upperLayout.setStretch(1, 1)
         self.upperLayout.setStretch(2, 1)

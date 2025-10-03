@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import FancyBboxPatch, PathPatch
 
-__all__ = ['swarm_cord', 'stat_plvl', 'plot_prb']
+__all__ = ['swarm_cord', 'stat_plvl', 'spk_correlogram', 'plot_prb']
 """
 Function list:
   swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
   stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None): Stats significance bars.
+  spk_correlogram(px, py=None, t=0.05, s=0.001): Compute spike train correlogram.
   plot_prb(prb, ax): Plot neural recoding probe.
 """
 
@@ -138,6 +139,34 @@ def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None,
         tp = ax.text(c, b, t, **textprops)
         text.append(tp)
     return line, text
+
+
+def spk_correlogram(px, py=None, t=0.05, s=0.001):
+    """ Compute spike train correlogram.
+
+    Args:
+        px (list[int | float] | np.ndarray): First spike train as trigger
+        py (list[int | float] | np.ndarray | None): Spike train being triggered (default: None = autocorrelogram)
+        t (int | float): Single side time range to set bins in second, actual window will double (default: 50ms)
+        s (int | float): Time range to sample step in second (default: 1ms)
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Spike counts and bin values
+    """
+    # Autocorrelogram
+    if py is None:
+        isi = np.subtract.outer(px, px)
+        # Trim ISI diagonal
+        n = isi.shape[0]
+        si, se = isi.strides
+        isi = np.lib.stride_tricks.as_strided(isi.ravel()[1:], shape=(n - 1, n), strides=(si + se, se)).flatten()
+    # Correlogram
+    else:
+        isi = np.subtract.outer(py, px)
+    # Create histogram
+    b = round(t * 2 / s) + 1
+    count, edge = np.histogram(isi, bins=b, range=(-t, t), density=False)
+    return count, edge
 
 
 def plot_prb(prb, ax):

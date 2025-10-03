@@ -1496,7 +1496,7 @@ QPushButton:disabled {color: dimgray;}</string>
        </layout>
       </item>
       <item>
-       <widget class="QFrame" name="elmFeatFrame">
+       <widget class="QFrame" name="spkFeatFrame">
         <property name="minimumSize">
          <size>
           <width>320</width>
@@ -1509,7 +1509,7 @@ QPushButton:disabled {color: dimgray;}</string>
         <property name="frameShadow">
          <enum>QFrame::Shadow::Sunken</enum>
         </property>
-        <layout class="QVBoxLayout" name="elmFeatLayout">
+        <layout class="QVBoxLayout" name="spkFeatLayout">
          <property name="spacing">
           <number>0</number>
          </property>

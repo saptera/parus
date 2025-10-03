@@ -336,6 +336,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self._sel_cid = []  # Selected cluster
         self._mrg_cid = []  # Merge cluster
         self._cmp_cid = []  # Compare cluster
+        self._cmp_lst = []  # Compare list
         self.__igrp = []  # Index to group mapping
         self.__arg_set = False
 
@@ -393,6 +394,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.allPrsvButton.clicked.connect(self.__proc_selfile)
         self.actChnBox.currentIndexChanged.connect(self.__set_act_chn)
         self.spkCidTable.itemSelectionChanged.connect(self.__set_act_cid)
+        self.spkCidTable.cellChanged.connect(self.__set_cell_name)
         self.avgCorTab.currentChanged.connect(self.__set_wfm_grp)
         self.signalScrollBar.valueChanged.connect(self.__signal_scroll)
         self.sigTypButton.clicked.connect(self.__signal_switch)
@@ -626,6 +628,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                                            self.min_cnt, self.cmap)
                 self.chnFeatLayout.addWidget(self._cfv.chn_feat)
                 self.grpFeatLayout.addWidget(self._cfv.grp_feat)
+                self.spkFeatLayout.addWidget(self._cfv.spk_feat)
             else:
                 self._cfv.reload_data(self.raw, self.spk, self.t, self.asp, self.psp, self.clst, self.min_cnt)
             # Update tables
@@ -647,9 +650,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self._sel_cid = []  # RESET VAR
         self._mrg_cid = []  # RESET VAR
         self._cmp_cid = []  # RESET VAR
+        self._cmp_lst = []  # RESET VAR
         self.__igrp = []
         row = 0
         # Load new values
+        self.spkCidTable.blockSignals(True)
         for n, w in enumerate(self.clst):
             for i in range(len(self.clst[w][self._ch])):
                 # Compute features
@@ -678,7 +683,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 self.spkCidTable.setItem(row, 6, CellData("%.4f" % isi, aln='r', ro=True))
                 self.spkCidTable.setItem(row, 7, CellData("%.4f" % cv, aln='r', ro=True))
                 self.spkCidTable.setItem(row, 8, CellData("%.4f" % cv2, aln='r', ro=True))
-                curr_cmp = CellCheckbox(identifier=[cid, w, i], checked=False)
+                curr_cmp = CellCheckbox(identifier=[cid, w, i, [self._ch]], checked=False, func=self.__spk_corwfm)
                 self._cmp_cid.append(curr_cmp)
                 self.spkCidTable.setCellWidget(row, 9, curr_cmp)
                 itm_clr = CellData("", bkg=tuple([round(c * 255) for c in self.cmap(row)[:3]]), ro=True)
@@ -688,6 +693,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 # Counter
                 self.__igrp.append([n, i])
                 row += 1
+        self.spkCidTable.blockSignals(False)
 
     def update_avgcor_table(self):
         """ Update averaged spike waveform correlation table. """
@@ -803,6 +809,47 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.update_avgcor_table()
         if self._cfv is not None:
             self._cfv.update_cluster(self.clst)
+
+    def __spk_corwfm(self):
+        """ Plot spike correlation waveforms. """
+        # Get checked item
+        for cb in self._cmp_cid:
+            if cb.isChecked() and (cb not in self._cmp_lst):
+                self._cmp_lst.append(cb)
+            if (not cb.isChecked()) and (cb in self._cmp_lst):
+                self._cmp_lst.remove(cb)
+        # Limit checked item length to 2
+        for cb in self._cmp_lst[:-2]:
+            cb.setChecked(False)
+        self._cmp_lst = self._cmp_lst[-2:]
+        # Trigger plot
+        if len(self._cmp_lst) == 0:
+            self._cfv.spk_feat.plot_correlogram(None, None)
+            self._cfv.spk_feat.plot_spksamp(None, wfm=None, chs=None)
+        elif len(self._cmp_lst) == 1:
+            t, w, i, c = self._cmp_lst[0].id
+            tx = "%s(%s)" % (t, w)
+            px = self.t[self.clst[w][self._ch][i]]
+            self._cfv.spk_feat.plot_correlogram(px, None, tx)
+            self._cfv.spk_feat.plot_spksamp(self.clst[w][self._ch][i], wfm=w, chs=c, name=tx)
+        else:
+            t, w, i, c = self._cmp_lst[0].id
+            tx = "%s(%s)" % (t, w)
+            px = self.t[self.clst[w][self._ch][i]]
+            self._cfv.spk_feat.plot_spksamp(self.clst[w][self._ch][i], wfm=w, chs=c, name=tx)
+            t, w, i = self._cmp_lst[1].id[:3]
+            ty = "%s(%s)" % (t, w)
+            py = self.t[self.clst[w][self._ch][i]]
+            self._cfv.spk_feat.plot_correlogram(px, py, tx, ty)
+
+    def __set_cell_name(self, row, col):
+        """ Set name for detected cell. """
+        name = self.spkCidTable.item(row, col).text()
+        self._sel_cid[row].id[0] = name
+        self._mrg_cid[row].id[0] = name
+        self._cmp_cid[row].id[0] = name
+        if self._cmp_cid[row] in self._cmp_lst:
+            self.__spk_corwfm()
 
     # File input table functions ------------------------------------------------------------------------------------- #
     def __set_data_file(self):

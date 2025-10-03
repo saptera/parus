@@ -1,6 +1,7 @@
 # Parus GUI plotting module
 
 import weakref
+from logging import warning
 from typing import Iterable
 import numpy as np
 import h5py as h5
@@ -16,6 +17,7 @@ import matplotlib.pyplot as plt
 
 __package__ = 'parus.gui'
 from ..fio import h5_load_dat
+from ..data import spk_correlogram
 from . import cs_dark
 
 __all__ = ['LoopedColormap', 'BlitManager', 'ClstFeatViewer', 'WfmPosMarker', 'ResPltLoader']
@@ -159,6 +161,7 @@ class ClstFeatViewer:
         # Create internal classes
         self.chn_feat = self._ChnFeat(self)
         self.grp_feat = self._GrpFeat(self)
+        self.spk_feat = self._SpkFeat(self)
 
     class _ChnFeat(FigureCanvasQTAgg):
         def __init__(self, parent):
@@ -473,6 +476,166 @@ class ClstFeatViewer:
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 
+    class _SpkFeat(FigureCanvasQTAgg):
+        def __init__(self, parent):
+            """ Spike train feature plots.
+
+            Args:
+                parent (ClstFeatViewer): Parent class
+            """
+            # Get inputs
+            self._cfv = parent
+
+            # Initialize figure
+            self.fig, self.ax = plt.subplots(2, 1, sharex='none', sharey='none', height_ratios=(1, 3))
+            self.fig.set_layout_engine(layout='tight')
+            self.ax[0].spines[['top', 'right']].set_visible(False)
+            self.ax[0].tick_params(axis='both', labelsize=6)
+            self.ax[1].spines[['top', 'bottom', 'left', 'right']].set_visible(False)
+            self.ax[1].tick_params(axis='both', left=False, top=False, right=False, bottom=False,
+                                   labelleft=False, labeltop=False, labelright=False, labelbottom=False)
+            # Initialize plots
+            self.plot_correlogram(None, None)
+            self.plot_spksamp(None, None, None)
+            # Connect to Qt backend
+            super(ClstFeatViewer._SpkFeat, self).__init__(self.fig)
+
+        def plot_correlogram(self, px, py=None, tx="Trigger", ty="Triggered"):
+            """ Plot spike train correlogram.
+
+            Args:
+                px (np.ndarray | None): Spike train as trigger
+                py (np.ndarray | None): Triggered spike train (default: None = autocorrelogram)
+                tx (str): Trigger spike train name (default: Trigger)
+                ty (str): Triggered spike train name (default: Triggered)
+            """
+            # Remove previous artist
+            self.ax[0].clear()
+            # Plot text when nothing selected
+            if px is None:
+                if py is None:
+                    self.ax[0].spines[['bottom', 'left']].set_visible(False)
+                    self.ax[0].tick_params(axis='both', left=False, top=False, right=False, bottom=False,
+                                           labelleft=False, labeltop=False, labelright=False, labelbottom=False)
+                    self.ax[0].set_xbound(0, 1)
+                    self.ax[0].set_ybound(0, 1)
+                    self.ax[0].text(0.5, 0.5, "No Spike Selected", size=9, ha='center', va='center')
+                    # Force figure update
+                    self.fig.canvas.draw()
+                    self.fig.canvas.flush_events()
+                    return
+                else:
+                    px = py
+                    py = None
+            # Set annotation visible
+            self.ax[0].spines[['bottom', 'left']].set_visible(True)
+            self.ax[0].tick_params(axis='both', left=True, top=False, right=False, bottom=True,
+                                   labelleft=True, labeltop=False, labelright=False, labelbottom=True)
+            self.ax[0].set_xlabel("Time (ms)", fontsize=8, fontweight='bold')
+            self.ax[0].set_ylabel("Counts", fontsize=8, fontweight='bold')
+            # Compute correlogram
+            count = [0]
+            edge = []
+            t = 0.05
+            s = 0.001
+            while (np.sum(count) == 0) or (t > 5):
+                count, edge = spk_correlogram(px, py, t=t, s=s)
+                t *= 10
+                s *= 10
+            edge *= 1000  # Convert to ms
+            # Plot correlogram
+            title = "Autocorrelogram [%s]" % tx if py is None else "Correlogram [%s -> %s]" % (tx, ty)
+            self.ax[0].stairs(count, edge, fill=True)
+            self.ax[0].set_title(title, fontsize=9, fontweight='bold')
+            self.ax[0].margins(x=0.01, y=0.05)
+            # Force figure update
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+        def plot_spksamp(self, pos, wfm, chs, name=None):
+            """ Plot spike sample over time or channel.
+
+            Args:
+                pos (np.ndarray): {1D-int | 2D-int} Spike position indices
+                wfm (str | None): Waveform name
+                chs (list[int] | None): Channels to sample
+                name (str | None): Spike cell name
+            """
+            # Remove previous artist
+            self.ax[1].clear()
+            # Plot text when nothing selected
+            if pos is None:
+                self.ax[1].set_xbound(0, 1)
+                self.ax[1].set_ybound(0, 1)
+                self.ax[1].text(0.5, 0.5, "No Spike Selected", size=9, ha='center', va='center')
+                # Force figure update
+                self.fig.canvas.draw()
+                self.fig.canvas.flush_events()
+                return
+            # Get spike samples
+            if pos.ndim == 1:
+                if len(chs) == 1:
+                    ch = chs[0]
+                    sel = np.unique(np.rint(np.linspace(0, len(pos) - 1, 8, endpoint=True)).astype(int))
+                    idx = np.repeat(pos[sel], self._cfv.num[wfm]) + np.tile(self._cfv.blk[wfm], len(sel))
+                    idx = np.clip(idx, a_min=0, a_max=len(self._cfv.spk[wfm][ch]) - 1).reshape(
+                        self._cfv.num[wfm], -1, order='F')
+                    smp = self._cfv.spk[wfm][ch][idx]
+                    txt = ["%.4f s" % t for t in self._cfv.t[pos[sel]]]
+                else:
+                    smp = np.zeros((self._cfv.num[wfm], len(chs)), dtype=np.float32)
+                    idx = np.repeat(pos, self._cfv.num[wfm]) + np.tile(self._cfv.blk[wfm], len(pos))
+                    idx = np.clip(idx, a_min=0, a_max=len(self._cfv.spk[wfm][chs[0]]) - 1).reshape(
+                        self._cfv.num[wfm], -1, order='F')
+                    for i, ch in enumerate(chs):
+                        smp[:, i] = np.mean(self._cfv.spk[wfm][ch][idx], axis=1)
+                    txt = ["CH-%04d" % t for t in chs]
+            else:
+                if pos.ndim != len(chs):
+                    self.ax[1].set_xbound(0, 1)
+                    self.ax[1].set_ybound(0, 1)
+                    self.ax[1].text(0.5, 0.5, "Unmatched Dimension!", size=9, ha='center', va='center', color='r')
+                    # Force figure update
+                    self.fig.canvas.draw()
+                    self.fig.canvas.flush_events()
+                    return
+                else:
+                    smp = np.zeros((self._cfv.num[wfm], len(chs)), dtype=np.float32)
+                    for i, (ps, ch) in enumerate(zip(pos, chs)):
+                        idx = np.repeat(ps, self._cfv.num[wfm]) + np.tile(self._cfv.blk[wfm], len(ps))
+                        idx = np.clip(idx, a_min=0, a_max=len(self._cfv.spk[wfm][ch]) - 1).reshape(
+                            self._cfv.num[wfm], -1, order='F')
+                        smp[:, i] = np.mean(self._cfv.spk[wfm][ch][idx], axis=1)
+                    txt = ["CH-%04d" % t for t in chs]
+            # Compute plot grid
+            rng = (np.max(smp) - np.min(smp)) * 1.05
+            bsl = np.min(smp) * 1.1
+            sx, sn = smp.shape
+            if sn < 5:
+                row = list(reversed(range(sn)))
+                col = [0] * sn
+            else:
+                dv, md = divmod(sn, 2)
+                row = list(reversed(range(sn - dv))) + list(reversed(range(md, sn - dv)))
+                col = [0] * (sn - dv) + [1] * dv
+            # Adjust sample
+            xx = np.zeros_like(smp)
+            yy = np.zeros_like(smp)
+            tt = []
+            for i, (r, c) in enumerate(zip(row, col)):
+                xx[:, i] = np.arange(sx) + c * sx * 1.1
+                yy[:, i] = smp[:, i] + r * rng
+                tt.append(((xx[0, i] + xx[-1, i]) / 2, bsl + r * rng))
+            # Plot
+            self.ax[1].plot(xx, yy)
+            for t, v in zip(txt, tt):
+                self.ax[1].text(v[0], v[1], t, size=6, ha='center', va='center')
+            self.ax[1].set_title("Sample [%s]" % name, fontsize=9, fontweight='bold')
+            self.ax[0].margins(x=0, y=0)
+            # Force figure update
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
     # Main class functions ------------------------------------------------------------------------------------------- #
     def reload_data(self, raw, spk, t, asp, psp, clst, min_cnt=50):
         """ Cluster feature plots main class.
@@ -507,6 +670,7 @@ class ClstFeatViewer:
         """ Close function. """
         plt.close(self.chn_feat.fig)
         plt.close(self.grp_feat.fig)
+        plt.close(self.spk_feat.fig)
 
     def set_channel(self, ch):
         """ Set current plotting channel for all plots.
