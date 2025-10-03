@@ -10,20 +10,38 @@
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QSpacerItem, QToolButton,
+                               QVBoxLayout, QWidget)
 
 
 class Ui_ParusDatWindow(object):
     def setupUi(self, ParusDatWindow):
         if not ParusDatWindow.objectName():
             ParusDatWindow.setObjectName(u"ParusDatWindow")
-        ParusDatWindow.resize(830, 450)
-        ParusDatWindow.setMinimumSize(QSize(830, 450))
-        ParusDatWindow.setMaximumSize(QSize(830, 450))
+        ParusDatWindow.resize(830, 470)
+        ParusDatWindow.setMinimumSize(QSize(830, 470))
+        ParusDatWindow.setMaximumSize(QSize(830, 470))
         self.centralWidget = QWidget(ParusDatWindow)
         self.centralWidget.setObjectName(u"centralWidget")
         self.centralLayout = QVBoxLayout(self.centralWidget)
         self.centralLayout.setObjectName(u"centralLayout")
+        self.settingLayout = QHBoxLayout()
+        self.settingLayout.setSpacing(0)
+        self.settingLayout.setObjectName(u"settingLayout")
+        self.settingSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.settingLayout.addItem(self.settingSpacer)
+
+        self.settingButton = QToolButton(self.centralWidget)
+        self.settingButton.setObjectName(u"settingButton")
+        self.settingButton.setMinimumSize(QSize(30, 20))
+        self.settingButton.setMaximumSize(QSize(30, 20))
+
+        self.settingLayout.addWidget(self.settingButton)
+
+
+        self.centralLayout.addLayout(self.settingLayout)
+
         self.logoFrame = QFrame(self.centralWidget)
         self.logoFrame.setObjectName(u"logoFrame")
         self.logoFrame.setMinimumSize(QSize(540, 150))
@@ -108,7 +126,7 @@ class Ui_ParusDatWindow(object):
 
         self.centralLayout.addWidget(self.ctrlFrame)
 
-        self.centralLayout.setStretch(0, 1)
+        self.centralLayout.setStretch(1, 1)
         ParusDatWindow.setCentralWidget(self.centralWidget)
 
         self.retranslateUi(ParusDatWindow)
@@ -118,6 +136,7 @@ class Ui_ParusDatWindow(object):
 
     def retranslateUi(self, ParusDatWindow):
         ParusDatWindow.setWindowTitle(QCoreApplication.translate("ParusDatWindow", u"Parus Data Pipeline", None))
+        self.settingButton.setText(QCoreApplication.translate("ParusDatWindow", u"...", None))
         self.titleLabel.setText(QCoreApplication.translate("ParusDatWindow", u"Data Processing", None))
         self.modInfButton.setText(QCoreApplication.translate("ParusDatWindow", u"Signal Separation", None))
         self.spkSrtButton.setText(QCoreApplication.translate("ParusDatWindow", u"Spike Sorting", None))

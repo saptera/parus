@@ -777,6 +777,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.nEpSpinbox.setValue(pars['total_epoch'])
             self.stpEvalSpinbox.setValue(pars['steps_per_eval'])
             self.indEvalCombo.setCurrentIndex(pars['eval_visual_method_index'])
+            self.exOptLine.setText(pars['advanced_options'])
         self.set_proc_args()
 
     def __save_params(self):
@@ -792,6 +793,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         pars['total_epoch'] = self.nEpSpinbox.value()
         pars['steps_per_eval'] = self.stpEvalSpinbox.value()
         pars['eval_visual_method_index'] = self.indEvalCombo.currentIndex()
+        pars['advanced_options'] = ' '.join(self.ex_opt)
         # Save to file
         with open(os.path.join(pkg_data, '_trn_params.json'), 'w') as fp:
             json.dump(pars, fp, indent=2)
