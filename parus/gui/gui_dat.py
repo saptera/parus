@@ -332,6 +332,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         # Results variables
         self.clst = {}  # Spike clusters
         self.avgw = {}  # Spike mean waveform
+        self.__has_res = False  # Has processed results flag
         # Process control variables
         self._sel_cid = []  # Selected cluster
         self._mrg_cid = []  # Merge cluster
@@ -408,13 +409,42 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
     def keyPressEvent(self, event):
         """ Main window keyboard inputs. """
+        # Cell selection escape key
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.spkCidTable.clearSelection()
+        # Plot navigation keys
+        elif event.key() == QtCore.Qt.Key.Key_Left:
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 1)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 10)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 20)
+            else:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() - 5)
+        elif event.key() == QtCore.Qt.Key.Key_Right:
+            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 1)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 10)
+            elif event.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 20)
+            else:
+                self.signalScrollBar.setSliderPosition(self.signalScrollBar.sliderPosition() + 5)
         else:
             QtWidgets.QMainWindow.keyPressEvent(self, event)
 
     def closeEvent(self, event):
         """ Close function. """
+        if self.__has_res:
+            reply = QtWidgets.QMessageBox.warning(
+                self, "Sorting Results", "Spike sorting have been processed\nDo you want to exit?",
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No
+            )
+            if reply == QtWidgets.QMessageBox.StandardButton.No:
+                event.ignore()
+                return
         if self._cfv is not None:
             self._cfv.close()
 
@@ -460,8 +490,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             """
             super(ParusSrt._DataProcThread, self).__init__(parent)
             self.parent = parent
+            self.success = True  # Process success flag
 
         def run(self):
+            self.success = False  # RESET FLAG
             if self.save:
                 self.proc_save()
             elif self.single:
@@ -510,6 +542,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
                     self.parent.clst[w].append([cls[i] for i in sid])
                     self.parent.avgw[w].append([avg[i] for i in sid])
+            # Set flag
+            self.success = True
 
         def proc_save(self):
             """ Save result to single file. """
@@ -530,6 +564,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                             chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
                         row += 1
             fp.close()
+            # Set flag
+            self.success = True
 
         def proc_multi(self):
             """ Process spike sorting and saving on all selected file. """
@@ -578,6 +614,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                                 dat[v] = 1
                                 chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
                     fp.close()
+            # Set flag
+            self.success = True
 
     def __proc_actfile_spksrt(self):
         """ Process single activated file. """
@@ -610,34 +648,52 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         """ Data process finalized connected function. """
         self.ctrl_enable(True)
         if self.__save:
-            self.statBar.showMessage("File [%s] successfully saved" % self._act_file)
-        elif self.__single:
-            # Set GUI items
-            self.actChnBox.blockSignals(True)
-            self.actChnBox.clear()
-            [self.actChnBox.addItem("CH-%03d" % i) for i in range(self.raw.shape[0])]
-            self.actChnBox.blockSignals(False)
-            self.signalScrollBar.blockSignals(True)
-            self.__update_scroll_bar()
-            self.signalScrollBar.setValue(0)
-            self.signalScrollBar.blockSignals(False)
-            self.actSaveButton.setEnabled(True)
-            # Set figures
-            if self._cfv is None:
-                self._cfv = ClstFeatViewer(self.raw, self.spk, self.t, self.asp, self.psp, self.clst,
-                                           self.min_cnt, self.cmap)
-                self.chnFeatLayout.addWidget(self._cfv.chn_feat)
-                self.grpFeatLayout.addWidget(self._cfv.grp_feat)
-                self.spkFeatLayout.addWidget(self._cfv.spk_feat)
+            if self._proc_thread.success:
+                self.__has_res = False
+                self.statBar.showMessage("File [%s] successfully saved" % self._act_file)
             else:
-                self._cfv.reload_data(self.raw, self.spk, self.t, self.asp, self.psp, self.clst, self.min_cnt)
-            # Update tables
-            self.update_spkcid_table()
-            self.update_avgcor_table()
-            # Show message
-            self.statBar.showMessage("File [%s] processed" % self._act_file)
+                self.statBar.showMessage("Error when saving file [%s]" % self._act_file)
+                QtWidgets.QMessageBox.critical(self, "Error", "Error when saving file [%s]" % self._act_file,
+                                               QtWidgets.QMessageBox.StandardButton.Yes)
+        elif self.__single:
+            if self._proc_thread.success:
+                self.__has_res = True
+                # Set GUI items
+                self.actChnBox.blockSignals(True)
+                self.actChnBox.clear()
+                [self.actChnBox.addItem("CH-%03d" % i) for i in range(self.raw.shape[0])]
+                self.actChnBox.blockSignals(False)
+                self.signalScrollBar.blockSignals(True)
+                self.__update_scroll_bar()
+                self.signalScrollBar.setValue(0)
+                self.signalScrollBar.blockSignals(False)
+                self.actSaveButton.setEnabled(True)
+                # Set figures
+                if self._cfv is None:
+                    self._cfv = ClstFeatViewer(self.raw, self.spk, self.t, self.asp, self.psp, self.clst,
+                                               self.min_cnt, self.cmap)
+                    self.chnFeatLayout.addWidget(self._cfv.chn_feat)
+                    self.grpFeatLayout.addWidget(self._cfv.grp_feat)
+                    self.spkFeatLayout.addWidget(self._cfv.spk_feat)
+                else:
+                    self._cfv.reload_data(self.raw, self.spk, self.t, self.asp, self.psp, self.clst, self.min_cnt)
+                # Update tables
+                self.update_spkcid_table()
+                self.update_avgcor_table()
+                # Show message
+                self.statBar.showMessage("File [%s] processed" % self._act_file)
+            else:
+                self.statBar.showMessage("Failed to process file [%s]" % self._act_file)
+                QtWidgets.QMessageBox.critical(self, "Error", "Failed to process file [%s]" % self._act_file,
+                                               QtWidgets.QMessageBox.StandardButton.Yes)
         else:
-            self.statBar.showMessage("All selected file processed")
+            if self._proc_thread.success:
+                self.__has_res = False
+                self.statBar.showMessage("All selected file processed")
+            else:
+                self.statBar.showMessage("Error occurred when process files")
+                QtWidgets.QMessageBox.critical(self, "Error", "Error occurred when process files\nPlease check inputs",
+                                               QtWidgets.QMessageBox.StandardButton.Yes)
 
     def update_spkcid_table(self, cid_lst=None):
         """ Update single cell spike information table.
@@ -1327,21 +1383,11 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
                 )
                 if reply == QtWidgets.QMessageBox.StandardButton.No:
                     event.ignore()
-                elif reply == QtWidgets.QMessageBox.StandardButton.Yes:
-                    self.__save_msg.allow_close = True  # Unblock close lock for dialog
-                    self.__save_msg.close()  # Close process informing dialog
-                    self._result.close()  # Close result plot
-                    event.accept()
-            else:
-                self.__save_msg.allow_close = True  # Unblock close lock for dialog
-                self.__save_msg.close()  # Close process informing dialog
-                self._result.close()  # Close result plot
-                event.accept()
-        else:
-            self.__save_msg.allow_close = True  # Unblock close lock for dialog
-            self.__save_msg.close()  # Close process informing dialog
-            self._result.close()  # Close result plot
-            event.accept()
+                    return
+        self.__save_msg.allow_close = True  # Unblock close lock for dialog
+        self.__save_msg.close()  # Close process informing dialog
+        self._result.close()  # Close result plot
+        event.accept()
 
     def keyPressEvent(self, event) -> bool:
         """ Main window keyboard inputs. """

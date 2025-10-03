@@ -495,8 +495,8 @@ class ClstFeatViewer:
             self.ax[1].tick_params(axis='both', left=False, top=False, right=False, bottom=False,
                                    labelleft=False, labeltop=False, labelright=False, labelbottom=False)
             # Initialize plots
-            self.plot_correlogram(None, None)
-            self.plot_spksamp(None, None, None)
+            self.__chs = []
+            self.reset_fig()
             # Connect to Qt backend
             super(ClstFeatViewer._SpkFeat, self).__init__(self.fig)
 
@@ -556,7 +556,7 @@ class ClstFeatViewer:
             """ Plot spike sample over time or channel.
 
             Args:
-                pos (np.ndarray): {1D-int | 2D-int} Spike position indices
+                pos (np.ndarray | None): {1D-int | 2D-int} Spike position indices
                 wfm (str | None): Waveform name
                 chs (list[int] | None): Channels to sample
                 name (str | None): Spike cell name
@@ -569,6 +569,7 @@ class ClstFeatViewer:
                 self.ax[1].set_ybound(0, 1)
                 self.ax[1].text(0.5, 0.5, "No Spike Selected", size=9, ha='center', va='center')
                 # Force figure update
+                self.__chs = []
                 self.fig.canvas.draw()
                 self.fig.canvas.flush_events()
                 return
@@ -596,6 +597,7 @@ class ClstFeatViewer:
                     self.ax[1].set_ybound(0, 1)
                     self.ax[1].text(0.5, 0.5, "Unmatched Dimension!", size=9, ha='center', va='center', color='r')
                     # Force figure update
+                    self.__chs = []
                     self.fig.canvas.draw()
                     self.fig.canvas.flush_events()
                     return
@@ -607,6 +609,7 @@ class ClstFeatViewer:
                             self._cfv.num[wfm], -1, order='F')
                         smp[:, i] = np.mean(self._cfv.spk[wfm][ch][idx], axis=1)
                     txt = ["CH-%04d" % t for t in chs]
+            self.__chs = chs
             # Compute plot grid
             rng = (np.max(smp) - np.min(smp)) * 1.05
             bsl = np.min(smp) * 1.1
@@ -635,6 +638,20 @@ class ClstFeatViewer:
             # Force figure update
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
+
+        def reset_fig(self):
+            """ Reset figures. """
+            self.plot_correlogram(None, None)
+            self.plot_spksamp(None, None, None)
+
+        def chk_channel(self, ch):
+            """ Check current plotting channel for plots.
+
+            Args:
+                ch (int): Current active channel
+            """
+            if ch not in self.__chs:
+                self.reset_fig()
 
     # Main class functions ------------------------------------------------------------------------------------------- #
     def reload_data(self, raw, spk, t, asp, psp, clst, min_cnt=50):
@@ -665,6 +682,7 @@ class ClstFeatViewer:
         # Replot figures
         self.chn_feat.replot_fig()
         self.grp_feat.replot_fig()
+        self.spk_feat.reset_fig()
 
     def close(self):
         """ Close function. """
@@ -685,6 +703,7 @@ class ClstFeatViewer:
             # Update figure
             self.chn_feat.replot_fig()
             self.grp_feat.replot_fig()
+            self.spk_feat.chk_channel(ch)
 
     def set_act_clst(self, idx):
         """ Set active cluster in figure.
@@ -705,6 +724,7 @@ class ClstFeatViewer:
         # Replot figures
         self.chn_feat.replot_fig()
         self.grp_feat.replot_fig()
+        self.spk_feat.reset_fig()
 
 
 class WfmPosMarker(BlitManager):
