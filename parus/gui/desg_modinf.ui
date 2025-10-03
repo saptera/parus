@@ -535,7 +535,7 @@
          <property name="title">
           <string>Process Options</string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout">
+         <layout class="QHBoxLayout" name="optGrpLayout">
           <item>
            <layout class="QHBoxLayout" name="ovlpLayout">
             <property name="spacing">

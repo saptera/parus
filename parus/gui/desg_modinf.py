@@ -230,8 +230,8 @@ class Ui_ParusInfWindow(object):
         self.optGroup.setMinimumSize(QSize(1000, 70))
         self.optGroup.setMaximumSize(QSize(16777215, 70))
         self.optGroup.setFont(font2)
-        self.horizontalLayout = QHBoxLayout(self.optGroup)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.optGrpLayout = QHBoxLayout(self.optGroup)
+        self.optGrpLayout.setObjectName(u"optGrpLayout")
         self.ovlpLayout = QHBoxLayout()
         self.ovlpLayout.setSpacing(0)
         self.ovlpLayout.setObjectName(u"ovlpLayout")
@@ -255,22 +255,22 @@ class Ui_ParusInfWindow(object):
         self.ovlpLayout.addWidget(self.ovlpSpinbox)
 
 
-        self.horizontalLayout.addLayout(self.ovlpLayout)
+        self.optGrpLayout.addLayout(self.ovlpLayout)
 
         self.optSpacerL = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout.addItem(self.optSpacerL)
+        self.optGrpLayout.addItem(self.optSpacerL)
 
         self.tmemCheckbox = QCheckBox(self.optGroup)
         self.tmemCheckbox.setObjectName(u"tmemCheckbox")
         self.tmemCheckbox.setMinimumSize(QSize(115, 25))
         self.tmemCheckbox.setFont(font4)
 
-        self.horizontalLayout.addWidget(self.tmemCheckbox)
+        self.optGrpLayout.addWidget(self.tmemCheckbox)
 
         self.optSpacerM = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout.addItem(self.optSpacerM)
+        self.optGrpLayout.addItem(self.optSpacerM)
 
         self.btszLayout = QHBoxLayout()
         self.btszLayout.setSpacing(0)
@@ -296,11 +296,11 @@ class Ui_ParusInfWindow(object):
         self.btszLayout.addWidget(self.btszSpinbox)
 
 
-        self.horizontalLayout.addLayout(self.btszLayout)
+        self.optGrpLayout.addLayout(self.btszLayout)
 
         self.optSpacerR = QSpacerItem(100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.horizontalLayout.addItem(self.optSpacerR)
+        self.optGrpLayout.addItem(self.optSpacerR)
 
         self.clvlLayout = QHBoxLayout()
         self.clvlLayout.setSpacing(0)
@@ -332,7 +332,7 @@ class Ui_ParusInfWindow(object):
         self.clvlLayout.addWidget(self.clvlCombo)
 
 
-        self.horizontalLayout.addLayout(self.clvlLayout)
+        self.optGrpLayout.addLayout(self.clvlLayout)
 
 
         self.infFrameLayout.addWidget(self.optGroup)

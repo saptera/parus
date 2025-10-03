@@ -84,7 +84,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.clvl = self.__set_comp_lvl()
         self.out_path = []
 
-        # Connect buttons
+        # Connect controls
         self.addFileButton.clicked.connect(self.__set_data_file)
         self.addPathButton.clicked.connect(self.__set_data_path)
         self.selAllButton.clicked.connect(lambda: self.__set_selc('all'))

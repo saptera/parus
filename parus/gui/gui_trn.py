@@ -8,15 +8,17 @@ from PySide6 import QtWidgets
 
 __package__ = 'parus.gui'
 from .. import pkg_data
-from ..scripts import gen_sim, gen_sta
+from ..scripts import gen_sim, gen_sta, mod_trn
 from . import cs_dark
 from .desg_genctl import Ui_ParusGenWindow
+from .desg_modtrn import Ui_ParusTrnWindow
 from .elm_proc import PyScriptExec, ProcConsole, path_selector
 
-__all__ = ['ParusGen']
+__all__ = ['ParusGen', 'ParusTrn']
 """
 Class list:
   ParusGen(parent=None): Parus simulated signal generation window.
+  ParusTrn( parent=None): Parus model training window.
 """
 
 
@@ -631,3 +633,270 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         else:
             self._sta_proc.reset_arguments()
             self.genStaButton.setEnabled(False)
+
+
+class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
+    def __init__(self, parent=None):
+        """ Parus model training window.
+
+        Args:
+            parent: Parent window or widget
+        """
+        # Initialize main UI
+        super(ParusTrn, self).__init__(parent)
+        self.setupUi(self)
+        if cs_dark():
+            self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
+        else:
+            self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+        # Set control variable defaults
+        self.__auto_scr = True
+        self.__proc_run = False
+
+        # Set inference process
+        self._proc = PyScriptExec(script=mod_trn, console=self.procConsole, trigger=self.procButton,
+                                  name="Parus [Model Train]", disp_time=True, clr_con=False,
+                                  trig_txt=("Initiate Model Training", "Stop Process"))
+        self._proc.set_auto_scroll(self.__auto_scr)
+        self._proc.started.connect(self.__proc_start)
+        self._proc.finished.connect(self.__proc_finish)
+        # Initialize console
+        self._console = ProcConsole(console=self.procConsole,
+                                    btn_clr=self.procConClear, btn_cpy=self.procConCopy, btn_scr=self.procConScroll,
+                                    lnk_proc=[self._proc], stat_bar=self.statBar, disp_time=True,
+                                    init_msg="Parus Model Training GUI ready!")
+
+        # Set data variable defaults
+        self.sim_dir = None
+        self.out_dir = None
+        self.num_trn = []
+        self.num_vld = []
+        self.num_tst = []
+        self.seq_len = []
+        self.mod_name = []
+        self.num_ep = []
+        self.eval_stp = []
+        self.eval_ind = ['-t', 'disp']
+        self.ex_opt = []
+
+        # Connect controls
+        self.simSelect.clicked.connect(self.__sel_sim_dir)
+        self.simPath.textChanged.connect(self.__set_sim_dir)
+        self.outSelect.clicked.connect(self.__sel_out_dir)
+        self.outPath.textChanged.connect(self.__set_out_dir)
+        self.trnSampSpinbox.valueChanged.connect(self.__set_num_trn)
+        self.vldSampSpinbox.valueChanged.connect(self.__set_num_vld)
+        self.tstSampSpinbox.valueChanged.connect(self.__set_num_tst)
+        self.seqLenSpinbox.valueChanged.connect(self.__set_seq_len)
+        self.modNameLine.textChanged.connect(self.__set_mod_name)
+        self.nEpSpinbox.valueChanged.connect(self.__set_num_ep)
+        self.stpEvalSpinbox.valueChanged.connect(self.__set_eval_stp)
+        self.indEvalCombo.currentIndexChanged.connect(self.__set_eval_ind)
+        self.exOptLine.textChanged.connect(self.__set_ex_opt)
+
+        # Load previous execution parameters
+        self.__load_params()
+        # System standby
+        self.statBar.showMessage("System standby")
+
+    def ctrl_enable(self, enable=True):
+        """ Set enable status of controls.
+
+        Args:
+            enable (bool): Enable status of controls (default: True)
+        """
+        self.simPath.setEnabled(enable)
+        self.outPath.setEnabled(enable)
+        self.trnSampSpinbox.setEnabled(enable)
+        self.vldSampSpinbox.setEnabled(enable)
+        self.tstSampSpinbox.setEnabled(enable)
+        self.seqLenSpinbox.setEnabled(enable)
+        self.modNameLine.setEnabled(enable)
+        self.nEpSpinbox.setEnabled(enable)
+        self.stpEvalSpinbox.setEnabled(enable)
+        self.indEvalCombo.setEnabled(enable)
+
+    # Process related functions -------------------------------------------------------------------------------------- #
+    def set_proc_args(self):
+        """ Set arguments for model training. """
+        if (self.sim_dir is None) or (self.out_dir is None):
+            self.procButton.setEnabled(False)
+            self._proc.reset_arguments()
+        else:
+            args = (self.out_dir + self.sim_dir + self.num_trn + self.num_vld + self.num_tst + self.seq_len +
+                    self.mod_name + self.num_ep + self.eval_stp + self.eval_ind + self.ex_opt)
+            self._proc.set_arguments(args)
+            self.procButton.setEnabled(True)
+
+    def __switch_proc_btn(self):
+        """ ParusModTrn button connected function. """
+        if self.__proc_run:
+            self.procButton.setStyleSheet('QPushButton {color: red}')
+        else:
+            if cs_dark():
+                self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
+            else:
+                self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+
+    def __proc_start(self):
+        """ ParusModTrn process STARTED connected function. """
+        self.__proc_run = True
+        self.__switch_proc_btn()
+        self.ctrl_enable(False)
+        self.statBar.showMessage("Parus model training started")
+
+    def __proc_finish(self):
+        """ ParusModTrn process FINISHED connected function. """
+        # Reset button
+        self.__proc_run = False
+        self.ctrl_enable(True)
+        self.__switch_proc_btn()
+        # Display status
+        if self._proc.fin_stop:
+            # Save current successful execution params
+            self.__save_params()
+            self.statBar.showMessage("Model training successfully finished")
+        else:
+            self.statBar.showMessage("Model training terminated")
+
+    # Control element related functions ------------------------------------------------------------------------------ #
+    def __load_params(self):
+        """ Load GUI settings from previous execution. """
+        par_json = os.path.join(pkg_data, '_trn_params.json')
+        if os.path.isfile(par_json):
+            # Load previous settings
+            with open(par_json, 'r') as fp:
+                pars = json.load(fp)
+            # Set to current controls
+            self.simPath.setText(pars['dataset_path'])
+            self.trnSampSpinbox.setValue(pars['n_trn_samples'])
+            self.vldSampSpinbox.setValue(pars['n_vld_samples'])
+            self.tstSampSpinbox.setValue(pars['n_tst_samples'])
+            self.seqLenSpinbox.setValue(pars['sequence_length'])
+            self.modNameLine.setText(pars['model_name'])
+            self.nEpSpinbox.setValue(pars['total_epoch'])
+            self.stpEvalSpinbox.setValue(pars['steps_per_eval'])
+            self.indEvalCombo.setCurrentIndex(pars['eval_visual_method_index'])
+        self.set_proc_args()
+
+    def __save_params(self):
+        """ Save GUI settings of current execution. """
+        pars = {}  # INIT VAR
+        # Read current controls
+        pars['dataset_path'] = self.simPath.text()
+        pars['n_trn_samples'] = self.trnSampSpinbox.value()
+        pars['n_vld_samples'] = self.vldSampSpinbox.value()
+        pars['n_tst_samples'] = self.tstSampSpinbox.value()
+        pars['sequence_length'] = self.seqLenSpinbox.value()
+        pars['model_name'] = self.modNameLine.text()
+        pars['total_epoch'] = self.nEpSpinbox.value()
+        pars['steps_per_eval'] = self.stpEvalSpinbox.value()
+        pars['eval_visual_method_index'] = self.indEvalCombo.currentIndex()
+        # Save to file
+        with open(os.path.join(pkg_data, '_trn_params.json'), 'w') as fp:
+            json.dump(pars, fp, indent=2)
+
+    def __sel_sim_dir(self):
+        """ Select dataset (*.sim) folder button connection. """
+        path = path_selector(self.simPath, mode='path', caption="Select Dataset Folder", parent=self)
+        self.sim_dir = None if path is None else [path]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_sim_dir(self):
+        """ Select dataset (*.sim) folder line edit connection. """
+        path = self.simPath.text()
+        if os.path.isdir(path):
+            self.sim_dir = [path]
+            self.statBar.showMessage("Dataset folder defined")
+        else:
+            self.sim_dir = None
+            self.statBar.showMessage("Dataset folder is invalid!")
+        # Update process arguments
+        self.set_proc_args()
+
+    def __sel_out_dir(self):
+        """ Select model training results output folder button connection. """
+        path = path_selector(self.outPath, mode='path', caption="Select Model Output Folder", parent=self)
+        self.out_dir = None if path is None else [path]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_out_dir(self):
+        """ Select model training results output folder line edit connection. """
+        path = self.outPath.text()
+        if os.path.isdir(path):
+            self.out_dir = [path]
+            self.statBar.showMessage("Model output folder defined")
+        else:
+            self.out_dir = None
+            self.statBar.showMessage("Model output folder is invalid!")
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_num_trn(self):
+        """ Set number of training samples. """
+        num = self.trnSampSpinbox.value()
+        self.num_trn = ['-dtn', str(num)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_num_vld(self):
+        """ Set number of validation samples. """
+        num = self.vldSampSpinbox.value()
+        self.num_vld = ['-dvl', str(num)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_num_tst(self):
+        """ Set number of testing samples. """
+        num = self.tstSampSpinbox.value()
+        self.num_tst = ['-dts', str(num)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_seq_len(self):
+        """ Set dataset/model sample sequence length. """
+        num = self.seqLenSpinbox.value()
+        self.seq_len = ['-mls', str(num)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_mod_name(self):
+        """ Set model name. """
+        self.modNameLine.blockSignals(True)
+        name = self.modNameLine.text()
+        name = "".join(s for s in name if s.isalnum())
+        self.modNameLine.setText(name)
+        self.modNameLine.blockSignals(False)
+        self.mod_name = ['-mid', name]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_num_ep(self):
+        """ Set number of epochs. """
+        num = self.nEpSpinbox.value()
+        self.num_ep = ['-tep', str(num)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_eval_stp(self):
+        """ Set training steps per evaluation. """
+        stp = self.stpEvalSpinbox.value()
+        self.eval_stp = ['-tev', str(stp)]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_eval_ind(self):
+        """ Set model evaluation results visualization method. """
+        ind = ['none', 'disp', 'save'][self.indEvalCombo.currentIndex()]
+        self.eval_ind = ['-t', ind]
+        # Update process arguments
+        self.set_proc_args()
+
+    def __set_ex_opt(self):
+        """ Model training advance option. This function DOES NOT check input, error will be handled by the script. """
+        opt = self.exOptLine.text()
+        self.ex_opt = [o for o in opt.split(' ') if o]
+        # Update process arguments
+        self.set_proc_args()

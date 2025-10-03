@@ -24,7 +24,7 @@ pg_d.add_argument('-dtn', '--smptrn', dest='n_trn_samples', type=int, default=ar
                   help="Number of samples for training")
 pg_d.add_argument('-dvl', '--smpvld', dest='n_vld_samples', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Number of samples for validation")
-pg_d.add_argument('-dts', '--smptst', dest='n_trn_samples', type=int, default=argparse.SUPPRESS, metavar="[int]",
+pg_d.add_argument('-dts', '--smptst', dest='n_tst_samples', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Number of samples for testing")
 pg_d.add_argument('-dwk', '--numwkr', dest='n_worker', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Number of worker threads for dataset loading")
@@ -44,7 +44,7 @@ pg_m.add_argument('-mnl', '--numlyr', dest='n_layers', type=int, default=argpars
                   help="Number of sub-encoder-layers in the encoder")
 pg_m.add_argument('-mdf', '--dimffd', dest='d_feedforward', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Dimension of the feedforward network model")
-# Model definitions (optional)
+# Training settings (optional)
 pg_t = parser.add_argument_group("Training settings")
 pg_t.add_argument('-tep', '--numeps', dest='total_epoch', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Total number of epoches for training")
