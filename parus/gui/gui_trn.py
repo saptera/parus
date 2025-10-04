@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 import json
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 __package__ = 'parus.gui'
 from .. import pkg_data
@@ -32,6 +32,8 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Initialize main UI
         super(ParusGen, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.genSimButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
@@ -646,6 +648,8 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         # Initialize main UI
         super(ParusTrn, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')

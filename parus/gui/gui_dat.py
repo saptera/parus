@@ -8,7 +8,7 @@ import h5py as h5
 import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
 __package__ = 'parus.gui'
@@ -46,6 +46,8 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Initialize GUI
         super(ParusInf, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
@@ -295,6 +297,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         # Initialize GUI
         super(ParusSrt, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         cs_dark() and self.signalScrollBar.setStyleSheet('')
         # Timer initialization
@@ -1202,6 +1206,8 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         # Initialize GUI
         super(WfmSel, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.__sel_lst = []
         # Generate buttons for each channel
@@ -1270,6 +1276,8 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Initialize main UI
         super(ParusRes, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         cs_dark() and self.signalScrollBar.setStyleSheet('')
         self.file = file

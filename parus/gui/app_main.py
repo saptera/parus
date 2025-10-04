@@ -1,6 +1,6 @@
 import os
 import json
-from PySide6 import QtCore, QtWidgets, QtSvgWidgets
+from PySide6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
 
 __package__ = 'parus.gui'
 from .. import pkg_data
@@ -31,6 +31,8 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
         # Initialize GUI
         super(SysSet, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         # Load basic setting file
         self.__cfg_json = os.path.join(pkg_data, '_config.json')
         if os.path.isfile(self.__cfg_json):
@@ -98,6 +100,8 @@ class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         # Initialize GUI
         super(ParusTrnApp, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         logo = QtSvgWidgets.QSvgWidget(os.path.join(os.path.dirname(__file__), "assets/logo.svg"), parent=self)
         logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)
         self.logoLayout.addWidget(logo)
@@ -138,6 +142,8 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         # Initialize GUI
         super(ParusDatApp, self).__init__(parent)
         self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
         logo = QtSvgWidgets.QSvgWidget(os.path.join(os.path.dirname(__file__), "assets/logo.svg"), parent=self)
         logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)
         self.logoLayout.addWidget(logo)
