@@ -102,6 +102,10 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # System standby
         self.statBar.showMessage("System standby")
 
+    def closeEvent(self, event):
+        """ Clean-ups upon close. """
+        self._proc.terminate()
+
     def ctrl_enable(self, enable=True):
         """ Set enable status of controls.
 

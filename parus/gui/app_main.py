@@ -6,15 +6,18 @@ __package__ = 'parus.gui'
 from .. import pkg_data
 from . import set_color_scheme
 from .desg_sysset import Ui_SysSetWindow
+from .desg_apptrn import Ui_ParusTrnWindow
 from .desg_appdat import Ui_ParusDatWindow
 from .elm_proc import path_selector
+from .gui_trn import ParusGen, ParusTrn
 from .gui_dat import ParusInf, ParusSrt, ParusRes
 
-__all__ = ['SysSet', 'ParusDatApp']
+__all__ = ['SysSet', 'ParusTrnApp', 'ParusDatApp']
 """
 Class list:
   SysSet(parent=None): Parus GUI general settings.
-  ParusDatApp(version=None, parent=None): Parus data pipeline toplevel application.
+  ParusTrnApp(set_win, version=None, parent=None): Parus model training toplevel application.
+  ParusDatApp(set_win, version=None, parent=None): Parus data pipeline toplevel application.
 """
 
 
@@ -83,6 +86,46 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
             json.dump(self.__cfg, fp, indent=2)
 
 
+class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
+    def __init__(self, set_win, version=None, parent=None):
+        """ Parus model training toplevel application.
+
+        Args:
+            set_win (SysSet): Setting window
+            version (int | float | str | None): App version
+            parent: Parent window or widget
+        """
+        # Initialize GUI
+        super(ParusTrnApp, self).__init__(parent)
+        self.setupUi(self)
+        logo = QtSvgWidgets.QSvgWidget(os.path.join(os.path.dirname(__file__), "assets/logo.svg"), parent=self)
+        logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        self.logoLayout.addWidget(logo)
+        self.setWindowTitle("%s [v %s]" % (self.windowTitle(), 'beta' if version is None else str(version)))
+        # Link windows
+        self.__gen_win = None
+        self.__mod_win = None
+        self.__set_win = set_win
+        # Link buttons
+        self.datGenButton.clicked.connect(self.__dat_gen_win)
+        self.modTrnButton.clicked.connect(self.__mod_trn_win)
+        self.settingButton.clicked.connect(self.__sys_set)
+
+    def __dat_gen_win(self):
+        """ Open Parus dataset generation window. """
+        self.__gen_win = ParusGen()
+        self.__gen_win.show()
+
+    def __mod_trn_win(self):
+        """ Open Parus model training window. """
+        self.__mod_win = ParusTrn()
+        self.__mod_win.show()
+
+    def __sys_set(self):
+        """ Open GUI general settings window. """
+        self.__set_win.show()
+
+
 class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
     def __init__(self, set_win, version=None, parent=None):
         """ Parus data pipeline toplevel application.
@@ -99,7 +142,9 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)
         self.logoLayout.addWidget(logo)
         self.setWindowTitle("%s [v %s]" % (self.windowTitle(), 'beta' if version is None else str(version)))
-        # Link setting window
+        # Link windows
+        self.__inf_win = None
+        self.__srt_win = None
         self.__set_win = set_win
         # Link buttons
         self.modInfButton.clicked.connect(self.__mod_inf_win)
@@ -107,17 +152,15 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         self.resVerButton.clicked.connect(self.__res_ver_win)
         self.settingButton.clicked.connect(self.__sys_set)
 
-    @staticmethod
-    def __mod_inf_win():
+    def __mod_inf_win(self):
         """ Open Parus model inference window. """
-        win = ParusInf()
-        win.show()
+        self.__inf_win = ParusInf()
+        self.__inf_win.show()
 
-    @staticmethod
-    def __spk_set_win():
+    def __spk_set_win(self):
         """ Open Parus spike sorting window. """
-        win = ParusSrt()
-        win.show()
+        self.__srt_win = ParusSrt()
+        self.__srt_win.showMaximized()
 
     def __res_ver_win(self):
         """ Open Parus result viewer window. """
@@ -126,7 +169,7 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         if file:
             for f in file:
                 win = ParusRes(f)
-                win.show()
+                win.showMaximized()
 
     def __sys_set(self):
         """ Open GUI general settings window. """

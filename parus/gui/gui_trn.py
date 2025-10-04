@@ -4,7 +4,7 @@ import os
 import re
 from datetime import datetime
 import json
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 __package__ = 'parus.gui'
 from .. import pkg_data
@@ -18,7 +18,7 @@ __all__ = ['ParusGen', 'ParusTrn']
 """
 Class list:
   ParusGen(parent=None): Parus simulated signal generation window.
-  ParusTrn( parent=None): Parus model training window.
+  ParusTrn(parent=None): Parus model training window.
 """
 
 
@@ -32,6 +32,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Initialize main UI
         super(ParusGen, self).__init__(parent)
         self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.genSimButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             self.genStaButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
@@ -645,6 +646,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         # Initialize main UI
         super(ParusTrn, self).__init__(parent)
         self.setupUi(self)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
             self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
         else:
@@ -653,7 +655,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.__auto_scr = True
         self.__proc_run = False
 
-        # Set inference process
+        # Set training process
         self._proc = PyScriptExec(script=mod_trn, console=self.procConsole, trigger=self.procButton,
                                   name="Parus [Model Train]", disp_time=True, clr_con=False,
                                   trig_txt=("Initiate Model Training", "Stop Process"))
@@ -698,6 +700,10 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.__load_params()
         # System standby
         self.statBar.showMessage("System standby")
+
+    def closeEvent(self, event):
+        """ Clean-ups upon close. """
+        self._proc.terminate()
 
     def ctrl_enable(self, enable=True):
         """ Set enable status of controls.
