@@ -1,7 +1,10 @@
-# IntanTech file import functions
+# IntanTech file import module
 
 import os
 import numpy as np
+
+__package__ = 'parus.fio'
+__name__ = 'parus.fio.intan'
 
 __all__ = [
     'intan_time_read',

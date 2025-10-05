@@ -1,6 +1,9 @@
-# Hierarchical Data Format (HDF) file IO functions
+# Hierarchical Data Format (HDF) file IO module
 
 import h5py as h5
+
+__package__ = 'parus.fio'
+__name__ = 'parus.fio.hdf'
 
 __all__ = ['h5_load_dat', 'h5_load_ref', 'H5PklFile']
 """

@@ -1,4 +1,4 @@
-# Model operation IO functions
+# Model operation IO module
 
 import os
 import time
@@ -8,6 +8,7 @@ from torch.utils import data
 from typing import TextIO
 
 __package__ = 'parus.model'
+__name__ = 'parus.model.mio'
 from .dset import TrainingDataset
 
 __all__ = [

@@ -1,7 +1,10 @@
-# Basic utilities functions
+# Basic utilities function module
 
 import sys
 import os
+
+__package__ = 'parus.util'
+__name__ = 'parus.util.base'
 
 __all__ = ['make_outdir', 'altmk_outdirs', 'search_files', 'prog_print']
 """

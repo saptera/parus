@@ -1,10 +1,11 @@
-# MATLAB file import functions
+# MATLAB file import module
 
 import h5py as h5
 import numpy as np
 import scipy.io as sio
 
 __package__ = 'parus.fio'
+__name__ = 'parus.fio.matlab'
 from .hdf import h5_load_dat, h5_load_ref
 
 __all__ = ['mat_meta_read', 'mat_data_read']

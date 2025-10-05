@@ -1,7 +1,10 @@
-# Tucker-Davis Technologies file import functions
+# Tucker-Davis Technologies file import module
 
 import copy
 import numpy as np
+
+__package__ = 'parus.fio'
+__name__ = 'parus.fio.tdt'
 
 __all__ = ['tdt_tsq_read', 'tdt_tev_read', 'tdt_chs_arng']
 """

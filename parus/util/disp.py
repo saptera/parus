@@ -1,10 +1,13 @@
-# Inline display related function
+# Display helper function module
 
 import numpy as np
 import scipy.optimize as spopt
 import plotext as ptx
 import matplotlib.pyplot as plt
 import warnings
+
+__package__ = 'parus.util'
+__name__ = 'parus.util.disp'
 
 __all__ = ['plt_mod_cli', 'plt_mod_img', 'fit_exp_loss']
 """

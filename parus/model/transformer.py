@@ -1,11 +1,31 @@
+# Transformer model module
+
 import numpy as np
 import torch
 import torch.nn as nn
 import warnings
 
+__package__ = 'parus.model'
+__name__ = 'parus.model.transformer'
+
+__all__ = ['EncoderTransformer']
+"""
+Class list:
+  PositionalEncoding(embedding_dim, dropout, max_len=300): Transformer positional encoding.
+  SparseContextLoader(emb_dim, ant_samp, n_samp, sel_meth='stp', gap=1): Signal data context loader.
+  EncoderTransformer(input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward, output_channels): Transformer.
+"""
+
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embedding_dim, dropout, max_len: int = 300):
+    def __init__(self, embedding_dim, dropout, max_len=300):
+        """ Transformer positional encoding.
+
+        Args:
+            embedding_dim (int): Embedding element length
+            dropout (float): Dropout rate
+            max_len (int): Sequence maximum length (default: 300)
+        """
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(max_len, embedding_dim)
@@ -92,6 +112,17 @@ class SparseContextLoader(nn.Module):
 
 class EncoderTransformer(nn.Module):
     def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward, output_channels):
+        """ Encoder-only transformer.
+
+        Args:
+            input_dim (int): Number of samples per input
+            context_dim (int): Embedding context element length
+            d_model (int): Number of expected features in the input
+            nhead (int): Number of heads in the multi-head-attention models
+            num_layers (int): Number of sub-encoder-layers in the encoder
+            dim_feedforward (int): Dimension of the feedforward network model
+            output_channels (int): Number of output features
+        """
         super(EncoderTransformer, self).__init__()
         self.input_linear = nn.Linear(context_dim, d_model)
         self.transformer_encoder_layer = nn.TransformerEncoderLayer(

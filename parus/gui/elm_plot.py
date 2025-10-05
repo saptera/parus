@@ -1,7 +1,5 @@
-# Parus GUI plotting module
+# GUI plotting module
 
-import weakref
-from logging import warning
 from typing import Iterable
 import numpy as np
 import h5py as h5
@@ -16,6 +14,7 @@ from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui.elm_plot'
 from ..fio import h5_load_dat
 from ..data import spk_correlogram
 from . import cs_dark

@@ -1,10 +1,13 @@
-# Parus customized meta file IO functions
+# Parus customized meta file IO module
 
 import warnings
 import csv
 import json
 import copy
 import numpy as np
+
+__package__ = 'parus.fio'
+__name__ = 'parus.fio.fmeta'
 
 __all__ = ['conv_lin_prb', 'read_spk_info', 'read_cell_type']
 """

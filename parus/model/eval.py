@@ -1,9 +1,10 @@
-# Model evaluation and inference functions
+# Model evaluation and inference module
 
 import numpy as np
 import torch
 
 __package__ = 'parus.model'
+__name__ = 'parus.model.eval'
 from ..util import plt_mod_cli, plt_mod_img
 from .post import peak_fwd_torch
 

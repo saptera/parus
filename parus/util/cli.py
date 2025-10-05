@@ -1,7 +1,10 @@
-# Commandline interface related functions
+# Commandline interface module
 
 import os
 from pathlib import Path
+
+__package__ = 'parus.util'
+__name__ = 'parus.util.cli'
 
 __all__ = ['yn_query', 'cli_path_in', 'cli_file_in', 'cli_int_in', 'cli_float_in', 'cli_list_sel', 'cli_outdir']
 """

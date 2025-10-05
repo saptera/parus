@@ -1,4 +1,4 @@
-# Parus GUI process related features
+# GUI process feature module
 
 import sys
 import os
@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui.elm_proc'
 from . import cs_dark
 
 __all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole', 'ProgBusyDialog',

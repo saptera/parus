@@ -1,9 +1,12 @@
-# Signal process functions
+# Signal process module
 
 import numpy as np
-from scipy import signal as sig
+import scipy.signal as sig
 import scipy.stats as stat
 import warnings
+
+__package__ = 'parus.data'
+__name__ = 'parus.data.sig'
 
 __all__ = [
     'spk_lowpass', 'spk_highpass', 'spk_bandpass', 'spk_notch',

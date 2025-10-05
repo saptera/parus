@@ -1,4 +1,4 @@
-# Parus data processing GUI main windows
+# Data processing GUI module
 
 import os
 import shutil
@@ -12,6 +12,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui.gui_dat'
 from .. import pkg_data
 from ..fio import h5_load_dat
 from ..data import (sig_peak_fwd, cls_cosamp_blk, cls_crscor_blk, pos_ripple_flt, post_cls_chk,

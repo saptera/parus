@@ -2,6 +2,9 @@
 
 import os
 
+__package__ = 'parus.scripts'
+__name__ = 'parus.scripts'
+
 __all__ = ['gen_sim', 'gen_sta', 'mod_trn', 'mod_inf', 'prd_dsp']
 """
 Scripts list:

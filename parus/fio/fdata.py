@@ -1,4 +1,4 @@
-# Parus customized data file IO functions
+# Parus customized data file IO module
 
 import os
 import warnings
@@ -9,6 +9,9 @@ import hashlib
 import pickle as pkl
 import h5py as h5
 import matplotlib.pyplot as plt
+
+__package__ = 'parus.fio'
+__name__ = 'parus.fio.fdata'
 
 __all__ = [
     'pklz_read', 'pklz_write', 'cjsh_read', 'cjsh_write',

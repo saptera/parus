@@ -1,4 +1,4 @@
-# PARUS GUI module
+# PARUS GUI package
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -6,6 +6,8 @@ from PySide6 import QtCore, QtWidgets
 mpl.use('QtAgg')
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui'
+
 __all__ = ['cs_dark', 'set_color_scheme']
 """
 Function list:

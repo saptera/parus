@@ -1,5 +1,7 @@
-# PARUS file IO module
+# PARUS file IO package
 
+__package__ = 'parus.fio'
+__name__ = 'parus.fio'
 from .fmeta import *
 from .fdata import *
 from .hdf import *

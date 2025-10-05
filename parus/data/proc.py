@@ -1,8 +1,11 @@
-# Basic data process functions
+# Basic data process module
 
 import copy
 import numpy as np
 from scipy.stats import norm, laplace
+
+__package__ = 'parus.data'
+__name__ = 'parus.data.proc'
 
 __all__ = [
     'arr_rand_samp', 'norm_lst_gen', 'laplace_lst_gen',

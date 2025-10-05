@@ -1,6 +1,9 @@
-# Spike clustering functions
+# Spike clustering module
 
 import numpy as np
+
+__package__ = 'parus.data'
+__name__ = 'parus.data.clst'
 
 __all__ = [
     'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',

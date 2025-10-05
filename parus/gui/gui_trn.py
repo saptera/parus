@@ -1,4 +1,4 @@
-# Parus model training GUI main windows
+# Model training GUI module
 
 import os
 import re
@@ -7,6 +7,7 @@ import json
 from PySide6 import QtCore, QtGui, QtWidgets
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui.gui_trn'
 from .. import pkg_data
 from ..scripts import gen_sim, gen_sta, mod_trn
 from . import cs_dark

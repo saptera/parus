@@ -1,4 +1,4 @@
-# Data loader classes for model
+# Model data loader classes module
 
 import numpy as np
 import torch
@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 import warnings
 
 __package__ = 'parus.model'
+__name__ = 'parus.model.dset'
 from ..fio import H5PklFile, sim_args_read, sim_data_read
 
 __all__ = ['TrainingDataset', 'InferenceDataset']

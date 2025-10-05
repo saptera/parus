@@ -1,6 +1,9 @@
-# Model inference post-process functions
+# Model inference post-process module
 
 import torch
+
+__package__ = 'parus.model'
+__name__ = 'parus.model.post'
 
 __all__ = ['peak_zsc_torch', 'peak_fwd_torch', 'eval_pos']
 """

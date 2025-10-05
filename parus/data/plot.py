@@ -1,9 +1,12 @@
-# Data plotting related functions
+# Data plotting module
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import FancyBboxPatch, PathPatch
+
+__package__ = 'parus.data'
+__name__ = 'parus.data.plot'
 
 __all__ = ['swarm_cord', 'stat_plvl', 'spk_correlogram', 'plot_prb']
 """

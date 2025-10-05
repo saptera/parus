@@ -1,4 +1,4 @@
-# Model training functions
+# Model training and optimization module
 
 import os
 import time
@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 __package__ = 'parus.model'
+__name__ = 'parus.model.optim'
 from .mio import save_model, write_train_log, write_train_history
 from .eval import validation
 

@@ -1,8 +1,11 @@
+# PARUS main application module
+
 import os
 import json
 from PySide6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
 
 __package__ = 'parus.gui'
+__name__ = 'parus.gui.app_main'
 from .. import pkg_data
 from . import set_color_scheme
 from .desg_sysset import Ui_SysSetWindow
