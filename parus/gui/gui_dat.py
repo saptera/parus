@@ -47,7 +47,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         # Initialize GUI
         super(ParusInf, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
@@ -298,7 +298,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         # Initialize GUI
         super(ParusSrt, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         cs_dark() and self.signalScrollBar.setStyleSheet('')
@@ -1207,7 +1207,7 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         # Initialize GUI
         super(WfmSel, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.__sel_lst = []
@@ -1277,7 +1277,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Initialize main UI
         super(ParusRes, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         cs_dark() and self.signalScrollBar.setStyleSheet('')

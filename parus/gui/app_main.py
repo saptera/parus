@@ -103,7 +103,7 @@ class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         # Initialize GUI
         super(ParusTrnApp, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_trn.ico"))
         self.setWindowIcon(icon)
         logo = QtSvgWidgets.QSvgWidget(os.path.join(os.path.dirname(__file__), "assets/logo.svg"), parent=self)
         logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)
@@ -145,7 +145,7 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         # Initialize GUI
         super(ParusDatApp, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         logo = QtSvgWidgets.QSvgWidget(os.path.join(os.path.dirname(__file__), "assets/logo.svg"), parent=self)
         logo.renderer().setAspectRatioMode(QtCore.Qt.AspectRatioMode.KeepAspectRatio)

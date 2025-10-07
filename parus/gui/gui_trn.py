@@ -33,7 +33,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         # Initialize main UI
         super(ParusGen, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_trn.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
@@ -649,7 +649,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         # Initialize main UI
         super(ParusTrn, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_trn.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
