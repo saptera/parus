@@ -438,6 +438,7 @@ class ClstFeatViewer:
             """ Re-plotting figure. """
             # Clear axes
             self.ax.clear()
+            self.__mrk_txt = None
             # Plot new data
             self.plot_fig()
 
@@ -537,7 +538,7 @@ class ClstFeatViewer:
             edge = []
             t = 0.05
             s = 0.001
-            while (np.sum(count) == 0) or (t > 5):
+            while (np.sum(count) == 0) and (t <= 5):
                 count, edge = spk_correlogram(px, py, t=t, s=s)
                 t *= 10
                 s *= 10
