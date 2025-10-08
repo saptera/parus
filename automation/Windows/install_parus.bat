@@ -41,12 +41,11 @@ python -m pip install --upgrade pip
 
 :: Install required packages
 python -m pip install h5py
-python -m pip install numpy
-python -m pip install scipy
-python -m pip install scikit-learn
-python -m pip install matplotlib
+python -m pip install "numpy>=2.0.0"
+python -m pip install "scipy>=1.14.0"
+python -m pip install "matplotlib>=3.8.4"
 python -m pip install plotext
-python -m pip install PySide6
+python -m pip install "PySide6>=6.8"
 
 ECHO ----------------------------------------
 ECHO.
