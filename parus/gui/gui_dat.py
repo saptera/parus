@@ -341,6 +341,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         # Results variables
         self.clst = {}  # Spike clusters
         self.avgw = {}  # Spike mean waveform
+        self.idcs = {}  # Spike cell name
+        self.selc = {}  # Cluster selection
         self.__has_res = False  # Has processed results flag
         # Process control variables
         self._sel_cid = []  # Selected cluster
@@ -528,6 +530,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             # Spike sorting
             self.parent.clst = {}  # RESET VAR
             self.parent.avgw = {}  # RESET VAR
+            self.parent.idcs = {}  # RESET VAR
+            self.parent.selc = {}  # RESET VAR
             for w in self.parent.spk:
                 # Get arguments
                 meth = self.parent.meth.get(w, 0)
@@ -539,6 +543,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 # Set variable
                 self.parent.clst[w] = []
                 self.parent.avgw[w] = []
+                self.parent.idcs[w] = []
+                self.parent.selc[w] = []
                 for i in self.parent.spk[w]:
                     # Detect and cluster spikes
                     pos = sig_peak_fwd(i, th)
@@ -551,6 +557,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
                     self.parent.clst[w].append([cls[i] for i in sid])
                     self.parent.avgw[w].append([avg[i] for i in sid])
+                    self.parent.idcs[w].append(["%s_%02d" % (w, i + 1) for i in range(len(sid))])
+                    self.parent.selc[w].append([len(cls[i]) > self.parent.min_cnt for i in sid])
             # Set flag
             self.success = True
 
@@ -560,18 +568,16 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             if 'pos' in fp:
                 del fp['pos']
             grp = fp.create_group('pos')
-            row = 0
             for w in self.parent.clst:
                 wfm = grp.create_group(w)
                 for c in range(len(self.parent.clst[w])):
                     chn = wfm.create_group(str(c))
-                    for v in self.parent.clst[w][c]:
-                        if self.parent._sel_cid[row].isChecked():
-                            name = self.parent.spkCidTable.item(row, 1).text()
+                    for i, v in enumerate(self.parent.clst[w][c]):
+                        if self.parent.selc[w][c][i]:
+                            name = self.parent.idcs[w][c][i]
                             dat = np.zeros_like(self.parent.t, dtype=np.int8)
                             dat[v] = 1
                             chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
-                        row += 1
             fp.close()
             # Set flag
             self.success = True
@@ -704,12 +710,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 QtWidgets.QMessageBox.critical(self, "Error", "Error occurred when process files\nPlease check inputs",
                                                QtWidgets.QMessageBox.StandardButton.Yes)
 
-    def update_spkcid_table(self, cid_lst=None):
-        """ Update single cell spike information table.
-
-        Args:
-            cid_lst (list[str] | None): Cell IDs
-        """
+    def update_spkcid_table(self):
+        """ Update single cell spike information table. """
         # Clear previous table
         self.spkCidTable.setRowCount(0)
         self._sel_cid = []  # RESET VAR
@@ -733,9 +735,9 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     cv = tpt_spk_cv(tpt, org=self.t[0].item(), end=self.t[-1].item())
                     cv2 = tpt_spk_cv2(tpt, org=self.t[0].item(), end=self.t[-1].item())
                 # Set table
-                cid = "%s_%02d" % (w, i + 1) if cid_lst is None else cid_lst[row]
+                cid = self.idcs[w][self._ch][i]
                 self.spkCidTable.insertRow(row)
-                curr_sel = CellCheckbox(identifier=[cid, w, i], checked=cnt > self.min_cnt)
+                curr_sel = CellCheckbox(identifier=[cid, w, i], checked=self.selc[w][self._ch][i], func=self.__clst_sel)
                 self._sel_cid.append(curr_sel)
                 self.spkCidTable.setCellWidget(row, 0, curr_sel)
                 self.spkCidTable.setItem(row, 1, CellData(cid, aln='c', emp='b'))
@@ -817,6 +819,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         else:
             pass
 
+    def __clst_sel(self):
+        """ Cluster selection list. """
+        for cb in self._sel_cid:
+            self.selc[cb.id[1]][self._ch][cb.id[2]] = cb.isChecked()
+
     def __chk_merge(self):
         """ Spike merge checkbox linked function, validate merge option. """
         # Get list
@@ -860,17 +867,14 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         for i in reversed(mrg_lst):
             self.clst[i[1]][self._ch].pop(i[2])
             self.avgw[i[1]][self._ch].pop(i[2])
+            self.idcs[i[1]][self._ch].pop(i[2])
+            self.selc[i[1]][self._ch].pop(i[2])
             self._sel_cid.pop(i[3])
             self._mrg_cid.pop(i[3])
             self._cmp_cid.pop(i[3])
             self.spkCidTable.removeRow(i[3])
-        # Reorder checkbox
-        cid_lst = []
-        for i, cb in enumerate(self._mrg_cid):
-            cb.id[3] = i
-            cid_lst.append(self.spkCidTable.item(i, 1).text())
         # Update widgets
-        self.update_spkcid_table(cid_lst)
+        self.update_spkcid_table()
         self.update_avgcor_table()
         if self._cfv is not None:
             self._cfv.update_cluster(self.clst)
@@ -909,8 +913,19 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
     def __set_cell_name(self, row, col):
         """ Set name for detected cell. """
+        # Check conflicts in defined name
         name = self.spkCidTable.item(row, col).text()
+        w = self._sel_cid[row].id[1]
+        i = 2
+        while name in self.idcs[w][self._ch]:
+            name += "_n%02d" % i
+            i += 1
+        self.spkCidTable.blockSignals(True)
+        self.spkCidTable.item(row, col).setText(name)
+        self.spkCidTable.blockSignals(False)
+        # Update variables
         self._sel_cid[row].id[0] = name
+        self.idcs[w][self._ch][self._sel_cid[row].id[2]] = name
         self._mrg_cid[row].id[0] = name
         self._cmp_cid[row].id[0] = name
         if self._cmp_cid[row] in self._cmp_lst:
