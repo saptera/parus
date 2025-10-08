@@ -12,7 +12,7 @@ from .desg_sysset import Ui_SysSetWindow
 from .desg_apptrn import Ui_ParusTrnWindow
 from .desg_appdat import Ui_ParusDatWindow
 from .elm_proc import path_selector
-from .gui_trn import ParusGen, ParusTrn
+from .gui_trn import ParusArc, ParusGen, ParusTrn
 from .gui_dat import ParusInf, ParusSrt, ParusRes
 
 __all__ = ['SysSet', 'ParusTrnApp', 'ParusDatApp']
@@ -110,13 +110,20 @@ class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.logoLayout.addWidget(logo)
         self.setWindowTitle("%s [v %s]" % (self.windowTitle(), 'beta' if version is None else str(version)))
         # Link windows
+        self.__arc_win = None
         self.__gen_win = None
         self.__mod_win = None
         self.__set_win = set_win
         # Link buttons
+        self.arcMksButton.clicked.connect(self.__arc_mks_win)
         self.datGenButton.clicked.connect(self.__dat_gen_win)
         self.modTrnButton.clicked.connect(self.__mod_trn_win)
         self.settingButton.clicked.connect(self.__sys_set)
+
+    def __arc_mks_win(self):
+        """ Open Parus archival signal file creation window. """
+        self.__arc_win = ParusArc()
+        self.__arc_win.show()
 
     def __dat_gen_win(self):
         """ Open Parus dataset generation window. """

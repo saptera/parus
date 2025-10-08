@@ -4,23 +4,582 @@ import os
 import re
 from datetime import datetime
 import json
+import numpy as np
+import h5py as h5
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 from PySide6 import QtCore, QtGui, QtWidgets
 
 __package__ = 'parus.gui'
 __name__ = 'parus.gui.gui_trn'
 from .. import pkg_data
+from ..fio import arc_write, noi_write
 from ..scripts import gen_sim, gen_sta, mod_trn
 from . import cs_dark
+from .desg_arcmrk import Ui_ParusArcWindow
 from .desg_genctl import Ui_ParusGenWindow
 from .desg_modtrn import Ui_ParusTrnWindow
-from .elm_proc import PyScriptExec, ProcConsole, path_selector
+from .elm_proc import PyScriptExec, ProcConsole, ProgBusyDialog, path_selector
+from .elm_plot import ArcPreviewPlot
 
-__all__ = ['ParusGen', 'ParusTrn']
+__all__ = ['ArcPrv', 'ParusArc', 'ParusGen', 'ParusTrn']
 """
 Class list:
+  ArcPrv(data, parent=None): Archival signal data preview dialog.
+  ParusArc(parent=None): Parus archival file creation window.
   ParusGen(parent=None): Parus simulated signal generation window.
   ParusTrn(parent=None): Parus model training window.
 """
+
+
+class ArcPrv(QtWidgets.QDialog):
+    def __init__(self, data, parent=None):
+        """ Archival signal data preview dialog.
+
+        Args:
+            data (dict): Archival signal data, refer to [parus.fio.fdata -> ARC data structure definition]
+            parent (QtCore.QObject | None): Parent Qt object
+        """
+        # Initialize GUI
+        super().__init__(parent)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
+        self.setWindowTitle("Signal Preview")
+        # Set window feature
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowCloseButtonHint, True)
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowMinimizeButtonHint, True)
+        self.setWindowFlag(QtCore.Qt.WindowType.WindowMaximizeButtonHint, True)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        # Set figure
+        self._arcplot = ArcPreviewPlot(data)
+        self._toolbar = NavigationToolbar2QT(self._arcplot, self)
+        # Set layout
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self._toolbar)
+        layout.addWidget(self._arcplot)
+        self.setLayout(layout)
+
+    def closeEvent(self, event):
+        """ Close clean-up. """
+        self._arcplot.close()
+
+
+class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
+    def __init__(self, parent=None):
+        """ Parus archival file creation window.
+
+        Args:
+            parent: Parent window or widget
+        """
+        # Initialize GUI
+        super(ParusArc, self).__init__(parent)
+        self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_trn.ico"))
+        self.setWindowIcon(icon)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        self.recDate.setDate(QtCore.QDate.currentDate())
+        self.recTime.setTime(QtCore.QTime.currentTime())
+
+        # Archive file data variables
+        self.sig = None
+        self.pos = -1
+        self.rng = None
+        self.freq = 0
+        self.meta = self.__set_meta_dict()
+        # Control variables
+        self.__loaded = False
+        self.__dst_ok = False
+        self.__ch_wfm = None
+        self.__ch_pos = None
+        self.__arc_win = None
+        # Data process thread
+        self.out_file = None
+        self.__prw_ok = False
+        self._proc_thread = self._DataProcThread(self)
+        self._proc_thread.finished.connect(self.__proc_finalize)
+        self.__save_msg = ProgBusyDialog(self, "<b>Archival data being processed<br><br>Please wait...</b>")
+
+        # Connect file IO controls
+        self.srcFilePath.textChanged.connect(self.__set_src_file)
+        self.srcFileSelect.clicked.connect(self.__sel_src_file)
+        self.dstDirPath.textChanged.connect(self.__set_dst_path)
+        self.dstDirSelect.clicked.connect(self.__sel_dst_path)
+        self.datChnCombo.currentIndexChanged.connect(self.__set_data_chn)
+        self.datWfmCombo.currentIndexChanged.connect(self.__set_data_wfm)
+        # Connect organism data controls
+        self.ognGenLine.textChanged.connect(self.__set_meta_dict)
+        self.ognSpcLine.textChanged.connect(self.__set_meta_dict)
+        self.ognStrLine.textChanged.connect(self.__set_meta_dict)
+        self.ognModLine.textChanged.connect(self.__set_meta_dict)
+        self.ognNoteLine.textChanged.connect(self.__set_meta_dict)
+        # Connect signal data controls
+        self.sigRegLine.textChanged.connect(self.__set_meta_dict)
+        self.sigTypLine.textChanged.connect(self.__set_meta_dict)
+        self.sigCelLine.textChanged.connect(self.__set_meta_dict)
+        self.sigNoteLine.textChanged.connect(self.__set_meta_dict)
+        # Connect system data controls
+        self.sysTypCombo.currentIndexChanged.connect(self.__set_meta_dict)
+        self.sysMfrLine.textChanged.connect(self.__set_meta_dict)
+        self.sysPrtLine.textChanged.connect(self.__set_meta_dict)
+        self.sysSrnLine.textChanged.connect(self.__set_meta_dict)
+        self.sysSocLine.textChanged.connect(self.__set_meta_dict)
+        self.sysNoteLine.textChanged.connect(self.__set_meta_dict)
+        # Connect probe data controls
+        self.prbTypLine.textChanged.connect(self.__set_meta_dict)
+        self.prbMfrLine.textChanged.connect(self.__set_meta_dict)
+        self.prbPrtLine.textChanged.connect(self.__set_meta_dict)
+        self.prbSrnLine.textChanged.connect(self.__set_meta_dict)
+        self.prbChnSpinbox.valueChanged.connect(self.__set_meta_dict)
+        self.prbNoteLine.textChanged.connect(self.__set_meta_dict)
+        # Connect date time buttons
+        self.recDate.dateChanged.connect(self.__set_meta_dict)
+        self.recTime.timeChanged.connect(self.__set_meta_dict)
+        # Connect process buttons
+        self.previewButton.clicked.connect(self.__preview)
+        self.saveButton.clicked.connect(self.__save)
+
+        # Set control initial status
+        self.previewButton.setEnabled(False)
+        self.saveButton.setEnabled(False)
+        # Load control values
+        self.__load_params()
+
+    def closeEvent(self, event):
+        """ Window closed cleaning. """
+        # Close process informing dialog
+        self.__save_msg.allow_close = True
+        self.__save_msg.close()
+        # Close preview window
+        try:
+            if self.__arc_win is not None:
+                self.__arc_win.close()
+        except RuntimeError:
+            pass
+
+    def ctrl_enable(self, enable=True):
+        """ Set enable status of controls.
+
+        Args:
+            enable (bool): Enable status of controls (default: True)
+        """
+        # Source data IO controls
+        self.srcFilePath.setEnabled(enable)
+        self.srcFileSelect.setEnabled(enable)
+        self.datChnCombo.setEnabled(enable)
+        self.datWfmCombo.setEnabled(enable)
+        self.datSpkCombo.setEnabled(enable)
+        self.smpAntSpinbox.setEnabled(enable)
+        self.smpPstSpinbox.setEnabled(enable)
+        self.dstDirPath.setEnabled(enable)
+        self.dstDirSelect.setEnabled(enable)
+        # Organism data controls
+        self.ognGenLine.setEnabled(enable)
+        self.ognSpcLine.setEnabled(enable)
+        self.ognStrLine.setEnabled(enable)
+        self.ognModLine.setEnabled(enable)
+        self.ognNoteLine.setEnabled(enable)
+        # Signal data controls
+        self.sigRegLine.setEnabled(enable)
+        self.sigTypLine.setEnabled(enable)
+        self.sigCelLine.setEnabled(enable)
+        self.sigNoteLine.setEnabled(enable)
+        # System data controls
+        self.sysTypCombo.setEnabled(enable)
+        self.sysMfrLine.setEnabled(enable)
+        self.sysPrtLine.setEnabled(enable)
+        self.sysSrnLine.setEnabled(enable)
+        self.sysSocLine.setEnabled(enable)
+        self.sysNoteLine.setEnabled(enable)
+        # Probe data controls
+        self.prbTypLine.setEnabled(enable)
+        self.prbMfrLine.setEnabled(enable)
+        self.prbPrtLine.setEnabled(enable)
+        self.prbSrnLine.setEnabled(enable)
+        self.prbChnSpinbox.setEnabled(enable)
+        self.prbNoteLine.setEnabled(enable)
+
+    # Data process members ------------------------------------------------------------------------------------------- #
+    class _DataProcThread(QtCore.QThread):
+        save = False  # Save mode flag
+
+        def __init__(self, parent):
+            """ Data process independent thread.
+
+            Args:
+                parent (ParusArc): Parus archival signal creation window caller
+            """
+            super(ParusArc._DataProcThread, self).__init__(parent)
+            self.parent = parent
+            self.file_saved = False
+
+        def run(self):
+            self.file_saved = False
+            file = self.parent.srcFilePath.text()
+            chn = self.parent.datChnCombo.currentIndex()
+            wfm = self.parent.datWfmCombo.currentText()
+            # Archival noise creation
+            if wfm == 'raw':
+                with h5.File(file, 'r') as fp:
+                    noi = fp['raw'][chn].tolist()
+                if self.save:
+                    name = "_".join([self.parent.meta['probe']['typ'], self.parent.meta['system']['typ'],
+                                     self.parent.meta['feature']['typ'],
+                                     self.parent.meta['datetime'].replace('-', '').replace(':', ''),
+                                     "%04d" % self.parent.meta['probe']['chn']]) + '.noi'
+                    self.parent.out_file = os.path.join(self.parent.dstDirPath.text(), name)
+                    data = {'data': {'noi': noi, 'freq': self.parent.freq}, 'meta': self.parent.meta}
+                    self.file_saved = noi_write(self.parent.out_file, data)
+            # Archival signal creation
+            else:
+                # Get control inputs
+                asp = round(self.parent.smpAntSpinbox.value() * 1.1)
+                psp = round(self.parent.smpPstSpinbox.value() * 1.2)
+                spk = self.parent.datSpkCombo.currentText()
+                # Read data
+                with h5.File(file, 'r') as fp:
+                    raw = fp['raw'][chn]
+                    ano = np.nonzero(fp['pos'][wfm][str(chn)][spk][()])[0]
+                # Get required indices
+                num = asp + psp + 1
+                blk = np.arange(-asp, psp + 1, step=1, dtype=int)
+                idx = np.repeat(ano, num) + np.tile(blk, len(ano))
+                idx = np.clip(idx, a_min=0, a_max=len(raw) - 1).reshape(-1, num, order='C')
+                # Compute data
+                self.parent.sig = np.mean(raw[idx], axis=0).tolist()
+                ra = asp - self.parent.smpAntSpinbox.value()
+                re = ra + self.parent.smpPstSpinbox.value() + 1
+                self.parent.rng = [ra, re]
+                self.parent.pos = np.argmin(self.parent.sig[ra:re]).item() + ra
+                # Save results
+                if self.save:
+                    name = "_".join([self.parent.meta['probe']['typ'], self.parent.meta['system']['typ'],
+                                     self.parent.meta['neuron']['spk'],
+                                     self.parent.meta['datetime'].replace('-', '').replace(':', ''),
+                                     "%04d" % self.parent.meta['probe']['chn']]) + '.arc'
+                    self.parent.out_file = os.path.join(self.parent.dstDirPath.text(), name)
+                    data = {'data':{'sig': self.parent.sig, 'pos': self.parent.pos,
+                                    'rng': self.parent.rng, 'freq': self.parent.freq},
+                            'meta': self.parent.meta}
+                    self.file_saved = arc_write(self.parent.out_file, data)
+
+    def __load_src_info(self, file):
+        """ Load current source file information. """
+        # Block signals
+        self.datChnCombo.blockSignals(True)
+        self.datWfmCombo.blockSignals(True)
+        self.datSpkCombo.blockSignals(True)
+        # Clear controls
+        self.datChnCombo.clear()
+        self.datWfmCombo.clear()
+        self.datSpkCombo.clear()
+        if os.path.isfile(file) and file.endswith(('.hdf', '.h5', '.hdf5', '.he5')):
+            fp = h5.File(file, 'r')
+            # Load frequency information
+            if 'frq' in fp:
+                self.freq = fp['frq'][()].item()
+            else:
+                self.previewButton.setEnabled(False)
+                self.saveButton.setEnabled(False)
+                self.__loaded = False
+                self.statBar.showMessage("Recoding frequency missing in file, cannot process further")
+                QtWidgets.QMessageBox.warning(
+                    self, "Warning", "Recoding frequency missing in file", QtWidgets.QMessageBox.StandardButton.Ok)
+                return
+            # Check raw trace availability
+            if 'raw' in fp:
+                self.__ch_wfm = {}
+                self.__ch_pos = {}
+                for i in range(fp['raw'].shape[0]):
+                    self.datChnCombo.addItem("CH_%03d" % i)
+                    self.__ch_wfm[i] = ['raw']
+                    self.__ch_pos[i] = {}
+            else:
+                self.previewButton.setEnabled(False)
+                self.saveButton.setEnabled(False)
+                self.__loaded = False
+                self.statBar.showMessage("Raw recoding missing in file, cannot process further")
+                QtWidgets.QMessageBox.warning(
+                    self, "Warning", "Raw recoding missing in file", QtWidgets.QMessageBox.StandardButton.Ok)
+                return
+            # Check annotation position
+            if 'pos' in fp:
+                for w in fp['pos']:
+                    for c in fp['pos'][w]:
+                        ano = list(fp['pos'][w][c].keys())
+                        if ano:
+                            self.__ch_wfm[int(c)].append(w)
+                            self.__ch_pos[int(c)][w] = ano
+            else:
+                self.__ch_pos = None
+                self.statBar.showMessage("No spike annotation in current file")
+            # Close file
+            fp.close()
+        # Enable controls
+        self.previewButton.setEnabled(True)
+        self.__loaded = True
+        # Relink signals
+        self.datChnCombo.setCurrentIndex(-1)
+        self.datChnCombo.blockSignals(False)
+        self.datChnCombo.setCurrentIndex(0)
+        self.datWfmCombo.setCurrentIndex(-1)
+        self.datWfmCombo.blockSignals(False)
+        self.datWfmCombo.setCurrentIndex(0)
+        self.datSpkCombo.blockSignals(False)
+        # Trigger metadata check
+        self.__set_meta_dict()
+
+    def __preview(self):
+        """ Preview archived signal results. """
+        self.__save_msg.show()
+        self._proc_thread.save = False
+        self._proc_thread.start()
+
+    def __save(self):
+        """ Save archived signal to file. """
+        # Disable controls
+        self.__prw_ok = self.previewButton.isEnabled()
+        self.ctrl_enable(False)
+        self.previewButton.setEnabled(False)
+        self.saveButton.setEnabled(False)
+        # Initiate process
+        self.__save_msg.show()
+        self._proc_thread.save = True
+        self._proc_thread.start()
+
+    def __proc_finalize(self):
+        """ Process finished linked function. """
+        self.__save_msg.hide()
+        # Save finalize
+        if self._proc_thread.save:
+            # Re-enable controls
+            self.ctrl_enable(True)
+            self.previewButton.setEnabled(self.__prw_ok)
+            self.saveButton.setEnabled(True)
+            # Display message
+            if self._proc_thread.file_saved:
+                self.__save_params()
+                self.statBar.showMessage("Archival file saved to [%s]" % self.out_file)
+            else:
+                self.statBar.showMessage("Save archival file failed")
+        # Show preview
+        else:
+            data = {'sig': self.sig, 'pos': self.pos, 'rng': self.rng, 'freq': self.freq}
+            self.__arc_win = ArcPrv(data)
+            self.__arc_win.show()
+            self.statBar.showMessage("Preview ready")
+
+    # Control element related functions ------------------------------------------------------------------------------ #
+    def __load_params(self):
+        """ Load GUI settings from previous execution. """
+        par_json = os.path.join(pkg_data, '_arc_params.json')
+        if os.path.isfile(par_json):
+            # Load previous settings
+            with open(par_json, 'r') as fp:
+                pars = json.load(fp)
+            # Set source data IO controls
+            self.smpAntSpinbox.setValue(pars['anterior_samples'])
+            self.smpPstSpinbox.setValue(pars['posterior_samples'])
+            self.dstDirPath.setText(pars['archive_folder'])
+            # Set organism data controls
+            self.ognGenLine.setText(pars['organism_genus'])
+            self.ognSpcLine.setText(pars['organism_species'])
+            self.ognStrLine.setText(pars['organism_strain'])
+            self.ognModLine.setText(pars['organism_modification'])
+            self.ognNoteLine.setText(pars['organism_note'])
+            # Set signal data controls
+            self.sigRegLine.setText(pars['recording_region'])
+            self.sigTypLine.setText(pars['signal_type'])
+            self.sigCelLine.setText(pars['cell_type'])
+            self.sigNoteLine.setText(pars['signal_note'])
+            # Set system data controls
+            self.sysTypCombo.setCurrentIndex(pars['system_type'])
+            self.sysMfrLine.setText(pars['system_manufacturer'])
+            self.sysPrtLine.setText(pars['system_part_number'])
+            self.sysSrnLine.setText(pars['system_serial_number'])
+            self.sysSocLine.setText(pars['system_socket'])
+            self.sysNoteLine.setText(pars['system_note'])
+            # Set probe data controls
+            self.prbTypLine.setText(pars['probe_type'])
+            self.prbMfrLine.setText(pars['probe_manufacturer'])
+            self.prbPrtLine.setText(pars['probe_part_number'])
+            self.prbSrnLine.setText(pars['probe_serial_number'])
+            self.prbNoteLine.setText(pars['probe_note'])
+
+    def __save_params(self):
+        """ Save GUI settings of current execution. """
+        pars = {}  # INIT VAR
+        # Read source data IO controls
+        pars['anterior_samples'] = self.smpAntSpinbox.value()
+        pars['posterior_samples'] = self.smpPstSpinbox.value()
+        pars['archive_folder'] = self.dstDirPath.text()
+        # Read organism data controls
+        pars['organism_genus'] = self.ognGenLine.text()
+        pars['organism_species'] = self.ognSpcLine.text()
+        pars['organism_strain'] = self.ognStrLine.text()
+        pars['organism_modification'] = self.ognModLine.text()
+        pars['organism_note'] = self.ognNoteLine.text()
+        # Read signal data controls
+        pars['recording_region'] = self.sigRegLine.text()
+        pars['signal_type'] = self.sigTypLine.text()
+        pars['cell_type'] = self.sigCelLine.text()
+        pars['signal_note'] = self.sigNoteLine.text()
+        # Read system data controls
+        pars['system_type'] = self.sysTypCombo.currentIndex()
+        pars['system_manufacturer'] = self.sysMfrLine.text()
+        pars['system_part_number'] = self.sysPrtLine.text()
+        pars['system_serial_number'] = self.sysSrnLine.text()
+        pars['system_socket'] = self.sysSocLine.text()
+        pars['system_note'] = self.sysNoteLine.text()
+        # Read probe data controls
+        pars['probe_type'] = self.prbTypLine.text()
+        pars['probe_manufacturer'] = self.prbMfrLine.text()
+        pars['probe_part_number'] = self.prbPrtLine.text()
+        pars['probe_serial_number'] = self.prbSrnLine.text()
+        pars['probe_note'] = self.prbNoteLine.text()
+        # Save to file
+        with open(os.path.join(pkg_data, '_arc_params.json'), 'w') as fp:
+            json.dump(pars, fp, indent=2)
+
+    def __set_src_file(self):
+        """ Set source file path. """
+        file = self.srcFilePath.text()
+        self.__load_src_info(file)
+
+    def __sel_src_file(self):
+        """ Select source file path button connection. """
+        file = path_selector(self.srcFilePath, mode='file', caption="Select Source File",
+                             flt="Signal Files (*.hdf *.h5 *.hdf5 *.he5)", parent=self)
+        if file is not None:
+            self.__load_src_info(file)
+
+    def __set_dst_path(self):
+        """ Set output file path. """
+        path = self.dstDirPath.text()
+        if os.path.isdir(path):
+            self.__dst_ok = True
+            self.statBar.showMessage("Output folder set")
+        else:
+            self.__dst_ok = False
+            self.statBar.showMessage("In valid output folder")
+        # Trigger metadata check
+        self.__set_meta_dict()
+
+    def __sel_dst_path(self):
+        """ Select output file path button connection. """
+        path_selector(self.dstDirPath, mode='path', caption="Select Output Folder", parent=self)
+
+    def __set_data_chn(self):
+        """ Set current source data channel. """
+        idx = self.datChnCombo.currentIndex()
+        self.prbChnSpinbox.setValue(idx)
+        # Block signals
+        self.datWfmCombo.blockSignals(True)
+        self.datSpkCombo.blockSignals(True)
+        # Clear controls
+        self.datWfmCombo.clear()
+        self.datSpkCombo.clear()
+        # Update controls
+        if self.__ch_wfm[idx]:
+            self.datWfmCombo.addItems(self.__ch_wfm[idx])
+        # Relink signals
+        self.datWfmCombo.setCurrentIndex(-1)
+        self.datWfmCombo.blockSignals(False)
+        self.datWfmCombo.setCurrentIndex(0)
+        self.datSpkCombo.blockSignals(False)
+
+    def __set_data_wfm(self):
+        """ Set current source data waveform. """
+        # Set control enable
+        flag = self.datWfmCombo.currentIndex() != 0
+        self.smpAntSpinbox.setEnabled(flag)
+        self.smpPstSpinbox.setEnabled(flag)
+        self.sigCelLine.setEnabled(flag)
+        self.previewButton.setEnabled(flag)
+        # Set spike combobox
+        if self.__ch_pos is not None:
+            idx = self.datChnCombo.currentIndex()
+            txt = self.datWfmCombo.currentText()
+            # Block signals
+            self.datSpkCombo.blockSignals(True)
+            # Clear controls
+            self.datSpkCombo.clear()
+            # Update controls
+            if txt in self.__ch_pos[idx]:
+                self.datSpkCombo.addItems(self.__ch_pos[idx][txt])
+            # Relink signals
+            self.datSpkCombo.blockSignals(False)
+        # Trigger metadata check
+        self.__set_meta_dict()
+
+    def __set_meta_dict(self):
+        """ Set archival signal metadata. """
+        # Get value
+        ogn_dat = {
+            'gn': self.ognGenLine.text(),
+            'se': self.ognSpcLine.text(),
+            'st': self.ognStrLine.text(),
+            'mod': None if self.ognModLine.text() == '' else self.ognModLine.text(),
+            'note': None if self.ognNoteLine.text() == '' else self.ognNoteLine.text()
+        }
+        rgn_dat = '' if self.sigRegLine.text() == '' else self.sigRegLine.text().split(' ')
+        sys_dat = {
+            'typ': ['d', 'a'][self.sysTypCombo.currentIndex()],
+            'mfr': self.sysMfrLine.text(),
+            'pn': self.sysPrtLine.text(),
+            'sn': self.sysSrnLine.text(),
+            'soc': self.sysSocLine.text(),
+            'note': None if self.sysNoteLine.text() == '' else self.sysNoteLine.text()
+        }
+        prb_dat = {
+            'typ': self.prbTypLine.text(),
+            'mfr': self.prbMfrLine.text(),
+            'pn': self.prbPrtLine.text(),
+            'sn': self.prbSrnLine.text(),
+            'chn': self.prbChnSpinbox.value(),
+            'note': None if self.prbNoteLine.text() == '' else self.prbNoteLine.text()
+        }
+        date_time = self.recDate.date().toString('yyyy-MM-dd') + 'T' + self.recTime.time().toString('hh:mm:ss')
+        # Set value
+        if self.datWfmCombo.currentText() == 'raw':
+            self.meta = {
+                'organism': ogn_dat,
+                'region': rgn_dat,
+                'feature': {
+                    'typ': self.sigTypLine.text(),
+                    'note': None if self.sigNoteLine.text() == '' else self.sigNoteLine.text()
+                },
+                'system': sys_dat,
+                'probe': prb_dat,
+                'datetime': date_time
+            }
+        else:
+            self.meta = {
+                'organism': ogn_dat,
+                'region': rgn_dat,
+                'neuron': {
+                    'typ': self.sigCelLine.text(),
+                    'spk': self.sigTypLine.text(),
+                    'note': None if self.sigNoteLine.text() == '' else self.sigNoteLine.text()
+                },
+                'system': sys_dat,
+                'probe': prb_dat,
+                'datetime': date_time
+            }
+        # Check value
+        for k in self.meta:
+            if k in ['region', 'datetime']:
+                if self.meta[k] == '':
+                    self.saveButton.setEnabled(False)
+                    self.saveButton.setToolTip("Please define all required field before save")
+                    break
+            else:
+                if any([i == '' for i in self.meta[k].values()]):
+                    self.saveButton.setEnabled(False)
+                    self.saveButton.setToolTip("Please define all required field before save")
+                    break
+        else:
+            self.saveButton.setEnabled(self.__loaded and self.__dst_ok)
+            self.saveButton.setToolTip("Save archival signal to defined path")
+        return self.meta
 
 
 class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):

@@ -19,11 +19,12 @@ from ..fio import h5_load_dat
 from ..data import spk_correlogram
 from . import cs_dark
 
-__all__ = ['LoopedColormap', 'BlitManager', 'ClstFeatViewer', 'WfmPosMarker', 'ResPltLoader']
+__all__ = ['LoopedColormap', 'BlitManager', 'ArcPreviewPlot', 'ClstFeatViewer', 'WfmPosMarker', 'ResPltLoader']
 """
 Class list:
   LoopedColormap(clst, name='loop_cmap'): Looped colormap with no resampling.
   BlitManager(canvas, artists=()): Bit blit manager for data plotting.
+  ArcPreviewPlot(data): Plot and preview archival signal data.
   ClstFeatViewer(raw, spk, t, asp, psp, clst, min_cnt=50, cmap=None): Cluster feature plots main class.
   WfmPosMarker(canvas, axes, t, wfm=None, pos=None): Bit blit manager for assistive marking elements.
   ResPltLoader(self, file, cmap='winter'): Load Parus analysis results for manual inspection.
@@ -120,6 +121,41 @@ class BlitManager:
             self.cvs.blit(self.cvs.figure.bbox)
         # GUI event loop process
         self.cvs.flush_events()
+
+
+class ArcPreviewPlot(FigureCanvasQTAgg):
+    def __init__(self, data):
+        """ Plot and preview archival signal data.
+
+        Args:
+            data (dict): Archival signal data, refer to [parus.fio.fdata -> ARC data structure definition]
+        """
+        t = list(range(len(data['sig'])))
+        # Get spike peak labels
+        peak_t = t[data['pos']]
+        peak_sig = data['sig'][data['pos']]
+        # Get signal range
+        sig_rng = data['rng'] if data['rng'] is not None else None
+        # Setup plot
+        self.fig, self.ax = plt.subplots(1, 1)
+        self.fig.set_layout_engine(layout='tight')
+        self.ax.set_title("Preview Archival Signal", fontsize=12, fontweight='bold')
+        self.ax.set_xlabel("Data Point", fontsize=12)
+        self.ax.set_ylabel("Amplitude", fontsize=12)
+        # Plotting
+        self.ax.plot(t, data['sig'], lw=1.5, zorder=1)
+        self.ax.scatter(peak_t, peak_sig, marker='x', c='r', s=64, alpha=0.75, zorder=4)
+        # Add reference lines
+        self.ax.axhline(0, c='white' if cs_dark() else 'darkgray', lw=0.5, alpha=0.75, zorder=2)
+        if sig_rng is not None:
+            self.ax.axvline(sig_rng[0], c='azure' if cs_dark() else'gray', ls='-.', lw=1, alpha=0.75, zorder=3)
+            self.ax.axvline(sig_rng[1], c='azure' if cs_dark() else'gray', ls='-.', lw=1, alpha=0.75, zorder=3)
+        # Connect to Qt backend
+        super(ArcPreviewPlot, self).__init__(self.fig)
+
+    def close(self):
+        """ Close clean-up. """
+        plt.close(self.fig)
 
 
 class ClstFeatViewer:
