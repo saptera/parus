@@ -106,7 +106,7 @@ def spk_merge(spk_data):
 def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
     """ Random slice and extract neuronal signal data for training models.
             This function only return NumPy-int8[0|1] (one-hot) type labels
-            Samples form this function are simple random slices of raw signal
+            Samples from this function are simple random slices of raw signal
 
     Args:
         sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
@@ -141,7 +141,7 @@ def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
             This function only return NumPy-int8[0|1] (one-hot) type labels
-            Samples form this function will always contain spikes
+            Samples from this function will always contain spikes
 
     Args:
         sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
@@ -165,7 +165,7 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     for s in lsp:
         samp = {'sig': None, 'lbl': None}  # INIT/RESET VAR
         # Get random index range
-        min_idx = s.item() - np.random.randint(size * 0.8)
+        min_idx = s.item() - np.random.randint(round(size * 0.8))
         min_idx = 0 if min_idx < 0 else min_idx  # Verify
         max_idx = min_idx + size
         min_idx = max_len - size if max_idx > max_len else min_idx  # Verify
@@ -184,7 +184,7 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
         time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
         lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
         size (int): Data point length of sample (default: 50)
-        pos (int | None): Location of spike (default: None = center of sample)
+        pos (int | None): Location of spike (default: None = centre of sample)
         method (str): {'min' | 'max' | 'none'}: Local extremum search method. (default: 'none')
             - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
             - 'max':  detect maximum of signal within [-rng_srch, rng_srch]

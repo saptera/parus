@@ -497,7 +497,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             """ Data process independent thread.
 
             Args:
-                parent (ParusSrt):
+                parent (ParusSrt): Parus sorting window caller
             """
             super(ParusSrt._DataProcThread, self).__init__(parent)
             self.parent = parent
@@ -1222,7 +1222,7 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         # Initialize GUI
         super(WfmSel, self).__init__(parent)
         self.setupUi(self)
-        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.__sel_lst = []
