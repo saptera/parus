@@ -124,6 +124,7 @@ if __name__ == '__main__':
     model.eval()
     with torch.no_grad():
         for i, src in enumerate(src_lst):
+            print("    Processing data [%s]" % src)
             # Model inference
             t_init = time.time()  # Start time
             inf_dataset = InferenceDataset(src, model_hparams['sequence_length'], args.overlap, to_mem=args.to_mem)
@@ -134,13 +135,14 @@ if __name__ == '__main__':
                 num_workers=hparams['data']['n_worker'])
             res = inference(model, inf_datagen, model_hparams['output_channels'], device)
             # Merge output
+            print("        Arranging model outputs...")
             spk = {}  # INIT VAR
             for c, g in enumerate(spk_grp):
                 arr = res[:, c, :].reshape((inf_dataset.n_ch, inf_dataset.n_sample, inf_dataset.seq_len), order='C')
                 spk[g] = np.asarray([sig_merge(arr[n], args.overlap, inf_dataset.pad) for n in range(inf_dataset.n_ch)])
             # CLI print
             t_proc = time.time()  # Process time
-            print("    Data [%s] processed in %.4f seconds (%d/%d)" % (src, t_proc - t_init, i + 1, tot_len))
+            print("            -> Processed in %.4f seconds" % (t_proc - t_init))
 
             # Save outputs
             fp = inf_dataset.mode_rw()
@@ -152,7 +154,8 @@ if __name__ == '__main__':
             inf_dataset.close()
             # CLI print
             t_save = time.time()  # File writing time
-            print("        -> Results saved in %.4f seconds" % (t_save - t_proc))
+            print("            -> Results saved in %.4f seconds" % (t_save - t_proc))
+            print("        Data [%s] successfully processed (%d/%d)" % (src, i + 1, tot_len))
 
     print("Inference successful completed")
     print("Parus data inference finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

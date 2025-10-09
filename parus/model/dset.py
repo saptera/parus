@@ -8,12 +8,13 @@ import warnings
 __package__ = 'parus.model'
 __name__ = 'parus.model.dset'
 from ..fio import H5PklFile, sim_args_read, sim_data_read
+from ..util import prog_print
 
 __all__ = ['TrainingDataset', 'InferenceDataset']
 """
 Class list:
   TrainingDataset(file, n_sample, seq_len): Load simulated dataset for model training.
-  InferenceDataset(file, seq_len, overlap=10, to_mem=False): Load raw recording data for model inference.
+  InferenceDataset(file, seq_len, overlap=10, to_mem=False, prt_idt=8): Load raw recording data for model inference.
 """
 
 
@@ -58,7 +59,7 @@ class TrainingDataset(Dataset):
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, file, seq_len, overlap=10, to_mem=False):
+    def __init__(self, file, seq_len, overlap=10, to_mem=False, prt_idt=8):
         """ Load raw recording data for model inference.
 
         Args:
@@ -66,6 +67,7 @@ class InferenceDataset(Dataset):
             seq_len (int): Model sequence length
             overlap (int): Sample overlapping length
             to_mem (bool): Load all data into memory, accelerate speed at the risk of memory overflow (default: False)
+            prt_idt (int): Progress print indents
         """
         # Open and validate dataset file
         self.__fp = H5PklFile(file, 'r')
@@ -87,11 +89,14 @@ class InferenceDataset(Dataset):
         else:
             self.pad = (self.total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - self.total
             self.n_sample = (self.total - overlap - 1) // (seq_len - overlap) + 1
+        # Get control attributes
+        self.__len = self.n_sample * self.n_ch
+        self.__prog_pfx = ' ' * prt_idt + 'Data progress:'
         # Create a pad array for the last sample of each channel
         self.__pad_arr = np.zeros(self.pad, dtype=self.data.dtype)
 
     def __len__(self):
-        return self.n_sample * self.n_ch
+        return self.__len
 
     def __getitem__(self, index):
         # Get channel and index position
@@ -102,7 +107,8 @@ class InferenceDataset(Dataset):
         sample = self.data[c, init:stop]
         if stop > self.total:
             sample = np.concatenate((sample, self.__pad_arr))
-        # Converting to PyTorch tensor
+        # Converting to PyTorch tensor and report progress
+        prog_print(index, self.__len, prefix=self.__prog_pfx)
         return torch.from_numpy(sample).type(torch.FloatTensor).view(1, self.seq_len)
 
     def mode_ro(self):
