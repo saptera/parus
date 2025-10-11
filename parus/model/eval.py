@@ -5,17 +5,98 @@ import torch
 
 __package__ = 'parus.model'
 __name__ = 'parus.model.eval'
-from ..util import plt_mod_cli, plt_mod_img
+from ..data import sig_merge
+from ..util import plt_mod_cli, plt_mod_img, prog_print
 from .post import peak_fwd_torch
 
-__all__ = ['validation', 'testing', 'inference', 'eval_bin_cls']
+__all__ = ['Inference', 'validation', 'testing', 'eval_bin_cls']
 """
+Class list:
+  Inference(model, datagen, channel, device, cmp_lvl=4, disp=8): Inference data.
 Function list:
   validation(model, datagen, criterion, device): Validation for model training.
   testing(model, datagen, channel, device, th=-1): Testing for model training.
-  inference(model, datagen, channel, device): Inference data.
   eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Binary detection evaluation.
 """
+
+
+class Inference:
+    def __init__(self, model, datagen, channel, device, cmp_lvl=4, disp=8):
+        """ Inference data .
+
+        Args:
+            model (torch.nn.Module): PyTorch model
+            datagen (torch.utils.data.DataLoader): Dataset loader
+            channel (list[str]): Output channel name list
+            device (torch.device): Device for model training
+            cmp_lvl (int): {0 - 9} Output compression level (default: 4)
+            disp (int | None): Progress print indents, None = no print (default: 8)
+
+        Returns:
+            np.ndarray: {3D-float32 (Index, Channel, Sample)} Inference results
+        """
+        # Store arguments
+        self.model = model
+        self.channel = channel
+        self.device = device
+        self.datagen = datagen
+        self.bs = datagen.batch_size
+        self.cmp = cmp_lvl
+        # Get dataset attributes
+        self.__fp = self.datagen.dataset.fp
+        self.tot = self.datagen.dataset.total
+        self.nsp = self.datagen.dataset.n_sample
+        self.seq = self.datagen.dataset.seq_len
+        self.ovp = self.datagen.dataset.overlap
+        self.stp = self.seq - self.ovp
+        self.blk = self.stp * self.bs + self.ovp
+        # Output initialization
+        self.cnt = len(self.datagen)
+        self.__prog_pfx = False if disp is None else ' ' * disp + 'Data progress:'
+        self.init_output()
+
+    def init_output(self):
+        """ Preallocate dataset in HDF5 file for output. """
+        shape = self.datagen.dataset.data.shape
+        # Remove existing groups
+        if 'spk' in self.__fp:
+            del self.__fp['spk']
+        grp = self.__fp.create_group('spk')
+        # Creating datasets in file
+        for k in self.channel:
+            grp.create_dataset(name=k, shape=shape, dtype=np.float32, compression="gzip", compression_opts=self.cmp)
+
+    def run(self):
+        """ Process inference """
+        for count, inputs in enumerate(self.datagen):
+            # Process inference
+            inputs = inputs.to(self.device)
+            outputs = self.model(inputs)
+            res = outputs.cpu().numpy()
+            # Compute indices
+            b = count * self.bs
+            t = b + res.shape[0]
+            p = 0
+            while b < t:
+                c, si = divmod(b, self.nsp)
+                i = si * self.stp
+                se = si + 1
+                while (se < self.nsp) and ((b + se - si) < t):
+                    se += 1
+                e = se * self.stp + self.ovp
+                # Store results
+                l = se - si
+                trim = e - self.tot if e > self.tot else 0
+                for n, k in enumerate(self.channel):
+                    arr = sig_merge(res[p:p+l, n, :], overlap=self.ovp, trim=trim)
+                    if i != 0:
+                        arr[:self.ovp] = (arr[:self.ovp] + self.__fp['spk'][k][c, i:i+self.ovp]) / 2
+                    self.__fp['spk'][k][c, i:e] = arr
+                # Counter
+                p += l
+                b += l
+            # Print progress
+            self.__prog_pfx and prog_print(count, self.cnt, prefix=self.__prog_pfx)
 
 
 def validation(model, datagen, criterion, device, hint='text', image=None):
@@ -105,35 +186,6 @@ def testing(model, datagen, channel, device, th=-1):
         pos_prd[s:e] = pos_outputs.cpu().numpy()
     # Arrange outputs
     return {'inp': inp_arr, 'prd': {'spk': spk_prd, 'pos': pos_prd}, 'lbl': {'spk': spk_lbl, 'pos': pos_lbl}}
-
-
-def inference(model, datagen, channel, device):
-    """ Inference data.
-
-    Args:
-        model (torch.nn.Module): PyTorch model
-        datagen (torch.utils.data.DataLoader): Dataset loader
-        channel (int): Number of output channels of model
-        device (torch.device): Device for model training
-
-    Returns:
-        np.ndarray: {3D-float32 (Index, Channel, Sample)} Inference results
-    """
-    bs = datagen.batch_size
-    shape = (len(datagen.dataset), channel, datagen.dataset.seq_len)
-    # Initialize return
-    spk = np.zeros(shape, dtype=np.float32)
-    # Inference
-    for i, inputs in enumerate(datagen):
-        s = i * bs
-        e = s + bs
-        # Process inference
-        inputs = inputs.to(device)
-        outputs = model(inputs)
-        # Store results
-        spk[s:e] = outputs.cpu().numpy()
-    # Return results
-    return spk
 
 
 def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5):

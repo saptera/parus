@@ -8,7 +8,6 @@ import warnings
 __package__ = 'parus.model'
 __name__ = 'parus.model.dset'
 from ..fio import H5PklFile, sim_args_read, sim_data_read
-from ..util import prog_print
 
 __all__ = ['TrainingDataset', 'InferenceDataset']
 """
@@ -70,13 +69,13 @@ class InferenceDataset(Dataset):
             prt_idt (int): Progress print indents
         """
         # Open and validate dataset file
-        self.__fp = H5PklFile(file, 'r')
-        if self.__fp['raw'].ndim != 2:
-            self.__fp.close()
+        self.fp = H5PklFile(file, 'r+')
+        if self.fp['raw'].ndim != 2:
+            self.fp.close()
             raise ValueError("Input array must be 2D (channels, samples).")
         # Load data
         self.__read_only = True  # File R/W flag
-        self.data = self.__fp['raw'][()] if to_mem else self.__fp['raw']
+        self.data = self.fp['raw'][()] if to_mem else self.fp['raw']
         # Get features
         self.n_ch, self.total = self.data.shape
         self.seq_len = seq_len
@@ -89,14 +88,11 @@ class InferenceDataset(Dataset):
         else:
             self.pad = (self.total - overlap - 1) // (seq_len - overlap) * (seq_len - overlap) + seq_len - self.total
             self.n_sample = (self.total - overlap - 1) // (seq_len - overlap) + 1
-        # Get control attributes
-        self.__len = self.n_sample * self.n_ch
-        self.__prog_pfx = ' ' * prt_idt + 'Data progress:'
         # Create a pad array for the last sample of each channel
         self.__pad_arr = np.zeros(self.pad, dtype=self.data.dtype)
 
     def __len__(self):
-        return self.__len
+        return self.n_sample * self.n_ch
 
     def __getitem__(self, index):
         # Get channel and index position
@@ -108,27 +104,8 @@ class InferenceDataset(Dataset):
         if stop > self.total:
             sample = np.concatenate((sample, self.__pad_arr))
         # Converting to PyTorch tensor and report progress
-        prog_print(index, self.__len, prefix=self.__prog_pfx)
         return torch.from_numpy(sample).type(torch.FloatTensor).view(1, self.seq_len)
-
-    def mode_ro(self):
-        """ Set dataset HDF5 file to read-only mode. """
-        if not self.__read_only:
-            file = self.__fp.filename
-            self.__fp.close()
-            self.__fp = H5PklFile(file, 'r')
-            self.__read_only = True
-        return self.__fp
-
-    def mode_rw(self):
-        """ Set dataset HDF5 file to read-write mode. """
-        if self.__read_only:
-            file = self.__fp.filename
-            self.__fp.close()
-            self.__fp = H5PklFile(file, 'r+')
-            self.__read_only = False
-        return self.__fp
 
     def close(self):
         """ Close dataset HDF5 file. """
-        self.__fp.close()
+        self.fp.close()

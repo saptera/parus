@@ -1,6 +1,5 @@
 import os
 import time
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils import data
@@ -8,8 +7,7 @@ import argparse
 import warnings
 
 __package__ = 'parus.scripts'
-from ..model import EncoderTransformer, InferenceDataset, load_hparams, load_model, inference
-from ..data import sig_merge
+from ..model import EncoderTransformer, InferenceDataset, Inference, load_hparams, load_model
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
@@ -128,33 +126,16 @@ if __name__ == '__main__':
             # Model inference
             t_init = time.time()  # Start time
             inf_dataset = InferenceDataset(src, model_hparams['sequence_length'], args.overlap, to_mem=args.to_mem)
-            inf_datagen = data.DataLoader(
-                dataset=inf_dataset,
-                batch_size=args.bat_sz,
-                shuffle=False,
-                num_workers=hparams['data']['n_worker'])
-            res = inference(model, inf_datagen, model_hparams['output_channels'], device)
-            # Merge output
-            print("        Arranging model outputs...")
-            spk = {}  # INIT VAR
-            for c, g in enumerate(spk_grp):
-                arr = res[:, c, :].reshape((inf_dataset.n_ch, inf_dataset.n_sample, inf_dataset.seq_len), order='C')
-                spk[g] = np.asarray([sig_merge(arr[n], args.overlap, inf_dataset.pad) for n in range(inf_dataset.n_ch)])
-            # CLI print
-            t_proc = time.time()  # Process time
-            print("            -> Processed in %.4f seconds" % (t_proc - t_init))
-
-            # Save outputs
-            fp = inf_dataset.mode_rw()
-            if 'spk' in fp:
-                del fp['spk']
-            grp = fp.create_group('spk')
-            for g in spk:
-                grp.create_dataset(name=g, data=spk[g], compression="gzip", compression_opts=args.cmp_lvl)
+            inf_datagen = data.DataLoader(dataset=inf_dataset,
+                                          batch_size=args.bat_sz,
+                                          shuffle=False,
+                                          num_workers=hparams['data']['n_worker'])
+            inf = Inference(model, inf_datagen, spk_grp, device, cmp_lvl=args.cmp_lvl, disp=8)
+            inf.run()
             inf_dataset.close()
             # CLI print
-            t_save = time.time()  # File writing time
-            print("            -> Results saved in %.4f seconds" % (t_save - t_proc))
+            t_stop = time.time()  # Process time
+            print("            -> Processed in %.4f seconds" % (t_stop - t_init))
             print("        Data [%s] successfully processed (%d/%d)" % (src, i + 1, tot_len))
 
     print("Inference successful completed")
