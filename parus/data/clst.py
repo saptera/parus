@@ -7,16 +7,21 @@ __name__ = 'parus.data.clst'
 
 __all__ = [
     'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',
-    'pos_ripple_flt', 'post_cls_chk'
+    'pos_ripple_flt', 'post_cls_chk', 'get_sig_nbr', 'find_crsch_sig'
 ]
 """
 Function list:
-  cls_cosamp_blk(sig, pos, asp, psp, k=0.6): Clustering spikes by cosine and amplitude similarity, block mode.
-  cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2): Clustering spikes by cos/amp similarity, progressive mode.
-  cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
-  cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson crs-cor, progressive mode.
-  pos_ripple_flt(sig, pos, lim=3, neg=True): Filter out ripples from one-hot spike position array.
-  post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
+  # Signal clustering functions:
+    cls_cosamp_blk(sig, pos, asp, psp, k=0.6): Clustering spikes by cosine and amplitude similarity, block mode.
+    cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2): Clustering spikes by cos/amp similarity, progressive mode.
+    cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
+    cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson crs-cor, progressive mode.
+  # Pre/Post clustering functions:
+    pos_ripple_flt(sig, pos, lim=3, neg=True): Filter out ripples from one-hot spike position array.
+    post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
+  # Multichannel cluster merge functions:
+    get_sig_nbr(prb, lim=60): Get neighbouring channels of multichannel probe for possible same cell source.
+    find_crsch_sig(cls, grp, tot, rng=5, th=0.8): Find cross channel signal cells for multichannel probes.
 Protected functions:
   _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0): Create a Gaussian weight vector centered at peak index.
   _get_wfm_smp(sig, pos, asp, psp): Get waveform samples for clustering algorithms.
@@ -71,6 +76,8 @@ def _get_wfm_smp(sig, pos, asp, psp):
     smp = sig[idx].reshape(-1, num)
     return smp, loc
 
+
+# Signal clustering functions ---------------------------------------------------------------------------------------- #
 
 def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
     """ Clustering spikes by combining cosine and amplitude similarity, block mode.
@@ -309,6 +316,8 @@ def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
     return res, [avg[_] / len(res[_]) for _ in range(len(res))]
 
 
+# Pre/Post clustering functions -------------------------------------------------------------------------------------- #
+
 def pos_ripple_flt(sig, pos, lim=3, neg=True):
     """ Filter out ripples from one-hot spike position array.
 
@@ -385,4 +394,78 @@ def post_cls_chk(avg, mode='cosamp', beta=0.5):
             res[i, i + 1:] = res[i + 1:, i] = nmr / dnm
     else:
         raise ValueError("Invalid similarity check mode, allowed mode: ['cossim', 'ampsim', 'cosamp', 'crscor'].")
+    return res
+
+
+# Multichannel cluster merge functions ------------------------------------------------------------------------------- #
+
+def get_sig_nbr(prb, lim=60):
+    """ Get neighbouring channels of multichannel probe for possible same cell source.
+
+    Args:
+        prb (dict): Multichannel probe geometry data
+        lim (int | float): Signal distance limit (μm, inclusive) for neighbouring channel (default: 60μm)
+
+    Returns:
+        dict[int, list[int]]: Probe channel neighbours
+    """
+    # Extract data from probe dictionary
+    tot = len(prb['site'])
+    c = np.zeros(tot, dtype=int)
+    x = np.zeros(tot, dtype=int)
+    y = np.zeros(tot, dtype=int)
+    for i, s in enumerate(prb['site']):
+        c[i] = s['id']
+        x[i], y[i] = s['geo']
+    # Compute distance
+    xx = np.subtract.outer(x, x)
+    yy = np.subtract.outer(y, y)
+    dist = np.sqrt(xx ** 2 + yy ** 2)
+    # Arrange result
+    org, tgt = np.where(dist <= lim)
+    return {c[i].item(): c[tgt[org == i]].tolist() for i in range(len(prb['site']))}
+
+
+def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
+    """ Find cross channel signal cells for multichannel probes.
+
+    Args:
+        cls (dict[int, list[np.ndarray]]): Multichannel spike cluster
+        grp (dict[int, list[int]]): Probe channel neighbours
+        tot (int): Total length of the source signal
+        rng (int): Allowed range for checking overlapping (default: 5)
+        th (float): {[0, 1]} Threshold rate of overlapping (default: 0.8)
+
+    Returns:
+        list[dict[str, dict[str, int] | dict[str, int]]]: Main cell and sub cell information
+    """
+    res = []  # INIT VAR
+    # Get search indices range
+    num = 2 * rng + 1
+    blk = np.arange(-rng, rng + 1, step=1, dtype=int)
+    # Process scan
+    for g in grp:
+        chs = [c for c in grp[g] if c != g]
+        # Exclude empty clusters
+        if (len(cls[g]) == 0) or (sum([len(cls[c]) for c in chs]) == 0):
+            continue
+        # Get cells in main channel
+        for i, ref in enumerate(cls[g]):
+            # Get indices
+            idx = np.repeat(ref, num) + np.tile(blk, len(ref))
+            idx = np.clip(idx, a_min=0, a_max=tot - 1).reshape(-1, num, order='C')
+            # Search in neighbouring channels
+            for c in chs:
+                # Exclude empty clusters
+                if len(cls[c]) == 0:
+                    continue
+                for j, tgt in enumerate(cls[c]):
+                    # Find match clsitions
+                    loc = np.zeros(tot, dtype=np.int8)
+                    loc[tgt] = 1
+                    match = np.sum(np.sum(loc[idx], axis=1) == 1)
+                    # Compute synchronized rate
+                    score = match / len(tgt)
+                    if score > th:
+                        res.append({'main': {'ch': g, 'id': i}, 'sub': {'ch': c, 'id': j}})
     return res
