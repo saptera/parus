@@ -1587,37 +1587,6 @@ QPushButton:disabled {color: dimgray;}</string>
             <height>15</height>
            </size>
           </property>
-          <property name="styleSheet">
-           <string notr="true">QScrollBar:horizontal {
-    border: 1px solid grey;
-    background: #D3D3D3;
-    height: 20px;
-    margin: 0px 20px 0px 20px;
-}
-QScrollBar::handle:horizontal {
-    background: #0078D7;
-    min-width: 10px;
-}
-QScrollBar::handle:horizontal:hover {
-    background: #73A5C6;
-}
-QScrollBar::handle:horizontal:pressed {
-    background: #4169E1;
-}
-QScrollBar::handle:horizontal:disabled{
-    background: #C0C0C0;
-}
-QScrollBar::add-line:horizontal {
-    width: 20px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-QScrollBar::sub-line:horizontal {
-    width: 20px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}</string>
-          </property>
           <property name="orientation">
            <enum>Qt::Orientation::Horizontal</enum>
           </property>

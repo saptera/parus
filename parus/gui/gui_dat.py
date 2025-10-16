@@ -301,7 +301,6 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
-        cs_dark() and self.signalScrollBar.setStyleSheet('')
         # Timer initialization
         self.__timer_val = -1
         # Set file table view
@@ -1295,7 +1294,6 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon_dat.ico"))
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
-        cs_dark() and self.signalScrollBar.setStyleSheet('')
         self.file = file
         # Timer initialization
         self.__timer_val = -1

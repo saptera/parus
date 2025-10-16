@@ -215,35 +215,6 @@ class Ui_ParusResWindow(object):
         self.signalScrollBar.setObjectName(u"signalScrollBar")
         self.signalScrollBar.setMinimumSize(QSize(0, 30))
         self.signalScrollBar.setMaximumSize(QSize(16777215, 30))
-        self.signalScrollBar.setStyleSheet(u"QScrollBar:horizontal {\n"
-"    border: 1px solid grey;\n"
-"    background: #D3D3D3;\n"
-"    height: 20px;\n"
-"    margin: 0px 20px 0px 20px;\n"
-"}\n"
-"QScrollBar::handle:horizontal {\n"
-"    background: #0078D7;\n"
-"    min-width: 10px;\n"
-"}\n"
-"QScrollBar::handle:horizontal:hover {\n"
-"    background: #73A5C6;\n"
-"}\n"
-"QScrollBar::handle:horizontal:pressed {\n"
-"    background: #4169E1;\n"
-"}\n"
-"QScrollBar::handle:horizontal:disabled{\n"
-"    background: #C0C0C0;\n"
-"}\n"
-"QScrollBar::add-line:horizontal {\n"
-"    width: 20px;\n"
-"    subcontrol-position: right;\n"
-"    subcontrol-origin: margin;\n"
-"}\n"
-"QScrollBar::sub-line:horizontal {\n"
-"    width: 20px;\n"
-"    subcontrol-position: left;\n"
-"    subcontrol-origin: margin;\n"
-"}")
         self.signalScrollBar.setOrientation(Qt.Orientation.Horizontal)
 
         self.navctrlLayout.addWidget(self.signalScrollBar)
