@@ -684,6 +684,9 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
     def __set_sort_waveform(self):
         """ Set spike sorting model output waveform. """
         self.gpu_proc.set_output_waveform()
+        # Reset buffer
+        self.cbuf_spk.flush()
+        self.cbuf_spk.position(self.cbuf_raw.locate())
 
     def __set_sort_sample(self):
         """ Set spike sorting sample range. """
