@@ -641,7 +641,12 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
         self.gpu_proc.build_model()
         # Check sequence length and set status
         if self.seq_len != self.gpu_proc.seq_len:
-            raise ValueError("Model input size different from defined sequence length")
+            self.statBar.showMessage("Error occurred during model building")
+            QtWidgets.QMessageBox.critical(self, "Error", "Model input size different from defined sequence length\n"
+                                                          "Please define the correct sequence length as the model",
+                                           QtWidgets.QMessageBox.StandardButton.Ok)
+            raise ValueError("Model input size (%d) different from defined sequence length (%d)" %
+                             (self.gpu_proc.seq_len, self.seq_len))
         self.act_md = True
         # Enable next controls
         self.srtWfmCombo.setEnabled(True)
