@@ -229,17 +229,15 @@ class CircularBufferCR:
             raise ValueError("Size must be a positive integer!")
         # Set new size
         if size < self._ptr:
-            self.buf = self.buf[:self._ptr]
+            self.buf = self.buf[:size]
             self._ptr = 0
             self.size = size
             self.__full = True
         elif size < self.size:
-            buf = np.zeros(size, dtype=self.dtype)
-            buf[:self._ptr] = self.buf[:self._ptr]
             if self.__full:
                 pos = size - self._ptr
-                buf[self._ptr:] = self.buf[-pos:]
-            self.buf = buf
+                self.buf[self._ptr:size] = self.buf[-pos:]
+            self.buf = self.buf[:size]
             self.size = size
         elif size > self.size:
             buf = np.zeros(size, dtype=self.dtype)
