@@ -1,5 +1,7 @@
 # Model evaluation and inference module
 
+import threading
+import queue
 import numpy as np
 import torch
 
@@ -50,9 +52,15 @@ class Inference:
         self.ovp = self.datagen.dataset.overlap
         self.stp = self.seq - self.ovp
         self.blk = self.stp * self.bs + self.ovp
+        # Process control attributes
+        self.__res_queue = queue.Queue()
+        self.__file_th = threading.Thread(target=self._write_file)
+        self.__proc_fin = False  # Model process finalized flag
         # Output initialization
         self.cnt = len(self.datagen)
         self.__prog_pfx = False if disp is None else ' ' * disp + 'Data progress:'
+        self.__inf_prt = False if disp is None else ' ' * disp + 'Model inference finished, results may still saving'
+        self.__fio_prt = False if disp is None else ' ' * disp + 'All results have been saved to file'
         self.init_output()
 
     def init_output(self):
@@ -64,39 +72,55 @@ class Inference:
         grp = self.__fp.create_group('spk')
         # Creating datasets in file
         for k in self.channel:
-            grp.create_dataset(name=k, shape=shape, dtype=np.float32, compression="gzip", compression_opts=self.cmp)
+            grp.create_dataset(name=k, shape=shape, dtype=np.float32, chunks=True,
+                               compression='gzip', compression_opts=self.cmp)
 
-    def run(self):
-        """ Process inference """
+    def _model_proc(self):
+        """ Process data inference. """
+        self.__proc_fin = False
         for count, inputs in enumerate(self.datagen):
             # Process inference
             inputs = inputs.to(self.device)
             outputs = self.model(inputs)
             res = outputs.cpu().numpy()
-            # Compute indices
-            b = count * self.bs
-            t = b + res.shape[0]
-            p = 0
-            while b < t:
-                c, si = divmod(b, self.nsp)
-                i = si * self.stp
-                se = si + 1
-                while (se < self.nsp) and ((b + se - si) < t):
-                    se += 1
-                e = se * self.stp + self.ovp
+            # Put result to queue
+            self.__res_queue.put((count, res))
+            self.__prog_pfx and prog_print(count, self.cnt, prefix=self.__prog_pfx)
+        # Inform file saving thread
+        self.__proc_fin = True
+        self.__inf_prt and print(self.__inf_prt)
+
+    def _write_file(self):
+        """ Save results to data file. """
+        while not (self.__proc_fin and self.__res_queue.empty()):
+            count, res = self.__res_queue.get()
+            # Process saving
+            bat_loc = count * self.bs  # Batched data starting index
+            bat_end = bat_loc + res.shape[0]  # Batched data terminal index
+            bat_pnt = 0  # Batch index pointer
+            while bat_loc < bat_end:
+                chn_num, smp_idx = divmod(bat_loc, self.nsp)  # Get current raw data channel and sampling step indices
+                i = smp_idx * self.stp  # Data elements starting index
+                smp_end = min(self.nsp, bat_end - bat_loc + smp_idx)
+                e = smp_end * self.stp + self.ovp  # Data elements terminal index
                 # Store results
-                l = se - si
+                l = smp_end - smp_idx  # Total number of sampling steps
                 trim = e - self.tot if e > self.tot else 0
                 for n, k in enumerate(self.channel):
-                    arr = sig_merge(res[p:p+l, n, :], overlap=self.ovp, trim=trim)
+                    arr = sig_merge(res[bat_pnt:bat_pnt+l, n, :], overlap=self.ovp, trim=trim)
                     if i != 0:
-                        arr[:self.ovp] = (arr[:self.ovp] + self.__fp['spk'][k][c, i:i+self.ovp]) / 2
-                    self.__fp['spk'][k][c, i:e] = arr
+                        arr[:self.ovp] = (arr[:self.ovp] + self.__fp['spk'][k][chn_num, i:i+self.ovp]) / 2
+                    self.__fp['spk'][k][chn_num, i:e] = arr
                 # Counter
-                p += l
-                b += l
-            # Print progress
-            self.__prog_pfx and prog_print(count, self.cnt, prefix=self.__prog_pfx)
+                bat_pnt += l
+                bat_loc += l
+        self.__fio_prt and print(self.__fio_prt)
+
+    def run(self):
+        """ Inference threads running trigger function. """
+        self.__file_th.start()
+        self._model_proc()  # Running model on the main thread
+        self.__file_th.join()
 
 
 def validation(model, datagen, criterion, device, hint='text', image=None):

@@ -13,7 +13,7 @@ __all__ = ['TrainingDataset', 'InferenceDataset']
 """
 Class list:
   TrainingDataset(file, n_sample, seq_len): Load simulated dataset for model training.
-  InferenceDataset(file, seq_len, overlap=10, to_mem=False, prt_idt=8): Load raw recording data for model inference.
+  InferenceDataset(file, seq_len, overlap=10, to_mem=False): Load raw recording data for model inference.
 """
 
 
@@ -58,7 +58,7 @@ class TrainingDataset(Dataset):
 
 
 class InferenceDataset(Dataset):
-    def __init__(self, file, seq_len, overlap=10, to_mem=False, prt_idt=8):
+    def __init__(self, file, seq_len, overlap=10, to_mem=False):
         """ Load raw recording data for model inference.
 
         Args:
@@ -66,7 +66,6 @@ class InferenceDataset(Dataset):
             seq_len (int): Model sequence length
             overlap (int): Sample overlapping length
             to_mem (bool): Load all data into memory, accelerate speed at the risk of memory overflow (default: False)
-            prt_idt (int): Progress print indents
         """
         # Open and validate dataset file
         self.fp = H5PklFile(file, 'r+')
