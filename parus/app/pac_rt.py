@@ -23,5 +23,5 @@ args = parser.parse_args()
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     win = ParusRtApp(args.seq_len, version=version)
-    win.show()
+    win.showMaximized()
     app.exec()

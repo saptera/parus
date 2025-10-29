@@ -152,6 +152,11 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.__sorting_switch()
         if self.md_on:
             self.__inference_switch()
+            # Put dummy data to processing queue to avoid blocking in processes
+            if not self.aq_on:
+                dum = np.zeros(self.seq_len, dtype=np.float32)
+                self.raw_queue.put(dum)
+            # Shut down process
             self.cpu_proc.wait(1000)  # Wait CPU thread finish, max 1000ms
             self.gpu_proc.wait(1000)  # Wait GPU thread finish, max 1000ms
         if self.aq_on:

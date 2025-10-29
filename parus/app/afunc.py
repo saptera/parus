@@ -47,5 +47,5 @@ def ParusRT(seq_len=300):
         seq_len (int): Requested model sequence length (default: 300)
     """
     window = ParusRtApp(seq_len, version=version)
-    window.show()
+    window.showMaximized()
     _app.exec()
