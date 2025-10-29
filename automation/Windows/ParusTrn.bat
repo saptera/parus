@@ -1,16 +1,16 @@
 @ECHO OFF
-TITLE PARUS Installer
-ECHO  __^| ^|_____________________________^| ^|__
-ECHO (__   _____________________________   __)
-ECHO    ^| ^|                             ^| ^|
-ECHO    ^| ^|  PARUS Installation Script  ^| ^|
-ECHO  __^| ^|_____________________________^| ^|__
-ECHO (__   _____________________________   __)
-ECHO    ^| ^|                             ^| ^|
+TITLE PARUS Model Training
+ECHO  __^| ^|________________________^| ^|__
+ECHO (__   ________________________   __)
+ECHO    ^| ^|                        ^| ^|
+ECHO    ^| ^|  PARUS Model Training  ^| ^|
+ECHO  __^| ^|________________________^| ^|__
+ECHO (__   ________________________   __)
+ECHO    ^| ^|                        ^| ^|
 ECHO.
 
 :: Set valid Python version range [inclusive, exclusive)
-SET minVersion=3.9.0
+SET minVersion=3.10.0
 SET maxVersion=9.9.9
 
 :: Set Python interpreter
@@ -38,26 +38,18 @@ IF %parVer% LSS %parMinVer% (
     EXIT
 )
 
-ECHO Press any key to start...
+:: Launch PARUS training GUI
+ECHO Starting PARUS Training System...
 ECHO.
-PAUSE >NUL
+ECHO Python command line outputs
 ECHO ----------------------------------------
 
-:: Update PIP
-%TPR% -m pip install --upgrade pip
-
-:: Install required packages
-%TPR% -m pip install h5py
-%TPR% -m pip install "numpy>=2.0.0"
-%TPR% -m pip install "scipy>=1.14.0"
-%TPR% -m pip install "matplotlib>=3.8.4"
-%TPR% -m pip install plotext
-%TPR% -m pip install "PySide6>=6.8"
-%TPR% -m pip install pyqtgraph
+SET GUI=%cd%%\parus\app\pac_ma.py
+%TPR% %GUI% -m trn
 
 ECHO ----------------------------------------
 ECHO.
-ECHO DONE
+ECHO System GUI has stopped
 ECHO Press any key to exit...
 PAUSE >NUL
 EXIT
