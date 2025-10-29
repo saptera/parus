@@ -1,0 +1,14 @@
+# Text handling behaviour
+*.py text eol=lf
+*.pth text eol=lf
+*.bat text eol=crlf
+*.ui text eol=lf
+*.svg text eol=lf
+
+# Binary formats
+*.ico binary
+*.png binary
+
+# Model artifacts handling behaviour
+*.ckpt filter=lfs diff=lfs merge=lfs -text
+*.pklz filter=lfs diff=lfs merge=lfs -text
