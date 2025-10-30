@@ -183,8 +183,9 @@ class Ui_ParusSrtWindow(object):
         self.clsMethBox = QComboBox(self.clusterGroup)
         self.clsMethBox.addItem("")
         self.clsMethBox.addItem("")
+        self.clsMethBox.addItem("")
         self.clsMethBox.setObjectName(u"clsMethBox")
-        self.clsMethBox.setMinimumSize(QSize(130, 25))
+        self.clsMethBox.setMinimumSize(QSize(135, 25))
         self.clsMethBox.setMaximumSize(QSize(16777215, 25))
         self.clsMethBox.setFont(font2)
 
@@ -688,8 +689,14 @@ class Ui_ParusSrtWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.clsMethLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Clustering Method", None))
         self.clsMethBox.setItemText(0, QCoreApplication.translate("ParusSrtWindow", u"Cosine-Amplitude", None))
-        self.clsMethBox.setItemText(1, QCoreApplication.translate("ParusSrtWindow", u"Cross-Correlation", None))
+        self.clsMethBox.setItemText(1, QCoreApplication.translate("ParusSrtWindow", u"Cosine-AmplitudeW", None))
+        self.clsMethBox.setItemText(2, QCoreApplication.translate("ParusSrtWindow", u"Cross-Correlation", None))
 
+#if QT_CONFIG(tooltip)
+        self.clsMethBox.setToolTip(QCoreApplication.translate("ParusSrtWindow", u"[Cosine-Amplitude] Composite similarity of cosine and amplitude\n"
+"[Cosine-AmplitudeW] Composite similarity of cosine and Gaussian weighted amplitude\n"
+"[Cross-Correlation] Pearson correlation coefficient score", None))
+#endif // QT_CONFIG(tooltip)
         self.detThLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Spike Threshold", None))
 #if QT_CONFIG(tooltip)
         self.detThSpinbox.setToolTip(QCoreApplication.translate("ParusSrtWindow", u"Overlapping size between each sample step\n"

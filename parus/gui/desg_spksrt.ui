@@ -408,7 +408,7 @@ Each waveform can have unique settings</string>
                 <widget class="QComboBox" name="clsMethBox">
                  <property name="minimumSize">
                   <size>
-                   <width>130</width>
+                   <width>135</width>
                    <height>25</height>
                   </size>
                  </property>
@@ -424,9 +424,19 @@ Each waveform can have unique settings</string>
                    <bold>false</bold>
                   </font>
                  </property>
+                 <property name="toolTip">
+                  <string>[Cosine-Amplitude] Composite similarity of cosine and amplitude
+[Cosine-AmplitudeW] Composite similarity of cosine and Gaussian weighted amplitude
+[Cross-Correlation] Pearson correlation coefficient score</string>
+                 </property>
                  <item>
                   <property name="text">
                    <string>Cosine-Amplitude</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Cosine-AmplitudeW</string>
                   </property>
                  </item>
                  <item>

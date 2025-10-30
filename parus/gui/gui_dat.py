@@ -549,7 +549,9 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     pos = sig_peak_fwd(i, th)
                     pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
                     if meth == 0:
-                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, beta=beta)
+                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, w=False, beta=beta)
+                    elif meth == 1:
+                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, w=True, beta=beta)
                     else:
                         cls, avg = cls_crscor_blk(i, pos, asp, psp, k=k)
                     # Sort clusters by size
@@ -607,7 +609,9 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                             pos = sig_peak_fwd(i, th)
                             pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
                             if meth == 0:
-                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, beta=beta)
+                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, w=False, beta=beta)
+                            elif meth == 1:
+                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, w=True, beta=beta)
                             else:
                                 cls, _ = cls_crscor_blk(i, pos, asp, psp, k=k)
                             # Sort clusters by size
@@ -1064,6 +1068,9 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         """ Select spike waveform for setting arguments. """
         w = self.spkWfmBox.currentText()
         # Set arguments
+        self.clsMethBox.blockSignals(True)
+        self.clsMethBox.setCurrentIndex(self.meth.get(w, 0))
+        self.clsMethBox.blockSignals(False)
         self.detThSpinbox.blockSignals(True)
         self.detThSpinbox.setValue(self.th.get(w, -50))
         self.detThSpinbox.blockSignals(False)

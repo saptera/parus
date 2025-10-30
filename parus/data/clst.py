@@ -12,8 +12,8 @@ __all__ = [
 """
 Function list:
   # Signal clustering functions:
-    cls_cosamp_blk(sig, pos, asp, psp, k=0.6): Clustering spikes by cosine and amplitude similarity, block mode.
-    cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2): Clustering spikes by cos/amp similarity, progressive mode.
+    cls_cosamp_blk(sig, pos, asp, psp, k=0.6, w=True): Clustering spikes by cosine and amplitude similarity, block mode.
+    cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2): Clustering spikes cosine-amplitude, progressive mode.
     cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
     cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson crs-cor, progressive mode.
   # Pre/Post clustering functions:
@@ -79,7 +79,7 @@ def _get_wfm_smp(sig, pos, asp, psp):
 
 # Signal clustering functions ---------------------------------------------------------------------------------------- #
 
-def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
+def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, w=True, **kwargs):
     """ Clustering spikes by combining cosine and amplitude similarity, block mode.
 
     The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
@@ -95,6 +95,7 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
         asp (int): {>0} Anterior samples to consider
         psp (int): {>0} Posterior samples to consider
         k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        w (bool): Gaussian weight flag (default: True)
         **kwargs: See below
 
     Keyword Args:
@@ -114,7 +115,7 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
     # Get Gaussian weight
-    wt = _gaussian_weight(asp, psp, sigma, epsilon)
+    wt = _gaussian_weight(asp, psp, sigma, epsilon) if w else np.ones(asp + psp + 1, dtype=np.float32)
     # Initialize process variables
     stp = np.arange(len(loc))
     res = []
@@ -138,7 +139,7 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, **kwargs):
     return res, avg
 
 
-def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2, **kwargs):
+def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2, **kwargs):
     """ Clustering spikes by combining cosine and amplitude similarity, progressive mode.
 
     The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
@@ -154,6 +155,7 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2, **kwargs):
         asp (int): {>0} Anterior samples to consider
         psp (int): {>0} Posterior samples to consider
         k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        w (bool): Gaussian weight flag (default: True)
         delta (float | None): {[0, 1]} Weight for new samples
         **kwargs: See below
 
@@ -174,7 +176,7 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, delta=0.2, **kwargs):
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
     # Get Gaussian weight
-    wt = _gaussian_weight(asp, psp, sigma, epsilon)
+    wt = _gaussian_weight(asp, psp, sigma, epsilon) if w else np.ones(asp + psp + 1, dtype=np.float32)
     # Initialize clustering history variables
     hst = smp[np.newaxis, 0]
     res = [np.array([loc[0]])]
