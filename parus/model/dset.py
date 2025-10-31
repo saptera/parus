@@ -73,7 +73,6 @@ class InferenceDataset(Dataset):
             self.fp.close()
             raise ValueError("Input array must be 2D (channels, samples).")
         # Load data
-        self.__read_only = True  # File R/W flag
         self.data = self.fp['raw'][()] if to_mem else self.fp['raw']
         # Get features
         self.n_ch, self.total = self.data.shape

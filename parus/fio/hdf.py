@@ -5,7 +5,7 @@ import h5py as h5
 __package__ = 'parus.fio'
 __name__ = 'parus.fio.hdf'
 
-__all__ = ['h5_load_dat', 'h5_load_ref', 'H5PklFile']
+__all__ = ['h5_load_dat', 'h5_load_ref', 'H5PklDataset', 'H5PklGroup', 'H5PklFile']
 """
 Function list:
   # Standard HDF5 file IOs
@@ -13,6 +13,9 @@ Function list:
     h5_load_ref(ref, pnt): Load HDF5 data by reference.
   # Pickle enabled HDF5 object
     _hpo_cache {dict}: Dictionary to record pickle enabled HDF5 file objects.
+    _H5PklObj: Overriding [h5py] high level object, and serve as a base class for Group and Dataset.
+    H5PklDataset: Pickle serialization enabled HDF5 dataset object.
+    H5PklGroup: Pickle serialization enabled HDF5 group object.
     H5PklFile: Pickle serialization enabled HDF5 file object.
 """
 
@@ -64,6 +67,52 @@ def h5_load_ref(ref, pnt):
 _hpo_record = {}  # Dictionary to record pickle enabled HDF file objects
 
 
+class _H5PklObj(h5.HLObject):
+    """ Overriding [h5py] high level object, and serve as a base class for Group and Dataset.
+        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """
+    def __getstate__(self):
+        """ Save the current name and a reference to the root file object. """
+        return {'name': self.name, 'file': self.file_info}
+
+    def __setstate__(self, state):
+        """ Reopened reference by pickle. Create steal identity of created object. """
+        self.__init__(state['file'][state['name']].id)
+        self.file_info = state['file']
+
+    def __getnewargs__(self):
+        """ Bypass the error raised by Pickle protocols >=2 as unable to pickle object. """
+        return ()
+
+
+class H5PklDataset(_H5PklObj, h5.Dataset):
+    """ Pickle serialization enabled HDF5 dataset object.
+        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """
+    pass
+
+
+class H5PklGroup(_H5PklObj, h5.Group):
+    """ Pickle serialization enabled HDF5 group object.
+        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """
+    def __getitem__(self, name):
+        """ Overriding standard [h5py] objects. """
+        obj = h5.Group.__getitem__(self, name)
+        if isinstance(obj, h5.Dataset):
+            ret_obj = H5PklDataset(obj.id)
+            ret_obj.file_info = self.file_info
+            return ret_obj
+        elif isinstance(obj, h5.Group):
+            ret_obj = H5PklGroup(obj.id)
+            ret_obj.file_info = self.file_info
+            return ret_obj
+        elif isinstance(obj, h5.File):
+            return H5PklFile(obj.id)
+        else:
+            return obj
+
+
 class H5PklFile(h5.File):
     """ Pickle serialization enabled HDF5 file object.
         Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
@@ -92,6 +141,22 @@ class H5PklFile(h5.File):
             # Return existing object
             self = _hpo_record[arg_hash]
         return self
+
+    def __getitem__(self, name):
+        """ Overriding standard [h5py] objects. """
+        obj = h5.Group.__getitem__(self, name)
+        if isinstance(obj, h5.Dataset):
+            ret_obj = H5PklDataset(obj.id)
+            ret_obj.file_info = self
+            return ret_obj
+        elif isinstance(obj, h5.Group):
+            ret_obj = H5PklGroup(obj.id)
+            ret_obj.file_info = self
+            return ret_obj
+        elif isinstance(obj, h5.File):
+            return H5PklFile(obj.id)
+        else:
+            return obj
 
     def __getstate__(self):
         """ Bypass the error raised by Pickle protocols 0, 1 as unable to pickle object. """

@@ -56,11 +56,12 @@ class Inference:
         self.__res_queue = queue.Queue()
         self.__file_th = threading.Thread(target=self._write_file)
         self.__proc_fin = False  # Model process finalized flag
-        # Output initialization
+        # Print out initialization
         self.cnt = len(self.datagen)
         self.__prog_pfx = False if disp is None else ' ' * disp + 'Data progress:'
         self.__inf_prt = False if disp is None else ' ' * disp + 'Model inference finished, results may still saving'
         self.__fio_prt = False if disp is None else ' ' * disp + 'All results have been saved to file'
+        # Output initialization
         self.init_output()
 
     def init_output(self):

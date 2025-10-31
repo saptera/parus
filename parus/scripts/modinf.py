@@ -126,10 +126,11 @@ if __name__ == '__main__':
             # Model inference
             t_init = time.time()  # Start time
             inf_dataset = InferenceDataset(src, model_hparams['sequence_length'], args.overlap, to_mem=args.to_mem)
+            # TODO: Explore free-threading writing possibilities for HDF5
             inf_datagen = data.DataLoader(dataset=inf_dataset,
                                           batch_size=args.bat_sz,
                                           shuffle=False,
-                                          num_workers=hparams['data']['n_worker'])
+                                          num_workers=0)  # Forced to single process IO
             inf = Inference(model, inf_datagen, spk_grp, device, cmp_lvl=args.cmp_lvl, disp=8)
             inf.run()
             inf_dataset.close()
