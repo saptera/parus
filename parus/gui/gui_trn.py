@@ -96,7 +96,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.__prw_ok = False
         self._proc_thread = self._DataProcThread(self)
         self._proc_thread.finished.connect(self.__proc_finalize)
-        self.__save_msg = ProgBusyDialog(self, "<b>Archival data being processed<br><br>Please wait...</b>")
+        self.__save_msg = ProgBusyDialog(self, "<b>Archival data being processed<br><br>Please wait...</b>", bar=False)
 
         # Connect file IO controls
         self.srcFilePath.textChanged.connect(self.__set_src_file)

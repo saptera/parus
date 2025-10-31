@@ -19,7 +19,7 @@ Class list:
   CellData(val, aln='c', emp=None, clr=None, bkg=None, ro=False): Data selection table cell data class.
   PyScriptExec: Execute Python script as a subprocess, with its console displayed.
   ProcConsole: GUI process console control combo class.
-  ProgBusyDialog(parent=None, message="Please wait.."): Non-interactive, application-modal busy dialog.
+  ProgBusyDialog(parent=None, message="Please wait..", bar=False): Non-interactive, application-modal busy dialog.
 Functon list:
   path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialog.
   table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None): Path item to table.
@@ -463,12 +463,13 @@ class ProcConsole:
 
 
 class ProgBusyDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, message="Busy\nPlease wait.."):
+    def __init__(self, parent=None, message="Busy\nPlease wait..", bar=False):
         """ Non-interactive, application-modal busy dialog.
 
         Args:
             parent (QtCore.QObject | None): Parent Qt object
             message (str): Messagebox message, support HTML formatting (default: "Please wait...")
+            bar (bool): Progress bar enable flag (default: False)
         """
         super().__init__(parent)
         self.allow_close = False  # Avoid user close [Alt+F4] and early programmatic close
@@ -484,11 +485,26 @@ class ProgBusyDialog(QtWidgets.QDialog):
         lbl.setTextFormat(QtCore.Qt.TextFormat.RichText)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(lbl)
+        if bar:
+            self.prog_bar = QtWidgets.QProgressBar(self, minimum=0, maximum=100)
+            layout.addWidget(self.prog_bar)
+        else:
+            self.prog_bar = None
         self.setLayout(layout)
-        self.setFixedSize(200, 90)
+        self.setFixedSize(200, 120) if bar else self.setFixedSize(200, 90)
 
     def closeEvent(self, event):
         event.accept() if self.allow_close else event.ignore()
+
+    def set_progress(self, val):
+        """  Set progress bar value.
+
+        Args:
+            val (int): {[0, 100]} Progress value between 0 to 100
+        """
+        if self.prog_bar is not None:
+            val = 0 if val < 0 else 100 if val > 100 else val
+            self.prog_bar.setValue(val)
 
 
 # Functions ---------------------------------------------------------------------------------------------------------- #

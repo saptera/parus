@@ -1310,7 +1310,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self._save_proc = self.SaveResThread()
         self._save_proc.src = file
         self._save_proc.finished.connect(self.__save_finalize)
-        self.__save_msg = ProgBusyDialog(self, "<b>Corrections being saved<br><br>Please wait...</b>")
+        self.__save_msg = ProgBusyDialog(self, "<b>Corrections being saved<br><br>Please wait...</b>", bar=False)
         self.__safe_close = True  # Check changes before close flag
 
         # Load and plot data
