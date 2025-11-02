@@ -2434,7 +2434,7 @@
             <property name="title">
              <string>Generation Statistics File Path</string>
             </property>
-            <layout class="QHBoxLayout" name="sigBoxLayout_2">
+            <layout class="QHBoxLayout" name="statFileBoxLayout">
              <property name="spacing">
               <number>10</number>
              </property>

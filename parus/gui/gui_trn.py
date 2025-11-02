@@ -13,7 +13,7 @@ __package__ = 'parus.gui'
 __name__ = 'parus.gui.gui_trn'
 from .. import pkg_data
 from ..fio import arc_write, noi_write
-from ..scripts import gen_sim, gen_sta, mod_trn
+from ..scripts import gen_sim, gen_sta, mod_trn, prd_dsp
 from . import cs_dark
 from .desg_arcmrk import Ui_ParusArcWindow
 from .desg_genctl import Ui_ParusGenWindow
@@ -1212,27 +1212,34 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.setWindowIcon(icon)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if cs_dark():
-            self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
+            self.trnProcButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
         else:
-            self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+            self.trnProcButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
         # Set control variable defaults
         self.__auto_scr = True
-        self.__proc_run = False
+        self.__trn_run = False
 
         # Set training process
-        self._proc = PyScriptExec(script=mod_trn, console=self.procConsole, trigger=self.procButton,
-                                  name="Parus [Model Train]", disp_time=True, clr_con=False,
-                                  trig_txt=("Initiate Model Training", "Stop Process"))
-        self._proc.set_auto_scroll(self.__auto_scr)
-        self._proc.started.connect(self.__proc_start)
-        self._proc.finished.connect(self.__proc_finish)
+        self._trn_proc = PyScriptExec(script=mod_trn, console=self.procConsole, trigger=self.trnProcButton,
+                                      name="Parus [Model Train]", disp_time=True, clr_con=False,
+                                      trig_txt=("Initiate Model Training", "Abort Training"))
+        self._trn_proc.set_auto_scroll(self.__auto_scr)
+        self._trn_proc.started.connect(self.__trn_proc_start)
+        self._trn_proc.finished.connect(self.__trn_proc_finish)
+        # Set testing view process
+        self._tst_view = PyScriptExec(script=prd_dsp, console=self.procConsole, trigger=self.tstViewButton,
+                                      name="Parus [Testing View]", disp_time=True, clr_con=False,
+                                      trig_txt=("View Testing Results", "Close View"))
+        self._tst_view.set_auto_scroll(self.__auto_scr)
+        self._tst_view.started.connect(self.__tst_view_start)
+        self._tst_view.finished.connect(self.__tst_view_finish)
         # Initialize console
         self._console = ProcConsole(console=self.procConsole,
                                     btn_clr=self.procConClear, btn_cpy=self.procConCopy, btn_scr=self.procConScroll,
-                                    lnk_proc=[self._proc], stat_bar=self.statBar, disp_time=True,
+                                    lnk_proc=[self._trn_proc, self._tst_view], stat_bar=self.statBar, disp_time=True,
                                     init_msg="Parus Model Training GUI ready!")
 
-        # Set data variable defaults
+        # Set training variable defaults
         self.sim_dir = None
         self.out_dir = None
         self.num_trn = []
@@ -1244,8 +1251,13 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.eval_stp = []
         self.eval_ind = ['-t', 'disp']
         self.ex_opt = []
+        # Set test viewing variable defaults
+        self.tst_dir = None
+        self.tst_typ = None
+        self.__set_tst_type()  # Update test model type
+        self.__art_prf = None  # Current model artifacts folder prefix
 
-        # Connect controls
+        # Connect model training controls
         self.simSelect.clicked.connect(self.__sel_sim_dir)
         self.simPath.textChanged.connect(self.__set_sim_dir)
         self.outSelect.clicked.connect(self.__sel_out_dir)
@@ -1259,15 +1271,20 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.stpEvalSpinbox.valueChanged.connect(self.__set_eval_stp)
         self.indEvalCombo.currentIndexChanged.connect(self.__set_eval_ind)
         self.exOptLine.textChanged.connect(self.__set_ex_opt)
+        # Connect test view controls
+        self.tstPathSelect.clicked.connect(self.__sel_tst_path)
+        self.tstPathLine.textChanged.connect(self.__set_tst_path)
+        self.tstTypeBox.currentIndexChanged.connect(self.__set_tst_type)
 
         # Load previous execution parameters
         self.__load_params()
+        self.set_view_args()
         # System standby
         self.statBar.showMessage("System standby")
 
     def closeEvent(self, event):
         """ Clean-ups upon close. """
-        self._proc.terminate()
+        self._trn_proc.terminate()
 
     def ctrl_enable(self, enable=True):
         """ Set enable status of controls.
@@ -1287,47 +1304,99 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.indEvalCombo.setEnabled(enable)
 
     # Process related functions -------------------------------------------------------------------------------------- #
-    def set_proc_args(self):
+    def set_train_args(self):
         """ Set arguments for model training. """
         if (self.sim_dir is None) or (self.out_dir is None):
-            self.procButton.setEnabled(False)
-            self._proc.reset_arguments()
+            self.trnProcButton.setEnabled(False)
+            self._trn_proc.reset_arguments()
         else:
             args = (self.out_dir + self.sim_dir + self.num_trn + self.num_vld + self.num_tst + self.seq_len +
                     self.mod_name + self.num_ep + self.eval_stp + self.eval_ind + self.ex_opt)
-            self._proc.set_arguments(args)
-            self.procButton.setEnabled(True)
+            self._trn_proc.set_arguments(args)
+            self.trnProcButton.setEnabled(True)
 
-    def __switch_proc_btn(self):
+    def __switch_trn_btn(self):
         """ ParusModTrn button connected function. """
-        if self.__proc_run:
-            self.procButton.setStyleSheet('QPushButton {color: red}')
+        if self.__trn_run:
+            self.trnProcButton.setStyleSheet('QPushButton {color: red}')
         else:
             if cs_dark():
-                self.procButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
+                self.trnProcButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
             else:
-                self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+                self.trnProcButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
-    def __proc_start(self):
+    def __trn_proc_start(self):
         """ ParusModTrn process STARTED connected function. """
-        self.__proc_run = True
-        self.__switch_proc_btn()
+        self.__trn_run = True
+        self.__switch_trn_btn()
         self.ctrl_enable(False)
+        # Get artifacts prefix
+        name = "parus" if self.modNameLine.text() == '' else self.modNameLine.text()
+        dset = os.path.basename(self.simPath.text().rstrip('/\\'))
+        time = datetime.now().strftime('%Y%m%d')
+        self.__art_prf = '__'.join([name, dset, time])
+        # Inform status bar
         self.statBar.showMessage("Parus model training started")
 
-    def __proc_finish(self):
+    def __trn_proc_finish(self):
         """ ParusModTrn process FINISHED connected function. """
         # Reset button
-        self.__proc_run = False
+        self.__trn_run = False
         self.ctrl_enable(True)
-        self.__switch_proc_btn()
+        self.__switch_trn_btn()
         # Display status
-        if self._proc.fin_stop:
+        if self._trn_proc.fin_stop:
             # Save current successful execution params
             self.__save_params()
             self.statBar.showMessage("Model training successfully finished")
+            # Set test view parameters
+            path = max([os.path.join(self.outPath.text(), d) for d in next(os.walk(self.outPath.text()))[1]
+                        if d.startswith(self.__art_prf)], key=os.path.getmtime)
+            self.tstPathLine.setText(path)
+            self.tstTypeBox.setCurrentIndex(1)
+            self.__art_prf = None  # Reset prefix
         else:
             self.statBar.showMessage("Model training terminated")
+
+    def set_view_args(self):
+        """ Set arguments for test results viewing. """
+        if self.tst_dir is None:
+            self.tstViewButton.setEnabled(False)
+            self._tst_view.reset_arguments()
+        else:
+            file = os.path.join(self.tst_dir, self.tst_typ)
+            if os.path.isfile(file):
+                self._tst_view.set_arguments([file])
+                self.tstViewButton.setEnabled(True)
+            else:
+                self.statBar.showMessage("Invalid test results file")
+                self.tstViewButton.setEnabled(False)
+                self._tst_view.reset_arguments()
+                QtWidgets.QMessageBox.critical(self, "File Not Found",
+                                               "Defined testing results group [%s]\n"
+                                               "cannot be located at defined folder [%s]\nPlease check you inputs." %
+                                               (self.tstTypeBox.currentText(), self.tst_dir),
+                                               QtWidgets.QMessageBox.StandardButton.Ok)
+
+    def __tst_view_start(self):
+        """ ParusPrdDsp process STARTED connected function. """
+        # Set button style
+        self.tstViewButton.setStyleSheet('QPushButton {color: red}')
+        # Inform status bar
+        self.statBar.showMessage("Testing results view started")
+
+    def __tst_view_finish(self):
+        """ ParusPrdDsp process FINISHED connected function. """
+        # Set button style
+        if cs_dark():
+            self.tstViewButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
+        else:
+            self.tstViewButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
+        # Inform status bar
+        if self._tst_view.fin_stop:
+            self.statBar.showMessage("Testing results view closed")
+        else:
+            self.statBar.showMessage("Testing results view terminated")
 
     # Control element related functions ------------------------------------------------------------------------------ #
     def __load_params(self):
@@ -1348,7 +1417,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.stpEvalSpinbox.setValue(pars['steps_per_eval'])
             self.indEvalCombo.setCurrentIndex(pars['eval_visual_method_index'])
             self.exOptLine.setText(pars['advanced_options'])
-        self.set_proc_args()
+        self.set_train_args()
 
     def __save_params(self):
         """ Save GUI settings of current execution. """
@@ -1373,7 +1442,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         path = path_selector(self.simPath, mode='path', caption="Select Dataset Folder", parent=self)
         self.sim_dir = None if path is None else [path]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_sim_dir(self):
         """ Select dataset (*.sim) folder line edit connection. """
@@ -1385,14 +1454,14 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.sim_dir = None
             self.statBar.showMessage("Dataset folder is invalid!")
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __sel_out_dir(self):
         """ Select model training results output folder button connection. """
         path = path_selector(self.outPath, mode='path', caption="Select Model Output Folder", parent=self)
         self.out_dir = None if path is None else [path]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_out_dir(self):
         """ Select model training results output folder line edit connection. """
@@ -1404,35 +1473,35 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.out_dir = None
             self.statBar.showMessage("Model output folder is invalid!")
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_num_trn(self):
         """ Set number of training samples. """
         num = self.trnSampSpinbox.value()
         self.num_trn = ['-dtn', str(num)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_num_vld(self):
         """ Set number of validation samples. """
         num = self.vldSampSpinbox.value()
         self.num_vld = ['-dvl', str(num)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_num_tst(self):
         """ Set number of testing samples. """
         num = self.tstSampSpinbox.value()
         self.num_tst = ['-dts', str(num)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_seq_len(self):
         """ Set dataset/model sample sequence length. """
         num = self.seqLenSpinbox.value()
         self.seq_len = ['-mls', str(num)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_mod_name(self):
         """ Set model name. """
@@ -1443,32 +1512,60 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.modNameLine.blockSignals(False)
         self.mod_name = ['-mid', name]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_num_ep(self):
         """ Set number of epochs. """
         num = self.nEpSpinbox.value()
         self.num_ep = ['-tep', str(num)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_eval_stp(self):
         """ Set training steps per evaluation. """
         stp = self.stpEvalSpinbox.value()
         self.eval_stp = ['-tev', str(stp)]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_eval_ind(self):
         """ Set model evaluation results visualization method. """
         ind = ['none', 'disp', 'save'][self.indEvalCombo.currentIndex()]
         self.eval_ind = ['-t', ind]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
 
     def __set_ex_opt(self):
         """ Model training advance option. This function DOES NOT check input, error will be handled by the script. """
         opt = self.exOptLine.text()
         self.ex_opt = [o for o in opt.split(' ') if o]
         # Update process arguments
-        self.set_proc_args()
+        self.set_train_args()
+
+    def __sel_tst_path(self):
+        """ Select test results (*.pklz) folder button connection. """
+        self.tstPathLine.blockSignals(True)
+        path = path_selector(self.tstPathLine, mode='path', caption="Select Test Results Folder", parent=self)
+        self.tstPathLine.blockSignals(False)
+        self.tst_dir = None if path is None else path
+        # Update process arguments
+        self.set_view_args()
+
+    def __set_tst_path(self):
+        """ Select test results (*.pklz) folder line edit connection. """
+        path = self.tstPathLine.text()
+        if os.path.isdir(path):
+            self.tst_dir = path
+            self.statBar.showMessage("Test results folder defined")
+        else:
+            self.tst_dir = None
+            self.statBar.showMessage("Test results folder is invalid!")
+        # Update process arguments
+        self.set_view_args()
+
+    def __set_tst_type(self):
+        """ Set test results linked model type. """
+        idx = self.tstTypeBox.currentIndex()
+        self.tst_typ = ['tst_opt.pklz', 'tst_fin.pklz'][idx]
+        # Update process arguments
+        self.set_view_args()

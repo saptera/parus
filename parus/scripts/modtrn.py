@@ -65,6 +65,8 @@ pg_t.add_argument('-tls', '--lossfn', dest='loss_function', type=str, choices=['
                   help="Loss function: 'l1' = Mean Absolute Error, 'mse' = Mean Squared Error, "
                        "'bce' = Binary Cross Entropy with Sigmoid")
 # Extra options
+parser.add_argument('-pth', '--pkdths', dest='pk_th', type=float, default=-50.0, metavar="[float]",
+                    help="Post-inference spike peak detection threshold (default: %(default)s)")
 parser.add_argument('-t', '--hint', dest='hint', type=str, choices=['text', 'disp', 'save', 'none'], default='text',
                     metavar="{text, disp, save, none}", help="Validation result hinting method (default: %(default)s)")
 parser.add_argument('-d', '--debug', dest='debug', default=False, action="store_true", help="Run with debug settings")
@@ -140,7 +142,7 @@ if __name__ == '__main__':
     print("\nInferencing test data with final model...")
     model.eval()
     with torch.no_grad():
-        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device)
+        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device, th=args.pk_th)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(work_dir, "tst_fin.pklz"), pklz_dct)
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     model = load_model(os.path.join(work_dir, "optimum.ckpt"), model)  # Override with optimum checkpoint
     model.eval()
     with torch.no_grad():
-        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device)
+        pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device, th=args.pk_th)
         pklz_dct['grp'] = spk_grp
         pklz_dct['frq'] = rec_frq
         pklz_write(os.path.join(work_dir, "tst_opt.pklz"), pklz_dct)

@@ -199,7 +199,7 @@ def testing(model, datagen, channel, device, th=-1):
         e = s + bs
         # Arrange inputs
         inputs, spk_labels, pos_labels = item
-        inp_arr[s:e] = inputs.cpu().numpy()
+        inp_arr[s:e] = inputs.cpu().numpy().squeeze()
         spk_lbl[s:e] = spk_labels.cpu().numpy()
         pos_lbl[s:e] = pos_labels.cpu().numpy()
         # Process inference

@@ -3,8 +3,8 @@
 import os
 import argparse
 import copy
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 __package__ = 'parus.scripts'
 from ..fio import pklz_read
@@ -175,7 +175,7 @@ def update_figure():
         # Plot labels
         if lbl_spk is not None:
             ls = lbl_spk[ic] if sel_flag else lbl_spk
-            axes[ax_l, ic].plot(x, ls, color=u'#2ca02c', label="Spike Reference")
+            axes[ax_l, ic].plot(x, ls.squeeze(), color=u'#2ca02c', label="Spike Reference")
         if lbl_pos is not None:
             lpx = lbl_pos['x'][ic] if sel_flag else lbl_pos['x']
             lpy = lbl_pos['y'][ic] if sel_flag else lbl_pos['y']
@@ -183,7 +183,7 @@ def update_figure():
         # Plot model predictions
         if prd_spk is not None:
             ps = prd_spk[ic] if sel_flag else prd_spk
-            axes[ax_p, ic].plot(x, ps, color=u'#1f77b4', label="Spike Prediction")
+            axes[ax_p, ic].plot(x, ps.squeeze(), color=u'#1f77b4', label="Spike Prediction")
         if prd_pos is not None:
             ppx = prd_pos['x'][ic] if sel_flag else prd_pos['x']
             ppy = prd_pos['y'][ic] if sel_flag else prd_pos['y']
@@ -253,19 +253,19 @@ if os.path.isfile(args.path):
     if 'prd' in raw:
         if isinstance(raw['prd'], dict):
             dic_typ = True
-            ncol = len(raw['prd'][next(iter(raw['prd']))].shape) - 1  # Global variable
+            ncol = raw['prd'][next(iter(raw['prd']))].shape[1]  # Global variable
         else:
             dic_typ = False
-            ncol = len(raw['prd'].shape) - 1  # Global variable
+            ncol = raw['prd'].shape[1]  # Global variable
     else:
         prd_flag = False
     if 'lbl' in raw:
         if isinstance(raw['lbl'], dict):
             dic_typ = True
-            ncol = len(raw['lbl'][next(iter(raw['lbl']))].shape) - 1  # Global variable
+            ncol = raw['lbl'][next(iter(raw['lbl']))].shape[1]  # Global variable
         else:
             dic_typ = False
-            ncol = len(raw['lbl'].shape) - 1  # Global variable
+            ncol = raw['lbl'].shape[1]  # Global variable
     else:
         ref_flag = False
     # Arrange data

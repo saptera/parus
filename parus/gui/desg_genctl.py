@@ -998,16 +998,16 @@ class Ui_ParusGenWindow(object):
         self.statFileBox.setMinimumSize(QSize(1110, 60))
         self.statFileBox.setMaximumSize(QSize(16777215, 60))
         self.statFileBox.setFont(font1)
-        self.sigBoxLayout_2 = QHBoxLayout(self.statFileBox)
-        self.sigBoxLayout_2.setSpacing(10)
-        self.sigBoxLayout_2.setObjectName(u"sigBoxLayout_2")
+        self.statFileBoxLayout = QHBoxLayout(self.statFileBox)
+        self.statFileBoxLayout.setSpacing(10)
+        self.statFileBoxLayout.setObjectName(u"statFileBoxLayout")
         self.statFilePath = QLineEdit(self.statFileBox)
         self.statFilePath.setObjectName(u"statFilePath")
         self.statFilePath.setMinimumSize(QSize(1000, 22))
         self.statFilePath.setMaximumSize(QSize(16777215, 22))
         self.statFilePath.setFont(font2)
 
-        self.sigBoxLayout_2.addWidget(self.statFilePath)
+        self.statFileBoxLayout.addWidget(self.statFilePath)
 
         self.statFileSelect = QPushButton(self.statFileBox)
         self.statFileSelect.setObjectName(u"statFileSelect")
@@ -1015,7 +1015,7 @@ class Ui_ParusGenWindow(object):
         self.statFileSelect.setMaximumSize(QSize(80, 24))
         self.statFileSelect.setFont(font2)
 
-        self.sigBoxLayout_2.addWidget(self.statFileSelect)
+        self.statFileBoxLayout.addWidget(self.statFileSelect)
 
 
         self.genStaLayout.addWidget(self.statFileBox)

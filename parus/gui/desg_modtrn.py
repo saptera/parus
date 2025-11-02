@@ -18,7 +18,7 @@ class Ui_ParusTrnWindow(object):
     def setupUi(self, ParusTrnWindow):
         if not ParusTrnWindow.objectName():
             ParusTrnWindow.setObjectName(u"ParusTrnWindow")
-        ParusTrnWindow.resize(1168, 771)
+        ParusTrnWindow.resize(1168, 951)
         self.centralWidget = QWidget(ParusTrnWindow)
         self.centralWidget.setObjectName(u"centralWidget")
         self.centralLayout = QVBoxLayout(self.centralWidget)
@@ -88,8 +88,8 @@ class Ui_ParusTrnWindow(object):
 
         self.trnFrame = QFrame(self.centralWidget)
         self.trnFrame.setObjectName(u"trnFrame")
-        self.trnFrame.setMinimumSize(QSize(1150, 415))
-        self.trnFrame.setMaximumSize(QSize(16777215, 415))
+        self.trnFrame.setMinimumSize(QSize(1150, 470))
+        self.trnFrame.setMaximumSize(QSize(16777215, 470))
         self.trnFrame.setFrameShape(QFrame.Shape.Box)
         self.trnFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.trnFrameLayout = QVBoxLayout(self.trnFrame)
@@ -431,16 +431,81 @@ class Ui_ParusTrnWindow(object):
 
         self.trnFrameLayout.addWidget(self.exGroup)
 
+        self.trnProcButton = QPushButton(self.trnFrame)
+        self.trnProcButton.setObjectName(u"trnProcButton")
+        self.trnProcButton.setMinimumSize(QSize(1000, 45))
+        self.trnProcButton.setMaximumSize(QSize(16777215, 45))
+        self.trnProcButton.setFont(font)
+
+        self.trnFrameLayout.addWidget(self.trnProcButton)
+
 
         self.centralLayout.addWidget(self.trnFrame)
 
-        self.procButton = QPushButton(self.centralWidget)
-        self.procButton.setObjectName(u"procButton")
-        self.procButton.setMinimumSize(QSize(1150, 45))
-        self.procButton.setMaximumSize(QSize(16777215, 45))
-        self.procButton.setFont(font)
+        self.tstFrame = QFrame(self.centralWidget)
+        self.tstFrame.setObjectName(u"tstFrame")
+        self.tstFrame.setMinimumSize(QSize(1132, 170))
+        self.tstFrame.setMaximumSize(QSize(16777215, 170))
+        self.tstFrame.setFrameShape(QFrame.Shape.Box)
+        self.tstFrame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.tstFrameLayout = QVBoxLayout(self.tstFrame)
+        self.tstFrameLayout.setObjectName(u"tstFrameLayout")
+        self.tstFrameLayout.setContentsMargins(-1, 0, -1, -1)
+        self.tstConLabel = QLabel(self.tstFrame)
+        self.tstConLabel.setObjectName(u"tstConLabel")
+        self.tstConLabel.setMinimumSize(QSize(1000, 28))
+        self.tstConLabel.setMaximumSize(QSize(16777215, 28))
+        self.tstConLabel.setFont(font)
 
-        self.centralLayout.addWidget(self.procButton)
+        self.tstFrameLayout.addWidget(self.tstConLabel)
+
+        self.tstFileBox = QGroupBox(self.tstFrame)
+        self.tstFileBox.setObjectName(u"tstFileBox")
+        self.tstFileBox.setMinimumSize(QSize(1000, 70))
+        self.tstFileBox.setMaximumSize(QSize(16777215, 70))
+        self.tstFileBox.setFont(font2)
+        self.tstFileLayout = QHBoxLayout(self.tstFileBox)
+        self.tstFileLayout.setSpacing(10)
+        self.tstFileLayout.setObjectName(u"tstFileLayout")
+        self.tstTypeBox = QComboBox(self.tstFileBox)
+        self.tstTypeBox.addItem("")
+        self.tstTypeBox.addItem("")
+        self.tstTypeBox.setObjectName(u"tstTypeBox")
+        self.tstTypeBox.setMinimumSize(QSize(80, 24))
+        self.tstTypeBox.setMaximumSize(QSize(80, 24))
+        self.tstTypeBox.setFont(font3)
+
+        self.tstFileLayout.addWidget(self.tstTypeBox)
+
+        self.tstPathLine = QLineEdit(self.tstFileBox)
+        self.tstPathLine.setObjectName(u"tstPathLine")
+        self.tstPathLine.setMinimumSize(QSize(900, 22))
+        self.tstPathLine.setMaximumSize(QSize(16777215, 22))
+        self.tstPathLine.setFont(font3)
+
+        self.tstFileLayout.addWidget(self.tstPathLine)
+
+        self.tstPathSelect = QPushButton(self.tstFileBox)
+        self.tstPathSelect.setObjectName(u"tstPathSelect")
+        self.tstPathSelect.setMinimumSize(QSize(80, 24))
+        self.tstPathSelect.setMaximumSize(QSize(80, 24))
+        self.tstPathSelect.setFont(font3)
+
+        self.tstFileLayout.addWidget(self.tstPathSelect)
+
+
+        self.tstFrameLayout.addWidget(self.tstFileBox)
+
+        self.tstViewButton = QPushButton(self.tstFrame)
+        self.tstViewButton.setObjectName(u"tstViewButton")
+        self.tstViewButton.setMinimumSize(QSize(1000, 45))
+        self.tstViewButton.setMaximumSize(QSize(16777215, 45))
+        self.tstViewButton.setFont(font)
+
+        self.tstFrameLayout.addWidget(self.tstViewButton)
+
+
+        self.centralLayout.addWidget(self.tstFrame)
 
         ParusTrnWindow.setCentralWidget(self.centralWidget)
         self.statBar = QStatusBar(ParusTrnWindow)
@@ -503,6 +568,17 @@ class Ui_ParusTrnWindow(object):
 
         self.exGroup.setTitle(QCoreApplication.translate("ParusTrnWindow", u"Extra Options", None))
         self.exOptLine.setPlaceholderText(QCoreApplication.translate("ParusTrnWindow", u"Model training extra options, for advanced users only. Please refer to model training script manual for possible options.", None))
-        self.procButton.setText(QCoreApplication.translate("ParusTrnWindow", u"Initiate Model Training", None))
+        self.trnProcButton.setText(QCoreApplication.translate("ParusTrnWindow", u"Initiate Model Training", None))
+        self.tstConLabel.setText(QCoreApplication.translate("ParusTrnWindow", u"Model Testing Results", None))
+        self.tstFileBox.setTitle(QCoreApplication.translate("ParusTrnWindow", u"Testing Results Selection", None))
+        self.tstTypeBox.setItemText(0, QCoreApplication.translate("ParusTrnWindow", u"Optimum", None))
+        self.tstTypeBox.setItemText(1, QCoreApplication.translate("ParusTrnWindow", u"Final", None))
+
+#if QT_CONFIG(tooltip)
+        self.tstTypeBox.setToolTip(QCoreApplication.translate("ParusTrnWindow", u"Select testing results model source", None))
+#endif // QT_CONFIG(tooltip)
+        self.tstPathLine.setPlaceholderText(QCoreApplication.translate("ParusTrnWindow", u"Select testing results folder", None))
+        self.tstPathSelect.setText(QCoreApplication.translate("ParusTrnWindow", u"Open", None))
+        self.tstViewButton.setText(QCoreApplication.translate("ParusTrnWindow", u"View Testing Results", None))
     # retranslateUi
 
