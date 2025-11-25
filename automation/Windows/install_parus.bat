@@ -10,7 +10,7 @@ ECHO    ^| ^|                             ^| ^|
 ECHO.
 
 :: Set valid Python version range [inclusive, exclusive)
-SET minVersion=3.9.0
+SET minVersion=3.10.0
 SET maxVersion=9.9.9
 
 :: Set Python interpreter
@@ -54,6 +54,9 @@ ECHO ----------------------------------------
 %TPR% -m pip install plotext
 %TPR% -m pip install "PySide6>=6.8"
 %TPR% -m pip install pyqtgraph
+:: Install PyTorch
+SET IPT=%cd%%\automation\environment\install_torch.py
+%TPR% %IPT%
 
 ECHO ----------------------------------------
 ECHO.
