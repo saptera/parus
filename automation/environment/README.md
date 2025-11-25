@@ -1,9 +1,9 @@
 ## Code Execution Environment Helper Files
 
-- `proj_path.pth`: Adds the project package to Python virtual environment `venv` path
+- `proj_path.pth`: Adds the project package to Python environment path
 
-&emsp;&emsp;&emsp;&emsp;-> Usage: place file in `[proj_root]/venv/Lib/site-packages/`
+&emsp;&emsp;&emsp;&emsp;-> Usage: place file in `[executable_root]/Lib/site-packages/`
 
-- `install_torch.py`: Detects the available compute platform (CPU | CUDA) and installs the corresponding PyTorch build
+- `install_parus.py`: Install `parus` project dependencies and build the execution environment
 
-&emsp;&emsp;&emsp;&emsp;-> Usage: run command: `python install_torch.py`
+&emsp;&emsp;&emsp;&emsp;-> Usage: run command: `python install_parus.py`
