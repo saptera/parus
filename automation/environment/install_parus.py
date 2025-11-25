@@ -12,7 +12,7 @@ if sys.version_info < (3, 10, 0):
     sys.exit(-1)
 
 # Upgrade [pip]
-print("\nUpgrading [pip]")
+print("Upgrading [pip]")
 subprocess.check_call(sys.executable + ' -m pip install --upgrade pip')
 # Upgrade [setuptools]
 print("\nUpgrading [setuptools]")
