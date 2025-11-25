@@ -1,14 +1,17 @@
-# Text handling behaviour
-*.py text eol=lf
-*.pth text eol=lf
-*.bat text eol=crlf
-*.ui text eol=lf
-*.svg text eol=lf
+# Source files
+*.py     text eol=lf diff=python
+*.pth    text eol=lf diff=python
+*.bat    text eol=crlf
 
-# Binary formats
-*.ico binary
-*.png binary
+# User interface files
+*.ui     text eol=lf
+*.svg    text eol=lf
+*.ico    binary
+*.png    binary
 
-# Model artifacts handling behaviour
-*.ckpt filter=lfs diff=lfs merge=lfs -text
-*.pklz filter=lfs diff=lfs merge=lfs -text
+# Model artifacts
+*.ckpt   -text filter=lfs diff=lfs merge=lfs
+*.pklz   -text filter=lfs diff=lfs merge=lfs
+
+# Documents
+*.md     text eol=lf
