@@ -166,11 +166,12 @@ def cjsh_write(file, data, level=-1):
                 mfr (str): probe manufacture
                 pn (str): manufacture part number or model
                 sn (str): manufacture serial number or batch number
-                chn (int or float): recording site channel number
+                chn (int | float): recording site channel number
                 note (Any): extra notes
             }
             datetime (str[datetime.ISO-format]): recording date and time information
         }
+    }
 """
 
 
@@ -321,6 +322,7 @@ def arc_plot(arc_file, save=None, close_on_save=True):
             }
             datetime (str[datetime.ISO-format]): recording date and time information
         }
+    }
 """
 
 
