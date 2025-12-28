@@ -103,8 +103,7 @@ class SparseContextLoader(nn.Module):
     def forward(self, x):
         bs, ctx, _ = x.shape
         x_np = x.cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw,
-                       mode='constant', constant_values=0.0)
+        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
         x_context = x_pad[:, :, self.tgt]
         # TODO: Dimension reserved future contexts, currently removed for efficiency
         return torch.from_numpy(x_context[:, 0, :, :]).cuda()
@@ -134,7 +133,7 @@ class EncoderTransformer(nn.Module):
         # self.context_loader = ContextLoader(
         #     emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_loader = SparseContextLoader(
-            emb_dim=context_dim, ant_samp=context_dim // 4, n_samp=input_dim, sel_meth='lin', gap=2
+            emb_dim=context_dim, ant_samp=context_dim // 4, n_samp=input_dim, sel_meth='lin', gap=4
         )
         self.extra_linear1 = nn.Linear(context_dim, 2*context_dim)
         self.extra_linear2 = nn.Linear(2*context_dim, context_dim)
