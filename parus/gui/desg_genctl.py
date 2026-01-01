@@ -543,9 +543,9 @@ class Ui_ParusGenWindow(object):
         self.sigMultMin.setFont(font2)
         self.sigMultMin.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.sigMultMin.setMinimum(0.100000000000000)
-        self.sigMultMin.setMaximum(10.000000000000000)
+        self.sigMultMin.setMaximum(1000000.000000000000000)
         self.sigMultMin.setSingleStep(0.500000000000000)
-        self.sigMultMin.setValue(0.800000000000000)
+        self.sigMultMin.setValue(50.000000000000000)
 
         self.sigMultMinLayout.addWidget(self.sigMultMin)
 
@@ -568,9 +568,9 @@ class Ui_ParusGenWindow(object):
         self.sigMultMax.setFont(font2)
         self.sigMultMax.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.sigMultMax.setMinimum(0.100000000000000)
-        self.sigMultMax.setMaximum(10.000000000000000)
+        self.sigMultMax.setMaximum(1000000.000000000000000)
         self.sigMultMax.setSingleStep(0.500000000000000)
-        self.sigMultMax.setValue(1.500000000000000)
+        self.sigMultMax.setValue(500.000000000000000)
 
         self.sigMultMaxLayout.addWidget(self.sigMultMax)
 
@@ -620,7 +620,7 @@ class Ui_ParusGenWindow(object):
         self.noiMultMin.setFont(font2)
         self.noiMultMin.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.noiMultMin.setMinimum(0.100000000000000)
-        self.noiMultMin.setMaximum(10.000000000000000)
+        self.noiMultMin.setMaximum(1000000.000000000000000)
         self.noiMultMin.setSingleStep(0.500000000000000)
         self.noiMultMin.setValue(1.000000000000000)
 
@@ -645,7 +645,7 @@ class Ui_ParusGenWindow(object):
         self.noiMultMax.setFont(font2)
         self.noiMultMax.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.noiMultMax.setMinimum(0.100000000000000)
-        self.noiMultMax.setMaximum(10.000000000000000)
+        self.noiMultMax.setMaximum(1000000.000000000000000)
         self.noiMultMax.setSingleStep(0.500000000000000)
         self.noiMultMax.setValue(2.500000000000000)
 
