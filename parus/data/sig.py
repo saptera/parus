@@ -12,7 +12,7 @@ __all__ = [
     'spk_lowpass', 'spk_highpass', 'spk_bandpass', 'spk_notch',
     'noise_white', 'noise_freq_decr', 'noise_freq_incr', 'bsl_sft_lin', 'bsl_sft_sin',
     'neuron_sig_slc', 'sig_split', 'sig_merge',
-    'loc_ext_1d', 'sig_peak_zsc', 'sig_peak_fwd', 'peak_extremum',
+    'loc_ext_1d', 'sig_peak_zsc', 'sig_peak_fwd', 'peak_extremum', 'peak_reloc_ex',
     'bin_spk_frq', 'tpt_spk_frq', 'bin_spk_isi', 'tpt_spk_isi',
     'bin_spk_cv', 'tpt_spk_cv', 'bin_spk_cv2', 'tpt_spk_cv2', 'tpt_kde_frq'
 ]
@@ -35,9 +35,10 @@ Function list:
     sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.
   # Peak process functions:
     loc_ext_1d(arr, allow_plateau=True): Detect local extrema of given 1D list or array.
-    sig_peak_zsc(signal, lag, threshold, influence=0.0): Robust signal peak detection using z-scores.
-    sig_peak_fwd(prd, th, neg=True): Signal peak detection using forward difference.
-    peak_extremum(signal, peak, threshold, positive=True, sampling=None): Find the extremum point of peak detections.
+    sig_peak_zsc(signal, lag, th, influence=0.0): Robust signal peak detection using z-scores.
+    sig_peak_fwd(signal, th, neg=True): Signal peak detection using forward difference.
+    peak_extremum(signal, peak, th, neg=True, smp=None): Find the extremum point of peak detections for [sig_peak_zsc].
+    peak_reloc_ex(signal, peak, th=None, neg=True, smp=10): Find the extremum point near the peak location for labels.
   # Feature process functions:
     bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.
     tpt_spk_frq(spk, t=None, g=None, org=0, end=None): Compute average firing frequency for timestamp spikes.
@@ -502,14 +503,14 @@ def loc_ext_1d(arr, allow_plateau=True):
     return {'max': idx[mx], 'min': idx[mi]}
 
 
-def sig_peak_zsc(signal, lag, threshold, influence=0.0):
+def sig_peak_zsc(signal, lag, th, influence=0.0):
     """ Robust signal peak detection using z-scores.
         Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
     Args:
-        signal (list[int | float] | np.ndarray): Input signal
+        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
         lag (int): The length of data will be smoothed, larger lags should be included for more stationary data
-        threshold (int | float): Threshold of standard deviations from the moving mean above to classify as peak
+        th (int | float): Threshold of standard deviations from the moving mean above to classify as peak
         influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
             - 0: Signals have no influence on the threshold, implicitly assume signal is stationary
             - 1: Signals have full influence of normal data points
@@ -530,7 +531,7 @@ def sig_peak_zsc(signal, lag, threshold, influence=0.0):
         avg = lin_sum * win_fac
         std = np.sqrt(abs(sqr_sum * win_fac - avg * avg))  # abs() to avoid negative lavue caused by precision loss
         # Peak detection with influence
-        if abs(s - avg) > threshold * std:
+        if abs(s - avg) > th * std:
             peak[i] = 1 if s > avg else -1
             filt[i + lag] = influence * s + (1 - influence) * filt[i + lag - 1]
         # Update sliding window sums
@@ -539,50 +540,79 @@ def sig_peak_zsc(signal, lag, threshold, influence=0.0):
     return peak
 
 
-def sig_peak_fwd(prd, th, neg=True):
+def sig_peak_fwd(signal, th, neg=True):
     """ Signal peak detection using forward difference.
 
     Args:
-        prd (list[int | float] | np.ndarray): {1D-Scalar} Input prediction results
+        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
         th (int | float): Peak detection threshold
         neg (bool): Negative peak flag -- True = peak less than threshold, False = peak greater than threshold
 
     Returns:
         np.ndarray: {int} Detected peak indices -- 1 = peak, 0 = no peak
     """
-    diff = np.sign(np.ediff1d(prd, to_end=prd[-1:]))
+    diff = np.sign(np.ediff1d(signal, to_end=signal[-1:]))
     diff[1:] = diff[:-1] + diff[1:]
-    det = np.where((prd < th) & (diff == 0), 1, 0) if neg else np.where((prd > th) & (diff == 0), 1, 0)
+    det = np.where((signal < th) & (diff == 0), 1, 0) if neg else np.where((signal > th) & (diff == 0), 1, 0)
     return det.astype(np.int8)
 
 
-def peak_extremum(signal, peak, threshold, positive=True, sampling=None):
+def peak_extremum(signal, peak, th, neg=True, smp=None):
     """ Find the extremum point of peak detections.
+            - This function should be used in pipeline with [sig_peak_zsc]
 
     Args:
-        signal (list[int | float] | np.ndarray): Input signal
+        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
         peak (list[int] | np.ndarray): {1D-int} Detected peak (1 = positive peak, -1 = negative peak, 0 = no peak)
-        threshold (int | float): Limit for the extremum value
-        positive (bool): Flag to define the peak direction (default: True)
-        sampling (int | None): Number of flanking samples to extract around the extremum (default: None = No sampling)
+        th (int | float): Limit for the extremum value
+        neg (bool): Flag to define the negative peak direction (default: True)
+        smp (int | None): Number of flanking samples to extract around the extremum (default: None = No sampling)
 
     Returns:
         tuple[np.ndarray, np.ndarray | None]: {1D-int} Peak extremum indices; {2D-float | None} Signal samples
     """
-    val = 1 if positive else -1
-    th = abs(threshold)
+    val = -1 if neg else 1
+    th = abs(th)
     # Detect extremum position
     det = np.where(peak == val)[0]
     grp = np.split(det, np.where(np.diff(det) != 1)[0] + 1)
     pos = [i[np.argmax(signal[i])] for i in grp if np.max(signal[i]) * val > th]
     # Sampling signal and return
-    if sampling is None:
+    if smp is None:
         return np.array(pos, dtype=int), None
     else:
-        rng = [range(i - sampling, i + sampling + 1) for i in pos]
+        rng = [range(i - smp, i + smp + 1) for i in pos]
         rng = np.clip(rng, a_min=0, a_max=len(signal) - 1)
         smp = signal[rng]
         return np.array(pos, dtype=int), smp
+
+
+def peak_reloc_ex(signal, peak, th=None, neg=True, smp=10):
+    """ Find the extremum point near the peak location.
+            - This function should be used in for aligning manual labelled peaks
+
+    Args:
+        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
+        peak (list[int] | np.ndarray): {1D-int} One-hot peak indices
+        th (int | float | None): Limit for the extremum value (default: None = no limit)
+        neg (bool): Flag to define the negative peak direction (default: True)
+        smp (int): Number of flanking samples to extract around the extremum (default: 10)
+
+    Returns:
+        np.ndarray: {int} Relocated peak indices -- 1 = peak, 0 = no peak
+    """
+    # Get search range
+    det = np.nonzero(peak)[0]
+    rng = np.clip([range(i - smp, i + smp + 1) for i in det], a_min=0, a_max=len(signal) - 1)
+    # Detect local extrema
+    idx = np.argmin(signal[rng], axis=1) if neg else np.argmax(signal[rng], axis=1)
+    pos = rng[np.arange(len(det)), idx]
+    if th is not None:
+        pos = np.array([p for p in pos if signal[p] < th]) if neg else np.array([p for p in pos if signal[p] > th])
+    # Cast to output type
+    res = np.zeros_like(signal, dtype=np.int8)
+    res[pos] = 1
+    return res
 
 
 # Feature process functions ------------------------------------------------------------------------------------------ #
