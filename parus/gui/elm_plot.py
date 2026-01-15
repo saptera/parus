@@ -1045,16 +1045,22 @@ class ResPltLoader(FigureCanvasQTAgg):
             file (str): Parus analysis result HDF5 file
             cplt (str | None): List of colour HEX codes for plotting
         """
+        init_len = 0.1  # 100ms initial view time length
         # Load result data
         self.fp = h5.File(file, 'r')
         self.nch, sig_len = self.fp['raw'].shape[:2]
-        self.t = np.arange(sig_len) / self.fp['frq'][()]
+        self.fs = self.fp['frq'][()]
+        self.t = np.arange(sig_len) / self.fs
         # Initialize data attributes
+        self._raw = None  # Raw waveform data
+        self._spk = {}  # Spike waveform data
         self.wfm = {}  # Waveforms in the data
         self.pos = {}  # Detected spike positions
         # Initialize plot control attributes
         self.__plt_init = False  # Plot initialize status
         self.__ch = 0  # Current channel index
+        self._ixi = 0  # X-axis data initial index
+        self._ixf = round(init_len * self.fs)  # X-axis data final index
         self._y_min = -1  # Y-axis lower bound
         self._y_max = 1  # Y-axis upper bound
         self.__leg = None  # Plot legend
@@ -1088,7 +1094,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.__leg = Legend(self.ax[0], list(self.wfm.values()), list(self.wfm.keys()), loc='upper right', fontsize=16)
         self.ax[0].add_artist(self.__leg)
         # Set 100ms initial view
-        self.set_time(0, 0.1)
+        self.set_time(0, init_len)
 
         # Connect to Qt backend
         super(ResPltLoader, self).__init__(self.fig)
@@ -1113,6 +1119,12 @@ class ResPltLoader(FigureCanvasQTAgg):
         """
         # Set axis bound
         self.ax[1].set_xlim(start, stop)
+        self._ixi = round(start * self.fs)
+        self._ixf = round(stop * self.fs)
+        # Set data
+        self.wfm['RAW'].set_data(self.t[self._ixi:self._ixf], self._raw[self._ixi:self._ixf])
+        for k in self._spk:
+            self.wfm[k].set_data(self.t[self._ixi:self._ixf], self._spk[k][self._ixi:self._ixf])
         # Set tick locations
         self.ax[1].set_xticks(np.linspace(start, stop, 5, endpoint=True))
         self.ax[1].xaxis.set_minor_locator(ticker.AutoMinorLocator(5))
@@ -1154,19 +1166,22 @@ class ResPltLoader(FigureCanvasQTAgg):
         ch = 0 if ch < 0 else ch if ch < self.nch else self.nch - 1
         self.__ch = ch
         # Get amplitude limits based on raw data
-        raw = self.fp['raw'][self.__ch]
-        self._y_min = np.round(np.min(raw) - 5, decimals=-1).item()  # Round down to tens
-        self._y_max = np.round(np.max(raw) + 5, decimals=-1).item()  # Round up to tens
+        self._raw = self.fp['raw'][self.__ch]
+        self._spk = {}  # Reset data store
+        self._y_min = np.round(np.min(self._raw) - 5, decimals=-1).item()  # Round down to tens
+        self._y_max = np.round(np.max(self._raw) + 5, decimals=-1).item()  # Round up to tens
 
         if self.__plt_init:
             # Disable previous active annotations
             self.set_act_wfm(None)
             self.set_act_pos(None, None)
             # Update waveforms
-            self.wfm['RAW'].set_data(self.t, raw)
+            self.wfm['RAW'].set_data(self.t[self._ixi:self._ixf], self._raw[self._ixi:self._ixf])
             if 'spk' in self.fp:
                 for k in self.fp['spk']:
-                    self.wfm[k].set_data(self.t, self.fp['spk'][k][self.__ch])
+                    spk = self.fp['spk'][k][self.__ch]
+                    self._spk[k] = spk
+                    self.wfm[k].set_data(self.t[self._ixi:self._ixf], spk[self._ixi:self._ixf])
             # Always remove previous positions
             for k in self.pos:
                 for p in self.pos[k]:
@@ -1174,11 +1189,15 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.pos = {}  # RESET VAR
         else:
             # Plot raw data
-            self.wfm['RAW'], = self.ax[0].plot(self.t, raw, color='w' if cs_dark() else 'k', alpha=0.8, label="RAW")
+            self.wfm['RAW'], = self.ax[0].plot(self.t[self._ixi:self._ixf], self._raw[self._ixi:self._ixf],
+                                               color='w' if cs_dark() else 'k', alpha=0.8, label="RAW")
             # Plot spike waveforms
             if 'spk' in self.fp:
                 for k in self.fp['spk']:
-                    self.wfm[k], = self.ax[0].plot(self.t, self.fp['spk'][k][self.__ch], color=self._cdct[k], label=k)
+                    spk = self.fp['spk'][k][self.__ch]
+                    self._spk[k] = spk
+                    self.wfm[k], = self.ax[0].plot(self.t[self._ixi:self._ixf], spk[self._ixi:self._ixf],
+                                                   color=self._cdct[k], label=k)
 
         # Plot position
         cnt = 0  # Position data counter
