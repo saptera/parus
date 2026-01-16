@@ -12,6 +12,7 @@ from matplotlib.colors import Colormap, to_rgba
 from matplotlib.legend import Legend
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
+import warnings
 
 __package__ = 'parus.gui'
 __name__ = 'parus.gui.elm_plot'
@@ -92,9 +93,23 @@ class BlitManager:
             art (artist.Artist): The artist to be added.
         """
         if art.figure != self.cvs.figure:
-            raise RuntimeError("Requested artist not on the targeted figure!")
+            warnings.warn("Requested artist not on the targeted figure!", RuntimeWarning, stacklevel=2)
         art.set_animated(True)
         self.artists.append(art)
+
+    def remove_artist(self, art):
+        """ Remove an artist from the manager.
+
+        Args:
+            art (artist.Artist): The artist to be added.
+        """
+        if art.figure != self.cvs.figure:
+            warnings.warn("Requested artist not on the targeted figure!", RuntimeWarning, stacklevel=2)
+        if art in self.artists:
+            art.set_animated(False)
+            self.artists.remove(art)
+        else:
+            warnings.warn("Requested artist not managed!", RuntimeWarning, stacklevel=2)
 
     def on_draw(self, event):
         """ Callback to register with [draw_event]. """
@@ -826,6 +841,7 @@ class WfmPosMarker(BlitManager):
 
         # Initialize parent class
         super().__init__(canvas, self._csr_ln + self._ano_mk)
+        self.__ax = axes
         # Set marker visibility
         self.__wfm_mkr.set_visible(wfm is not None)
         self.__pos_mkr.set_visible(False)
@@ -913,6 +929,46 @@ class WfmPosMarker(BlitManager):
             self.__pos_bkg.set_visible(True)
             self.__pos_on = True
         self.update()
+
+    def add_pos(self, wfm_key, chn_key, pos_key):
+        """ Add spike position to interactive objects.
+
+        Args:
+            wfm_key (str): Waveform name
+            chn_key (str): Channel name
+            pos_key (str): Spike name
+        """
+        # Add insertion artist
+        add_mrk, = self.__ax[1].plot([None], [None], marker='P', ms=8, color='crimson', ls='none')
+        self._ano_mk.append(add_mrk)
+        self.add_artist(add_mrk)
+        # Add removal artist
+        rmv_mrk, = self.__ax[1].plot([None], [None], marker='X', ms=9, color='crimson', ls='none')
+        self._ano_mk.append(rmv_mrk)
+        self.add_artist(rmv_mrk)
+        # Set control variables
+        self.__cor_idx[wfm_key][chn_key][pos_key] = {'+': set(), '-': set()}  # Use set to keep uniqueness
+        self.__cor_mkr[wfm_key][chn_key][pos_key] = {'+': add_mrk, '-': rmv_mrk}
+
+    def del_pos(self, wfm_key, chn_key, pos_key):
+        """ Remove spike position from interactive objects.
+
+        Args:
+            wfm_key (str): Waveform name
+            chn_key (str): Channel name
+            pos_key (str): Spike name
+        """
+        # Remove from control variables
+        self.__cor_idx[wfm_key][chn_key].pop(pos_key)
+        mkr = self.__cor_mkr[wfm_key][chn_key].pop(pos_key)
+        # Remove insertion artist
+        self._ano_mk.remove(mkr['+'])
+        self.remove_artist(mkr['+'])
+        mkr['+'].remove()
+        # Remove removal artist
+        self._ano_mk.remove(mkr['-'])
+        self.remove_artist(mkr['-'])
+        mkr['-'].remove()
 
     def chk_cor(self):
         """ Check if any manual correction has been made.
@@ -1056,6 +1112,8 @@ class ResPltLoader(FigureCanvasQTAgg):
         self._spk = {}  # Spike waveform data
         self.wfm = {}  # Waveforms in the data
         self.pos = {}  # Detected spike positions
+        self._pos_add = {}  # Added spike positions
+        self._pos_del = {}  # Removed spike positions
         # Initialize plot control attributes
         self.__plt_init = False  # Plot initialize status
         self.__ch = 0  # Current channel index
@@ -1209,16 +1267,27 @@ class ResPltLoader(FigureCanvasQTAgg):
                     sct = self.ax[1].scatter(self.t[pos], [cnt] * len(pos), color=self._cdct[k])
                     self.pos[k][p] = {'plt': sct, 'idx': cnt}
                     cnt += 1  # Counter
+        # Plot added position
+        for name in self._pos_add:
+            k, c, p = name
+            if c == str(self.__ch):
+                # Plot an empty row
+                sct = self.ax[1].scatter([], [], color=self._cdct[k])
+                self.pos[k][p] = {'plt': sct, 'idx': cnt}
+                cnt += 1  # Counter
+        # Plot removed position markers
+        for name in self._pos_del:
+            k, c, p = name
+            self._pos_del[name].set_visible(c == str(self.__ch))
 
         # Update signal Y axis limits
         self.set_amp(self._y_min, self._y_max)
         # Update position Y axis
         plbl, pclr = ("No Spike", 'r') if cnt == 0 else ("Spike", 'w' if cs_dark() else 'k')
         self.ax[1].set_ylabel(plbl, fontsize=14, fontweight='bold', color=pclr)
-        self.ax[1].set_ylim(-1, cnt + 1)
-        ano = sum([list(self.pos[k].keys()) for k in self.pos], [])
-        self.ax[1].set_yticks(np.arange(len(ano)))
-        self.ax[1].set_yticklabels(ano)
+        self.ax[1].set_ylim(-1, cnt)
+        self.ax[1].set_yticks(sum([[self.pos[k][p]['idx'] for p in self.pos[k]] for k in self.pos], []))
+        self.ax[1].set_yticklabels(sum([list(self.pos[k].keys()) for k in self.pos], []))
 
         # Force figure update
         if self.__plt_init:
@@ -1315,7 +1384,10 @@ class ResPltLoader(FigureCanvasQTAgg):
             if wfm_key == 'RAW':
                 self.set_act_wfm(wfm_key)
         else:
-            pos_dat = self.fp['pos'][wfm_key][str(self.__ch)][pos_key][()]
+            if (wfm_key, str(self.__ch), pos_key) in self._pos_add:
+                pos_dat = self._pos_add[(wfm_key, str(self.__ch), pos_key)]
+            else:
+                pos_dat = self.fp['pos'][wfm_key][str(self.__ch)][pos_key][()]
             self._wpm.set_pos(pos_dat, self.pos[wfm_key][pos_key]['idx'], wfm_key, pos_key)
             # Force the active waveform to be associated with spike position records
             if self.wfm[wfm_key].get_visible():
@@ -1323,9 +1395,55 @@ class ResPltLoader(FigureCanvasQTAgg):
             else:
                 self.set_act_wfm('RAW')
 
+    def add_pos(self, wfm_key, pos_key):
+        """ Add cell to the results.
+
+        Args:
+            wfm_key (str): Waveform name key
+            pos_key (str): Spike position name key
+        """
+        # Record added cell
+        name = (wfm_key, str(self.__ch), pos_key)
+        if name not in self._pos_add:
+            self._pos_add[name] = np.zeros_like(self._raw, dtype=np.int8)
+            # Update annotation list
+            ano = sum([list(self.pos[k].keys()) for k in self.pos], []) + [pos_key]
+            # Plot an empty row
+            sct = self.ax[1].scatter([], [], color=self._cdct[wfm_key])
+            self.pos[wfm_key][pos_key] = {'plt': sct, 'idx': len(ano) - 1}
+            # Update position Y axis
+            self.ax[1].set_ylabel("Spike", fontsize=14, fontweight='bold', color='w' if cs_dark() else 'k')
+            self.ax[1].set_ylim(-1, len(ano))
+            self.ax[1].set_yticks(np.arange(len(ano)))
+            self.ax[1].set_yticklabels(ano)
+            # Inform BlitManager
+            self._wpm.add_pos(wfm_key, str(self.__ch), pos_key)
+            # Force figure update
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
+    def del_rcv_pos(self, wfm_key, pos_key):
+        """ Remove or restore cell from the results.
+
+        Args:
+            wfm_key (str): Waveform name key
+            pos_key (str): Spike position name key
+        """
+        name = (wfm_key, str(self.__ch), pos_key)
+        if name in self._pos_del:
+            mk = self._pos_del.pop(name)
+            mk.remove()
+        else:
+            mk = self.ax[1].axhline(y=self.pos[wfm_key][pos_key]['idx'], linewidth=10, color='r', alpha=0.5, zorder=255)
+            self._pos_del[name] = mk
+        # Force figure update
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+
     def check_correction(self):
         """ Check if manual correction exist. """
-        return self._wpm.chk_cor()
+        flag = (len(self._pos_del) > 0) or self._wpm.chk_cor()
+        return flag
 
     def make_correction(self):
         """ Set all manual corrected position to current data. """
@@ -1340,6 +1458,24 @@ class ResPltLoader(FigureCanvasQTAgg):
                     if c == str(self.__ch):
                         p_idx = np.nonzero(p_bin[k][c][p])[0]
                         self.pos[k][p]['plt'].set_offsets(np.c_[self.t[p_idx], [self.pos[k][p]['idx']] * len(p_idx)])
+        # Set added cells
+        for name in self._pos_add:
+            k, c, p = name
+            cor_data = self._pos_add[name] + cor[k][c][p]
+            p_idx = np.nonzero(cor_data)[0]
+            # Record valid addition
+            if len(p_idx) > 0:
+                p_bin[k][c][p] = cor_data.copy()
+                if c == str(self.__ch):
+                    self.pos[k][p]['plt'].set_offsets(np.c_[self.t[p_idx], [self.pos[k][p]['idx']] * len(p_idx)])
+        self._pos_add = {}  # Reset
+        # Set removed cells
+        for name in self._pos_del:
+            k, c, p = name
+            p_bin[k][c].pop(p)  # Remove data
+            self._pos_del[name].remove()  # Remove marker
+            self._wpm.del_pos(k, c, p)  # Inform BlitManager
+        self._pos_del = {}  # Reset
         # Reset all corrections
         self._wpm.reset_cor()
         # Force figure update

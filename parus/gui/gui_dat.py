@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import re
 import json
 import numpy as np
 import h5py as h5
@@ -22,17 +23,19 @@ from . import cs_dark
 from .desg_modinf import Ui_ParusInfWindow
 from .desg_spksrt import Ui_ParusSrtWindow
 from .desg_wfmsel import Ui_WfmSelWindow
+from .desg_posadd import Ui_PosAddWindow
 from .desg_resver import Ui_ParusResWindow
 from .elm_proc import (CellCheckbox, CellData, PyScriptExec, ProcConsole, ProgBusyDialog,
                        path_selector, table_loader, selection_operator)
 from .elm_plot import LoopedColormap, ClstFeatViewer, ResPltLoader
 
-__all__ = ['ParusInf', 'ParusSrt', 'WfmSel', 'ParusRes']
+__all__ = ['ParusInf', 'ParusSrt', 'WfmSel', 'PosAdd', 'ParusRes']
 """
 Class list:
   ParusInf(parent=None): Parus data inference window.
   ParusSrt(parent=None): Parus spike sorting window.
   WfmSel(key, raw, parent=None): Result waveform channel selection window.
+  PosAdd(wfm_key, pos_key, parent=None): Result adding neuron management window.
   ParusRes(file, parent=None): Parus inference results viewing and validation window.
 """
 
@@ -1287,6 +1290,74 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
                                           QtWidgets.QMessageBox.StandardButton.Ok)
 
 
+class PosAdd(QtWidgets.QMainWindow, Ui_PosAddWindow):
+    key_sig = QtCore.Signal(str, str)  # New neuron name signal
+
+    def __init__(self, wfm_key, pos_key, parent=None):
+        """ Result adding neuron management window.
+
+        Args:
+            wfm_key (list[str]): Waveform channel name list
+            pos_key (list[str]): Position name list with associated waveform prefix
+            parent: Parent window or widget
+        """
+        # Initialize GUI
+        super(PosAdd, self).__init__(parent)
+        self.setupUi(self)
+        icon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "assets/icon.ico"))
+        self.setWindowIcon(icon)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose, False)
+
+        # Setup waveform selection
+        [self.wfmCombo.addItem(k) for k in wfm_key]
+        # Name validation control
+        self.__name = None
+        self.__pattern = re.compile(r'^[A-Za-z][A-Za-z0-9_]*$')
+        self.__pos_lst = pos_key.copy()
+        self.chk_cid_name()
+        # Link controls
+        self.wfmCombo.currentIndexChanged.connect(self.chk_cid_name)
+        self.cidLine.textChanged.connect(self.chk_cid_name)
+        self.addButton.clicked.connect(self.__add_send)
+        self.cancelButton.clicked.connect(self.hide)
+
+    def chk_cid_name(self):
+        """ Verify the legitimacy of input neuron name. """
+        wfm = self.wfmCombo.currentText()
+        cid = self.cidLine.text()
+        if bool(wfm) and bool(self.__pattern.match(cid)):
+            key = wfm + ' - ' + cid
+            if key in self.__pos_lst:
+                self.cidStatus.setText(
+                    "<html><head/><body><p><span style=\"color:#ffa500;\">Duplicate</span></p></body></html>")
+                self.addButton.setEnabled(False)
+                self.__name = None
+            else:
+                self.cidStatus.setText(
+                    "<html><head/><body><p><span style=\"color:#008000;\">Valid</span></p></body></html>")
+                self.addButton.setEnabled(True)
+                self.__name = (wfm, cid)
+        else:
+            self.cidStatus.setText(
+                "<html><head/><body><p><span style=\"color:#ff0000;\">Invalid</span></p></body></html>")
+            self.addButton.setEnabled(False)
+            self.__name = None
+
+    def upd_pos_lst(self, pos_key):
+        """ Update position name list.
+
+        Args:
+            pos_key (list[str]): Position name list with associated waveform prefix
+        """
+        self.__pos_lst = pos_key.copy()
+
+    def __add_send(self):
+        """ Send added neuron signal. """
+        self.__pos_lst.append(self.__name[0] + ' - ' + self.__name[1])
+        self.key_sig.emit(self.__name[0], self.__name[1])
+        self.hide()
+
+
 class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
     def __init__(self, file, parent=None):
         """ Parus inference results viewing and validation window.
@@ -1328,7 +1399,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         pos_key = sum([[k + ' - ' + p for p in self._result.pos[k]] for k in self._result.pos], [])
         [self.actanoComboBox.addItem(k) for k in pos_key]
 
-        # Set up waveform selection window
+        # Setup waveform selection window
         wfm_key = [k for k in self._result.wfm]
         wfm_raw = ['RAW' in k for k in wfm_key]
         self.__wfm_sel_win = WfmSel(wfm_key, wfm_raw, self)
@@ -1336,6 +1407,10 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Set active waveform to be raw
         self.__act_wfm = 'RAW'
         self._result.set_act_wfm(self.__act_wfm)
+
+        # Setup neuron add window
+        self.__pos_add_win = PosAdd(wfm_key[1:], pos_key, self)
+        self.__pos_add_win.key_sig.connect(self.__add_pos)
 
         # Set time controls
         self.__upd_time = True  # Plot time range update flag
@@ -1513,6 +1588,12 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.__act_pos_key_control(11)
         elif event.key() == QtCore.Qt.Key.Key_F12:
             self.__act_pos_key_control(12)
+        # Cell add and remove keys
+        elif event.key() == QtCore.Qt.Key.Key_Insert:
+            self.__call_add_win()
+        elif event.key() == QtCore.Qt.Key.Key_Delete:
+            self.__del_rcv_pos()
+        # Help key
         elif event.key() == QtCore.Qt.Key.Key_H:
             self.help_window()
         else:
@@ -1648,7 +1729,9 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         # Update annotation list
         self.actanoComboBox.clear()
         pos_key = sum([[k + ' - ' + p for p in self._result.pos[k]] for k in self._result.pos], ['NONE'])
-        [self.actanoComboBox.addItem(k) for k in pos_key]
+        pos_ord = sum([[self._result.pos[k][p]['idx'] + 1 for p in self._result.pos[k]] for k in self._result.pos], [0])
+        [self.actanoComboBox.addItem(pos_key[k]) for k in pos_ord]
+        self.__pos_add_win.upd_pos_lst(pos_key)
         # Update amplitude controls
         self.yminSpinBox.setMinimum(self._result.ax[0].get_ylim()[0])
         self.yminSpinBox.setValue(self._result.ax[0].get_ylim()[0])
@@ -1678,6 +1761,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             QtWidgets.QMessageBox.warning(self, "Warning", "Selected index [%d] exceed total number of cells [%d]\n"
                                                            "Set to maximum available cell!" % (idx, tot - 1),
                                           QtWidgets.QMessageBox.StandardButton.Ok)
+            self.actanoComboBox.setCurrentIndex(tot - 1)
 
     def __sel_wfm(self, sel):
         """ Select waveform(s) to be visible.
@@ -1705,6 +1789,29 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             # Set back index if previous selection is still valid
             if idx != 0:
                 self.actanoComboBox.setCurrentIndex(idx)
+
+    def __call_add_win(self):
+        """ Activate cell adding window. """
+        self.__pos_add_win.chk_cid_name()
+        self.__pos_add_win.show()
+
+    def __add_pos(self, wfm, pos):
+        """  Add cell to the results.
+
+        Args:
+            wfm (str): Waveform channel name
+            pos (str): New neuron name
+        """
+        self._result.add_pos(wfm, pos)
+        self.actanoComboBox.addItem(wfm + ' - ' + pos)
+        self.__pos_add_win.cidLine.clear()
+
+    def __del_rcv_pos(self):
+        """ Remove or restore active cell. """
+        key = self.actanoComboBox.currentText()
+        if key and (key != 'NONE'):
+            wfm, pos = key.split(' - ')
+            self._result.del_rcv_pos(wfm, pos)
 
     def __toggle_lnk_ano(self):
         """ Force re-emit waveform selection signal with linked annotation check box. """
@@ -1766,6 +1873,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self._save_proc.dst = None
         self._save_proc.data = None
         self._result.fp = h5.File(self.file, 'r')  # Reopen source file
+        self.__set_act_chn()  # Refresh current channel plot
         # Inform user with dialogs
         self.__save_msg.hide()
         QtWidgets.QMessageBox.information(self, "Saving", "Results saved to [%s]" % self.file)
@@ -1789,5 +1897,6 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             "[Control] + [Number Key]:    Toggle waveform\n\n"
             "[F1] ~ [F12]:    Activate annotation index\n        [Left Mouse Button]:    Add spike to annotation\n"
             "        [Right Mouse Button]:    Remove spike from annotation\n\n"
+            "[INSERT]:    Add cell record\n[DELETE]:    Remove or restore active cell\n\n"
             "[H]:    Show this help information"
         )
