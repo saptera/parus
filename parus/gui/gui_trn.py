@@ -246,9 +246,9 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
                 # Compute data
                 self.parent.sig = np.mean(raw[idx], axis=0).tolist()
                 ra = asp - self.parent.smpAntSpinbox.value()
-                re = ra + self.parent.smpPstSpinbox.value() + 1
-                self.parent.rng = [ra, re]
-                self.parent.pos = np.argmin(self.parent.sig[ra:re]).item() + ra
+                rp = ra + self.parent.smpPstSpinbox.value() + 1
+                self.parent.rng = [ra, rp]
+                self.parent.pos = np.argmin(self.parent.sig[ra:rp]).item() + ra
                 # Save results
                 if self.save:
                     name = "_".join([self.parent.meta['probe']['typ'], self.parent.meta['system']['typ'],
