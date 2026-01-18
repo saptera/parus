@@ -83,7 +83,7 @@ Recognized file extensions are `.pklz` and `.pkz`.
 
 The CJSH file format is a structured container for JSON data.
 1. The data is serialized using `json` and compressed with `zlib`.
-2. A SHA-256 checksum of the compressed data is generated using `hashlib`.
+2. SHA-256 checksum of the compressed data is generated using `hashlib`.
 3. The compressed data is stored under the `arc` key, and the checksum is stored under the `cks` key.
 4. The resulting structure is serialized again with `json` and compressed with `zlib` using compression level `0`.
 
@@ -101,31 +101,31 @@ All archived neural signal files are store with `CJSH` format defined above.
 
 The data structure of archived spike waveform is defined as follows:
 
-> - data (`dict`): signal data structure 
+> - data (`dict`): signal data structure
 >     - sig (`list[float]`): neural signal data
 >     - pos (`int`): index of spike location in `sig`
->     - rng (`list[int, int]` | `None`): 2 indices to define refined signal range
+>     - rng (`list[int, int]` | `null`): 2 indices to define refined signal range
 >     - freq (`int` | `float`): recording frequency of `sig`
-> - meta (`dict`): metadata structure of the signal 
->     - organism (`dict`): organism for the signal recording 
+> - meta (`dict`): metadata structure of the signal
+>     - organism (`dict`): organism for the signal recording
 >         - gn (`str`): generic name
 >         - se (`str`): specific epithet
->         - st (`str`): strain,
->         - mod (`str` | `None`): genetic modification, None for wildtype
+>         - st (`str`): strain identifier
+>         - mod (`str` | `null`): genetic modification, `None` (JSON `null`) for wildtype
 >         - note (`Any`): extra notes
 >     - region (`list`): recoding region(s) of the signal
 >     - neuron (`dict`): neural cell information 
 >         - typ (`str`): cell type
 >         - spk (`str`): spike type - `ss` for simple spike, `cs` for complex spike or `fp` for field potential
 >         - note (`Any`): extra notes
->     - system (`dict`): recording system information 
+>     - system (`dict`): recording system information
 >         - typ (`str`): system type - `d` for digital or `a` for analog
 >         - mfr (`str`): system manufacture
 >         - pn (`str`): manufacture part number or model
 >         - sn (`str`): manufacture serial number or batch number
 >         - soc (`int` | `float` | `str`): Socket in system for recording
 >         - note (`Any`): extra notes
->     - probe (`dict`): recording probe information 
+>     - probe (`dict`): recording probe information
 >         - typ (`str`): probe type - `si` for silicon, `w` for tungsten, `gls` for glass pipette etc.
 >         - mfr (`str`): probe manufacture
 >         - pn (`str`): manufacture part number or model
@@ -142,28 +142,28 @@ Data can be plotted using `arc_plot` API from the `parus.fio` module.
 
 The data structure of archived background waveform is defined as follows:
 
-> - data (`dict`): neural recording noise data structure 
+> - data (`dict`): neural recording noise data structure
 >     - noi (`list[float]`): neural recording noise data
 >     - freq (`int` | `float`): recording frequency of `noi`
-> - meta (`dict`): metadata structure of the noise 
->     - organism (`dict`): organism for the signal recording 
+> - meta (`dict`): metadata structure of the noise
+>     - organism (`dict`): organism for the signal recording
 >         - gn (`str`): generic name
 >         - se (`str`): specific epithet
->         - st (`str`): strain,
->         - mod (`str` | `None`): genetic modification, None for wildtype
+>         - st (`str`): strain identifier
+>         - mod (`str` | `null`): genetic modification, `None` (JSON `null`) for wildtype
 >         - note (`Any`): extra notes
 >     - region (`list`): recoding region(s) of the signal
->     - feature (`dict`): recorded features in the noise signal 
+>     - feature (`dict`): recorded features in the noise signal
 >         - typ (`list[str]`): existing noise - `fp` for field potential, `ele` for elec-sti, `opto` for opto-sti etc.
 >         - note (`Any`): extra notes
->     - system (`dict`): recording system information 
+>     - system (`dict`): recording system information
 >         - typ (`str`): system type - `d` for digital or `a` for analog
 >         - mfr (`str`): system manufacture
 >         - pn (`str`): manufacture part number or model
 >         - sn (`str`): manufacture serial number or batch number
 >         - soc (`int` | `float` | `str`): Socket in system for recording
 >         - note (`Any`): extra notes
->     - probe (`dict`): recording probe information 
+>     - probe (`dict`): recording probe information
 >         - typ (`str`): probe type - `si` for silicon, `w` for tungsten, `gls` for glass pipette etc.
 >         - mfr (`str`): probe manufacture
 >         - pn (`str`): manufacture part number or model
@@ -221,13 +221,14 @@ Multiple files will be created during model training.
 
 ```
 Model artifacts folder
-├── optimum.ckpt    <- Model weights with best validation set performace
-├── final.ckpt      <- Model weights after training finalized
-├── hparams.json    <- Hyperparameters used for training
-├── history.json    <- Training history
-├── train.log       <- Training event log
-├── tst_opt.pklz    <- Test results of [optimum.ckpt] weights
-└── tst_fin.pklz    <- Test results of [final.ckpt] weights
+├── optimum.ckpt        <- Model weights with best validation set performace
+├── final.ckpt          <- Model weights after training finalized
+├── hparams.json        <- Hyperparameters used for training
+├── history.json        <- Training history
+├── train.log           <- Training event log
+├── tst_opt.pklz        <- Test results of [optimum.ckpt] weights
+├── tst_fin.pklz        <- Test results of [final.ckpt] weights
+└── vld_ep*_stp*.png    <- [optional] Saved model validation results during training
 ```
 
 ### Model weights (`*.ckpt`) file
@@ -247,7 +248,7 @@ This file is store as standard JSON format with indent of `2`.
 
 The data contains following keys:
 
-> - data (`dict`): 
+> - data (`dict`):
 >     - n_trn_samples (`int`): Number of training samples
 >     - n_vld_samples (`int`): Number of validation samples
 >     - n_tst_samples (`int`): Number of testing samples
@@ -255,7 +256,7 @@ The data contains following keys:
 >     - dataset_name (`str`): Name of the dataset
 >     - spike_groups (`list[str]`): List of spike types
 >     - sampling_frequency (`int` |  `float`): Sampling rate of the samples
-> - model (`dict`): 
+> - model (`dict`):
 >     - model_name (`str`): Name of the model
 >     - sequence_length (`int`): Frame size (number of data points) in each sample
 >     - d_context (`int`): Embedding sparse context element length
@@ -264,7 +265,7 @@ The data contains following keys:
 >     - n_layers (`int`): Number of sub-encoder-layers in the encoder
 >     - d_feedforward (`int`): Dimension of the feedforward network model
 >     - output_channels (`int`): Number of output features (length of `spike_groups`)
-> - train (`dict`): 
+> - train (`dict`):
 >     - start_epoch (`int`): Initial epoch number, usually unchanged as `1`
 >     - total_epoch (`int`): Total number of epoches
 >     - batch_size (`int`): Data batch size
@@ -299,3 +300,31 @@ All model test results files are store with `PKLZ` format defined above.
 
 The model test results can be visualized with PARUS CLI `parus.scripts.prddsp` or
 GUI `Model Training` -> `Model Training` -> `View Testing Results`.
+
+## Probe geometry (*.prb) file
+
+The PRB file format is a structured container for JSON data.
+
+The data contains following keys:
+
+> - info (`dict`):
+>     - mfr (`str`): Probe manufacturer
+>     - typ (`str`): Name of the probe
+>     - pn (`str` | `null`): Probe part number
+>     - sn (`str` | `null`): Probe serial number
+>     - sty (`str`): {'left' | 'right' | 'edge' | 'centre'} Channel alignment (plotting only)
+>     - note (`Any`): Notes
+> - site (`list`):
+>     - _=[element]=_ (`dict`): Recording site information
+>         - id (`int`): Channel index
+>         - shk (`int`): Channel shank index
+>         - col (`int`): Channel column index with shank
+>         - geo (`tuple[float, float]`): Channel position (X, Y)
+>         - pad (`tuple[float, float]`): Channel physical size in μm
+
+Files can be read using any `json` module.  
+Linear probe data (e.g. from JRClust) can be converted with using `conv_lin_prb` API from the `parus.data` module.
+
+
+Probe can be visualized using `plot_prb` API from the `parus.data` module.  
+Probe can be visualized with PARUS `Data Processing` -> `Spike Sorting` -> `View` at the probe section.
