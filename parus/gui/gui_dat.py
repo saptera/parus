@@ -581,7 +581,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     self.parent.avgw[w][n] = [avg[i] for i in sid]
                     self.parent.idcs[w][n] = ["%s_c%d_%d" % (w, n, i + 1) for i in range(len(sid))]
                     self.parent.selc[w][n] = [len(cls[i]) > self.parent.min_cnt for i in sid]
-                    self.parent.ngrp[w][n] = [(None, None)] * len(sid)
+                    self.parent.ngrp[w][n] = [(None, [n])] * len(sid)
                 # Check multi-channel
                 if self.nbr is not None:
                     res = find_crsch_sig(self.parent.clst[w], self.nbr,
@@ -590,7 +590,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                         for gp in g:
                             self.parent.idcs[w][gp[0]][gp[1]] = "%s_mc_%d" % (w, i + 1)
                             self.parent.selc[w][gp[0]][gp[1]] = True
-                            self.parent.ngrp[w][gp[0]][gp[1]] = (i + 1, [n[0] for n in g])
+                            self.parent.ngrp[w][gp[0]][gp[1]] = (i + 1, list(set([n[0] for n in g])))
             # Set flag
             self.success = True
 
@@ -800,7 +800,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 itm_clr = CellData("", bkg=tuple([round(c * 255) for c in self.cmap(row)[:3]]), ro=True)
                 itm_clr.setFlags(~QtCore.Qt.ItemFlag.ItemIsSelectable)
                 self.spkCidTable.setItem(row, 10, itm_clr)
-                self.spkCidTable.setItem(row, 11, CellData("[%s] - %d" % (w, self._ch), aln='c', ro=True))
+                unit_chs = ', '.join([str(_) for _ in self.ngrp[w][self._ch][i][1]])
+                self.spkCidTable.setItem(row, 11, CellData("[%s] - %s" % (w, unit_chs), aln='c', ro=True))
                 # Counter
                 self.__igrp.append([n, i])
                 row += 1
@@ -905,6 +906,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 len_lst.append(clst.size)
                 mrg_lst.append(cb.id)
                 grp_lst.append(self.ngrp[cb.id[1]][self._ch][cb.id[2]])
+                cb.setChecked(False)  # Uncheck
+        self.spkMrgButton.setEnabled(False)  # Disable merge button
         # Sort and merge cluster
         if (self.prb is None) or (all([g[0] is None for g in grp_lst])):
             idx = np.argsort(len_lst, stable=True)[-1]
@@ -919,10 +922,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             new_clst = np.sort(np.concatenate(new_clst), stable=True)
             self.clst[gw][self._ch][gi] = new_clst.copy()
             # Rename for merged multichannel cell
-            ngp = set([g[0] for g in grp_lst])
+            ngp = set([g[0] for g in grp_lst if g[0] is not None])
             if len(ngp) > 1:
                 name = mrg_lst[idx][0]
                 mcc = list(set(sum([g[1] for g in grp_lst], [])))
+                mcc.remove(self._ch)  # Remove current channel
                 for n in mcc:
                     ext_ilst = []
                     ext_clst = []
@@ -935,7 +939,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     # Extend merge for the multichannel cell
                     if len(ext_clst) > 1:
                         self.clst[gw][n][ext_ilst[0]] = np.sort(np.concatenate(ext_clst), stable=True)
-                        for k in ext_ilst[1:]:
+                        for k in reversed(ext_ilst[1:]):
                             self.clst[gw][n].pop(k)
                             self.avgw[gw][n].pop(k)
                             self.idcs[gw][n].pop(k)
