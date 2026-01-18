@@ -7,7 +7,7 @@ __name__ = 'parus.data.clst'
 
 __all__ = [
     'cls_cosamp_blk', 'cls_cosamp_prg', 'cls_crscor_blk', 'cls_crscor_prg',
-    'pos_ripple_flt', 'post_cls_chk', 'get_sig_nbr', 'find_crsch_sig'
+    'pos_ripple_flt', 'post_cls_chk', 'get_sig_nbr', 'find_crsch_sig', 'crsch_grp'
 ]
 """
 Function list:
@@ -22,6 +22,7 @@ Function list:
   # Multichannel cluster merge functions:
     get_sig_nbr(prb, lim=60): Get neighbouring channels of multichannel probe for possible same cell source.
     find_crsch_sig(cls, grp, tot, rng=5, th=0.8): Find cross channel signal cells for multichannel probes.
+    crsch_grp(res): Grouping detected cross channel cells.
 Protected functions:
   _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0): Create a Gaussian weight vector centered at peak index.
   _get_wfm_smp(sig, pos, asp, psp): Get waveform samples for clustering algorithms.
@@ -462,7 +463,7 @@ def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
                 if len(cls[c]) == 0:
                     continue
                 for j, tgt in enumerate(cls[c]):
-                    # Find match clsitions
+                    # Find match clusters
                     loc = np.zeros(tot, dtype=np.int8)
                     loc[tgt] = 1
                     match = np.sum(np.sum(loc[idx], axis=1) == 1)
@@ -471,3 +472,33 @@ def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
                     if score > th:
                         res.append({'main': {'ch': g, 'id': i}, 'sub': {'ch': c, 'id': j}})
     return res
+
+
+def crsch_grp(res):
+    """ Grouping detected cross channel cells.
+
+    Args:
+        res (list[dict[str, dict[str, int] | dict[str, int]]]): Main cell and sub cell information
+
+    Returns:
+        list[tuple(int, int)]: Signal group list as (channel, index) pair
+    """
+    grp = []  # INIT VAR
+    for p in res:
+        pm = (p['main']['ch'], p['main']['id'])
+        ps = (p['sub']['ch'], p['sub']['id'])
+        if grp:
+            for g in grp:
+                ck_gm = pm in g
+                ck_gs = ps in g
+                if ck_gm or ck_gs:
+                    if not ck_gm:
+                        g.append(pm)
+                    if not ck_gs:
+                        g.append(ps)
+                    break
+            else:
+                grp.append([ps, pm])
+        else:
+            grp.append([ps, pm])
+    return grp

@@ -9,6 +9,7 @@ import h5py as h5
 import matplotlib as mpl
 from matplotlib.backend_bases import _Mode
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
+import matplotlib.pyplot as plt
 from PySide6 import QtCore, QtGui, QtWidgets
 import warnings
 
@@ -16,8 +17,8 @@ __package__ = 'parus.gui'
 __name__ = 'parus.gui.gui_dat'
 from .. import pkg_data
 from ..fio import h5_load_dat
-from ..data import (sig_peak_fwd, cls_cosamp_blk, cls_crscor_blk, pos_ripple_flt, post_cls_chk,
-                    tpt_spk_frq, tpt_spk_isi, tpt_spk_cv, tpt_spk_cv2)
+from ..data import (plot_prb, sig_peak_fwd, cls_cosamp_blk, cls_crscor_blk, pos_ripple_flt, post_cls_chk,
+                    get_sig_nbr, find_crsch_sig, crsch_grp,tpt_spk_frq, tpt_spk_isi, tpt_spk_cv, tpt_spk_cv2)
 from ..scripts import mod_inf
 from . import cs_dark
 from .desg_modinf import Ui_ParusInfWindow
@@ -339,12 +340,17 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.asp = {}  # Anterior samples
         self.psp = {}  # Posterior samples
         self.beta = {}  # Peak component beta factor
+        self.prb = None  # Probe data
+        self.max_cdt = 60  # Maximum channel distance in micrometre
+        self.max_spr = 5  # Allowed range for checking overlapping
+        self.ovp_pct = 0.8  # Threshold rate of overlapping
         self.min_cnt = self.minCutSpinbox.value()  # Minimum spikes required to save
         # Results variables
         self.clst = {}  # Spike clusters
         self.avgw = {}  # Spike mean waveform
         self.idcs = {}  # Spike cell name
         self.selc = {}  # Cluster selection
+        self.ngrp = {}  # Multichannel cell group
         self.__has_res = False  # Has processed results flag
         # Process control variables
         self._sel_cid = []  # Selected cluster
@@ -372,6 +378,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.actProcButton.setEnabled(False)
         self.actSaveButton.setEnabled(False)
         self.spkMrgButton.setEnabled(False)
+        self.prbViewButton.setEnabled(False)
 
         # Create plot colour map
         cplt = ['#ebac23', '#b80058', '#008cf9', '#006e00', '#00bbad', '#d163e6', '#b24502', '#ff9287', '#5954d6',
@@ -401,6 +408,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.sampAntSpinbox.valueChanged.connect(self.__set_ant_samp)
         self.sampPstSpinbox.valueChanged.connect(self.__set_pst_samp)
         self.betaSpinbox.valueChanged.connect(self.__set_amp_beta)
+        self.prbViewButton.clicked.connect(self.__view_prb)
+        self.chsThSpinbox.valueChanged.connect(self.__set_max_dist)
+        self.chkRngSpinbox.valueChanged.connect(self.__set_max_srng)
+        self.chkPctSpinbox.valueChanged.connect(self.__set_ovp_ratio)
         self.minCutSpinbox.valueChanged.connect(self.__set_min_cut)
         self.spkMrgButton.clicked.connect(self.__spk_merge)
         self.actProcButton.clicked.connect(self.__proc_actfile_spksrt)
@@ -482,6 +493,9 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.sampAntSpinbox.setEnabled(enable)
         self.sampPstSpinbox.setEnabled(enable)
         self.betaSpinbox.setEnabled(enable)
+        self.chsThSpinbox.setEnabled(enable)
+        self.chkRngSpinbox.setEnabled(enable)
+        self.chkPctSpinbox.setEnabled(enable)
         self.minCutSpinbox.setEnabled(enable)
         self.actProcButton.setEnabled(enable)
         self.actSaveButton.setEnabled(enable)
@@ -504,9 +518,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             super(ParusSrt._DataProcThread, self).__init__(parent)
             self.parent = parent
             self.success = True  # Process success flag
+            self.nbr = None  # Probe neighbour information
 
         def run(self):
             self.success = False  # RESET FLAG
+            self.nbr = None if self.parent.prb is None else get_sig_nbr(self.parent.prb, self.parent.max_cdt)  # Probe
             if self.save:
                 self.proc_save()
             elif self.single:
@@ -534,6 +550,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.parent.avgw = {}  # RESET VAR
             self.parent.idcs = {}  # RESET VAR
             self.parent.selc = {}  # RESET VAR
+            self.parent.ngrp = {}  # RESET VAR
             for w in self.parent.spk:
                 # Get arguments
                 meth = self.parent.meth.get(w, 0)
@@ -543,26 +560,37 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 k = self.parent.k.get(w, 0.8)
                 beta = self.parent.beta.get(w, 0.5)
                 # Set variable
-                self.parent.clst[w] = []
-                self.parent.avgw[w] = []
-                self.parent.idcs[w] = []
-                self.parent.selc[w] = []
-                for i in self.parent.spk[w]:
+                self.parent.clst[w] = {}
+                self.parent.avgw[w] = {}
+                self.parent.idcs[w] = {}
+                self.parent.selc[w] = {}
+                self.parent.ngrp[w] = {}
+                for n, d in enumerate(self.parent.spk[w]):
                     # Detect and cluster spikes
-                    pos = sig_peak_fwd(i, th)
-                    pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
+                    pos = sig_peak_fwd(d, th)
+                    pos = pos_ripple_flt(d, pos, 3, True)  # Ripple filtering
                     if meth == 0:
-                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, w=False, beta=beta)
+                        cls, avg = cls_cosamp_blk(d, pos, asp, psp, k=k, w=False, beta=beta)
                     elif meth == 1:
-                        cls, avg = cls_cosamp_blk(i, pos, asp, psp, k=k, w=True, beta=beta)
+                        cls, avg = cls_cosamp_blk(d, pos, asp, psp, k=k, w=True, beta=beta)
                     else:
-                        cls, avg = cls_crscor_blk(i, pos, asp, psp, k=k)
+                        cls, avg = cls_crscor_blk(d, pos, asp, psp, k=k)
                     # Sort clusters by size
                     sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
-                    self.parent.clst[w].append([cls[i] for i in sid])
-                    self.parent.avgw[w].append([avg[i] for i in sid])
-                    self.parent.idcs[w].append(["%s_%02d" % (w, i + 1) for i in range(len(sid))])
-                    self.parent.selc[w].append([len(cls[i]) > self.parent.min_cnt for i in sid])
+                    self.parent.clst[w][n] = [cls[i] for i in sid]
+                    self.parent.avgw[w][n] = [avg[i] for i in sid]
+                    self.parent.idcs[w][n] = ["%s_c%d_%d" % (w, n, i + 1) for i in range(len(sid))]
+                    self.parent.selc[w][n] = [len(cls[i]) > self.parent.min_cnt for i in sid]
+                    self.parent.ngrp[w][n] = [(None, None)] * len(sid)
+                # Check multi-channel
+                if self.nbr is not None:
+                    res = find_crsch_sig(self.parent.clst[w], self.nbr,
+                                         data['raw'].shape[-1], self.parent.max_spr, self.parent.ovp_pct)
+                    for i, g in enumerate(crsch_grp(res)):
+                        for gp in g:
+                            self.parent.idcs[w][gp[0]][gp[1]] = "%s_mc_%d" % (w, i + 1)
+                            self.parent.selc[w][gp[0]][gp[1]] = True
+                            self.parent.ngrp[w][gp[0]][gp[1]] = (i + 1, [n[0] for n in g])
             # Set flag
             self.success = True
 
@@ -574,7 +602,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             grp = fp.create_group('pos')
             for w in self.parent.clst:
                 wfm = grp.create_group(w)
-                for c in range(len(self.parent.clst[w])):
+                for c in self.parent.clst[w]:
                     chn = wfm.create_group(str(c))
                     for i, v in enumerate(self.parent.clst[w][c]):
                         if self.parent.selc[w][c][i]:
@@ -597,6 +625,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
                     # Spike sorting
                     clst = {}  # RESET VAR
+                    idcs = {}  # RESET VAR
                     for w in spk:
                         # Get arguments
                         meth = self.parent.meth.get(w, 0)
@@ -606,20 +635,29 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                         k = self.parent.k.get(w, 0.8)
                         beta = self.parent.beta.get(w, 0.5)
                         # Set variable
-                        clst[w] = []
-                        for i in spk[w]:
+                        clst[w] = {}
+                        idcs[w] = {}
+                        for n, d in enumerate(spk[w]):
                             # Detect and cluster spikes
-                            pos = sig_peak_fwd(i, th)
-                            pos = pos_ripple_flt(i, pos, 3, True)  # Ripple filtering
+                            pos = sig_peak_fwd(d, th)
+                            pos = pos_ripple_flt(d, pos, 3, True)  # Ripple filtering
                             if meth == 0:
-                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, w=False, beta=beta)
+                                cls, _ = cls_cosamp_blk(d, pos, asp, psp, k=k, w=False, beta=beta)
                             elif meth == 1:
-                                cls, _ = cls_cosamp_blk(i, pos, asp, psp, k=k, w=True, beta=beta)
+                                cls, _ = cls_cosamp_blk(d, pos, asp, psp, k=k, w=True, beta=beta)
                             else:
-                                cls, _ = cls_crscor_blk(i, pos, asp, psp, k=k)
+                                cls, _ = cls_crscor_blk(d, pos, asp, psp, k=k)
                             # Sort clusters by size
                             sid = np.argsort([len(i) for i in cls], stable=True)[::-1]
-                            clst[w].append([cls[i] for i in sid if len(cls[i]) >= self.parent.min_cnt])
+                            clst[w][n] = [cls[i] for i in sid if len(cls[i]) >= self.parent.min_cnt]
+                            idcs[w][n] = ["%s_c%d_%d" % (w, n, i + 1) for i in range(len(sid))]
+                        # Check multi-channel
+                        if self.nbr is not None:
+                            res = find_crsch_sig(self.parent.clst[w], self.nbr,
+                                                 data['raw'].shape[-1], self.parent.max_spr, self.parent.ovp_pct)
+                            for i, g in enumerate(crsch_grp(res)):
+                                for gp in g:
+                                    idcs[w][gp[0]][gp[1]] = "%s_mc_%d" % (w, i + 1)
 
                     # Write file
                     if 'pos' in fp:
@@ -627,10 +665,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     grp = fp.create_group('pos')
                     for w in clst:
                         wfm = grp.create_group(w)
-                        for c in range(len(clst[w])):
+                        for c in clst[w]:
                             chn = wfm.create_group(str(c))
                             for i, v in enumerate(clst[w][c]):
-                                name = '%s_%02d' % (w, i + 1)
+                                name = idcs[w][c][i]
                                 dat = np.zeros_like(spk[w][c], dtype=np.int8)
                                 dat[v] = 1
                                 chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
@@ -821,9 +859,18 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         chk_path = os.path.isfile(prb_file)
         chk_type = prb_file.endswith('.prb')
         if chk_path and chk_type:
-            pass
+            with open(prb_file, 'r') as fp:
+                self.prb = json.load(fp)
+            self.prbViewButton.setEnabled(True)
         else:
-            pass
+            self.prb = None
+            self.prbViewButton.setEnabled(False)
+
+    def __view_prb(self):
+        """ View defined probe. """
+        fig, ax = plt.subplots(1, 1)
+        plot_prb(self.prb, ax)
+        fig.show()
 
     def __clst_sel(self):
         """ Cluster selection list. """
@@ -850,18 +897,50 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         new_clst = []
         len_lst = []
         mrg_lst = []
+        grp_lst = []
         for cb in self._mrg_cid:
             if cb.isChecked():
                 clst = self.clst[cb.id[1]][self._ch][cb.id[2]]
                 new_clst.append(clst)
                 len_lst.append(clst.size)
                 mrg_lst.append(cb.id)
+                grp_lst.append(self.ngrp[cb.id[1]][self._ch][cb.id[2]])
         # Sort and merge cluster
-        idx = np.argsort(len_lst, stable=True)[-1]
-        gw = mrg_lst[idx][1]
-        gi = mrg_lst[idx][2]
-        new_clst = np.sort(np.concatenate(new_clst), stable=True)
-        self.clst[gw][self._ch][gi] = new_clst.copy()
+        if (self.prb is None) or (all([g[0] is None for g in grp_lst])):
+            idx = np.argsort(len_lst, stable=True)[-1]
+            gw = mrg_lst[idx][1]
+            gi = mrg_lst[idx][2]
+            new_clst = np.sort(np.concatenate(new_clst), stable=True)
+            self.clst[gw][self._ch][gi] = new_clst.copy()
+        else:
+            idx = np.argsort([-1 if g[0] is None else len_lst[i] for i, g in enumerate(grp_lst)], stable=True)[-1]
+            gw = mrg_lst[idx][1]
+            gi = mrg_lst[idx][2]
+            new_clst = np.sort(np.concatenate(new_clst), stable=True)
+            self.clst[gw][self._ch][gi] = new_clst.copy()
+            # Rename for merged multichannel cell
+            ngp = set([g[0] for g in grp_lst])
+            if len(ngp) > 1:
+                name = mrg_lst[idx][0]
+                mcc = list(set(sum([g[1] for g in grp_lst], [])))
+                for n in mcc:
+                    ext_ilst = []
+                    ext_clst = []
+                    for k, g in enumerate(self.ngrp[gw][n]):
+                        if g[0] in ngp:
+                            self.idcs[gw][n][k] = name
+                            self.ngrp[gw][n][k] = (grp_lst[idx][0], mcc.copy())
+                            ext_ilst.append(k)
+                            ext_clst.append(self.clst[gw][n][k])
+                    # Extend merge for the multichannel cell
+                    if len(ext_clst) > 1:
+                        self.clst[gw][n][ext_ilst[0]] = np.sort(np.concatenate(ext_clst), stable=True)
+                        for k in ext_ilst[1:]:
+                            self.clst[gw][n].pop(k)
+                            self.avgw[gw][n].pop(k)
+                            self.idcs[gw][n].pop(k)
+                            self.selc[gw][n].pop(k)
+                            self.ngrp[gw][n].pop(k)
         # Compute new average, recompute all due to the possible cross waveform merge
         num = self.asp.get(gw, 5) + self.psp.get(gw, 5) + 1
         blk = np.arange(-self.asp.get(gw, 5), self.psp.get(gw, 5) + 1, step=1, dtype=int)
@@ -875,6 +954,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.avgw[i[1]][self._ch].pop(i[2])
             self.idcs[i[1]][self._ch].pop(i[2])
             self.selc[i[1]][self._ch].pop(i[2])
+            self.ngrp[i[1]][self._ch].pop(i[2])
             self._sel_cid.pop(i[3])
             self._mrg_cid.pop(i[3])
             self._cmp_cid.pop(i[3])
@@ -922,16 +1002,24 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         # Check conflicts in defined name
         name = self.spkCidTable.item(row, col).text()
         w = self._sel_cid[row].id[1]
+        mcc = self.ngrp[w][self._ch][self._sel_cid[row].id[2]]
         i = 2
-        while name in self.idcs[w][self._ch]:
-            name += "_n%02d" % i
+        while name in sum([self.idcs[w][n] for n in self.idcs[w]], []):
+            name += "_n%d" % i
             i += 1
+        if (self.prb is None) or (mcc[0] is None):
+            self.idcs[w][self._ch][self._sel_cid[row].id[2]] = name
+        else:
+            for n in mcc[1]:
+                for k, g in enumerate(self.ngrp[w][n]):
+                    if g[0] == mcc[0]:
+                        self.idcs[w][n][k] = name
+        # Update table
         self.spkCidTable.blockSignals(True)
         self.spkCidTable.item(row, col).setText(name)
         self.spkCidTable.blockSignals(False)
-        # Update variables
+        # Update controls
         self._sel_cid[row].id[0] = name
-        self.idcs[w][self._ch][self._sel_cid[row].id[2]] = name
         self._mrg_cid[row].id[0] = name
         self._cmp_cid[row].id[0] = name
         if self._cmp_cid[row] in self._cmp_lst:
@@ -1151,6 +1239,18 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.beta[w] = self.betaSpinbox.value()
         # Set indicator
         self.__set_arg_stat(True)
+
+    def __set_max_dist(self):
+        """ Set maximum allowed distance for channels to record the same cell. """
+        self.max_cdt = self.chsThSpinbox.value()
+
+    def __set_max_srng(self):
+        """ Set maximum allowed distance for channels to record the same cell. """
+        self.max_spr = self.chkRngSpinbox.value()
+
+    def __set_ovp_ratio(self):
+        """ Set maximum allowed distance for channels to record the same cell. """
+        self.ovp_pct = self.chkRngSpinbox.value()
 
     def __set_min_cut(self):
         """ Set minimum number of spike required as valid cell. """

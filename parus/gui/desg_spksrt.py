@@ -345,6 +345,9 @@ class Ui_ParusSrtWindow(object):
 
         self.clusterLayout.addLayout(self.clsArgLayout)
 
+        self.prbGrpLayout = QHBoxLayout()
+        self.prbGrpLayout.setSpacing(12)
+        self.prbGrpLayout.setObjectName(u"prbGrpLayout")
         self.prbGroup = QGroupBox(self.clusterGroup)
         self.prbGroup.setObjectName(u"prbGroup")
         self.prbGroup.setMinimumSize(QSize(500, 50))
@@ -369,8 +372,96 @@ class Ui_ParusSrtWindow(object):
 
         self.prbLayout.addWidget(self.prbButton)
 
+        self.prbViewButton = QPushButton(self.prbGroup)
+        self.prbViewButton.setObjectName(u"prbViewButton")
+        self.prbViewButton.setMinimumSize(QSize(75, 25))
+        self.prbViewButton.setMaximumSize(QSize(75, 25))
+        self.prbViewButton.setFont(font1)
 
-        self.clusterLayout.addWidget(self.prbGroup)
+        self.prbLayout.addWidget(self.prbViewButton)
+
+
+        self.prbGrpLayout.addWidget(self.prbGroup)
+
+        self.chsThLayout = QVBoxLayout()
+        self.chsThLayout.setSpacing(4)
+        self.chsThLayout.setObjectName(u"chsThLayout")
+        self.chsThLabel = QLabel(self.clusterGroup)
+        self.chsThLabel.setObjectName(u"chsThLabel")
+        self.chsThLabel.setMinimumSize(QSize(100, 16))
+        self.chsThLabel.setMaximumSize(QSize(16777215, 16))
+        self.chsThLabel.setFont(font1)
+
+        self.chsThLayout.addWidget(self.chsThLabel)
+
+        self.chsThSpinbox = QSpinBox(self.clusterGroup)
+        self.chsThSpinbox.setObjectName(u"chsThSpinbox")
+        self.chsThSpinbox.setMinimumSize(QSize(100, 25))
+        self.chsThSpinbox.setMaximumSize(QSize(100, 25))
+        self.chsThSpinbox.setFont(font2)
+        self.chsThSpinbox.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.chsThSpinbox.setMinimum(0)
+        self.chsThSpinbox.setMaximum(65535)
+        self.chsThSpinbox.setValue(60)
+
+        self.chsThLayout.addWidget(self.chsThSpinbox)
+
+
+        self.prbGrpLayout.addLayout(self.chsThLayout)
+
+        self.chkRngLayout = QVBoxLayout()
+        self.chkRngLayout.setSpacing(4)
+        self.chkRngLayout.setObjectName(u"chkRngLayout")
+        self.chkRngLabel = QLabel(self.clusterGroup)
+        self.chkRngLabel.setObjectName(u"chkRngLabel")
+        self.chkRngLabel.setMinimumSize(QSize(0, 16))
+        self.chkRngLabel.setMaximumSize(QSize(16777215, 16))
+        self.chkRngLabel.setFont(font1)
+
+        self.chkRngLayout.addWidget(self.chkRngLabel)
+
+        self.chkRngSpinbox = QSpinBox(self.clusterGroup)
+        self.chkRngSpinbox.setObjectName(u"chkRngSpinbox")
+        self.chkRngSpinbox.setMinimumSize(QSize(60, 25))
+        self.chkRngSpinbox.setMaximumSize(QSize(60, 25))
+        self.chkRngSpinbox.setFont(font2)
+        self.chkRngSpinbox.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.chkRngSpinbox.setMinimum(1)
+        self.chkRngSpinbox.setMaximum(20)
+        self.chkRngSpinbox.setValue(5)
+
+        self.chkRngLayout.addWidget(self.chkRngSpinbox)
+
+
+        self.prbGrpLayout.addLayout(self.chkRngLayout)
+
+        self.chkPctLayout = QVBoxLayout()
+        self.chkPctLayout.setSpacing(4)
+        self.chkPctLayout.setObjectName(u"chkPctLayout")
+        self.chkPctLabel = QLabel(self.clusterGroup)
+        self.chkPctLabel.setObjectName(u"chkPctLabel")
+        self.chkPctLabel.setMinimumSize(QSize(0, 16))
+        self.chkPctLabel.setMaximumSize(QSize(16777215, 16))
+        self.chkPctLabel.setFont(font1)
+
+        self.chkPctLayout.addWidget(self.chkPctLabel)
+
+        self.chkPctSpinbox = QDoubleSpinBox(self.clusterGroup)
+        self.chkPctSpinbox.setObjectName(u"chkPctSpinbox")
+        self.chkPctSpinbox.setMinimumSize(QSize(60, 25))
+        self.chkPctSpinbox.setMaximumSize(QSize(60, 25))
+        self.chkPctSpinbox.setFont(font2)
+        self.chkPctSpinbox.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.chkPctSpinbox.setMaximum(1.000000000000000)
+        self.chkPctSpinbox.setValue(0.800000000000000)
+
+        self.chkPctLayout.addWidget(self.chkPctSpinbox)
+
+
+        self.prbGrpLayout.addLayout(self.chkPctLayout)
+
+
+        self.clusterLayout.addLayout(self.prbGrpLayout)
 
         self.vldCtrlLayout = QHBoxLayout()
         self.vldCtrlLayout.setSpacing(12)
@@ -729,6 +820,21 @@ class Ui_ParusSrtWindow(object):
         self.prbGroup.setTitle(QCoreApplication.translate("ParusSrtWindow", u"Probe Geometry", None))
         self.prbLine.setPlaceholderText(QCoreApplication.translate("ParusSrtWindow", u"Probe geometry file (*.prb)", None))
         self.prbButton.setText(QCoreApplication.translate("ParusSrtWindow", u"Select", None))
+        self.prbViewButton.setText(QCoreApplication.translate("ParusSrtWindow", u"View", None))
+        self.chsThLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Max Distance", None))
+#if QT_CONFIG(tooltip)
+        self.chsThSpinbox.setToolTip(QCoreApplication.translate("ParusSrtWindow", u"Maximum distance between channels to record the same cell", None))
+#endif // QT_CONFIG(tooltip)
+        self.chsThSpinbox.setSuffix(QCoreApplication.translate("ParusSrtWindow", u" \u03bcm", None))
+        self.chkRngLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Range", None))
+#if QT_CONFIG(tooltip)
+        self.chkRngSpinbox.setToolTip(QCoreApplication.translate("ParusSrtWindow", u"Allowed range for checking overlapping", None))
+#endif // QT_CONFIG(tooltip)
+        self.chkRngSpinbox.setSuffix(QCoreApplication.translate("ParusSrtWindow", u" pt", None))
+        self.chkPctLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Ratio", None))
+#if QT_CONFIG(tooltip)
+        self.chkPctSpinbox.setToolTip(QCoreApplication.translate("ParusSrtWindow", u"Threshold rate of overlapping", None))
+#endif // QT_CONFIG(tooltip)
         self.actChnLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Channel:", None))
         self.minCutLabel.setText(QCoreApplication.translate("ParusSrtWindow", u"Min Cut", None))
 #if QT_CONFIG(tooltip)
