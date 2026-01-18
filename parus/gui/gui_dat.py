@@ -860,9 +860,23 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         chk_path = os.path.isfile(prb_file)
         chk_type = prb_file.endswith('.prb')
         if chk_path and chk_type:
-            with open(prb_file, 'r') as fp:
-                self.prb = json.load(fp)
-            self.prbViewButton.setEnabled(True)
+            try:
+                with open(prb_file, 'r') as fp:
+                    self.prb = json.load(fp)
+                if ('info' in self.prb) and ('site' in self.prb):
+                    self.prbViewButton.setEnabled(True)
+                else:
+                    self.prb = None
+                    self.prbViewButton.setEnabled(False)
+                    QtWidgets.QMessageBox.critical(self, "Illegal File", "Corrupted probe file!\nKey data missing.",
+                                                   QtWidgets.QMessageBox.StandardButton.Ok)
+                    self.prbLine.clear()
+            except json.decoder.JSONDecodeError:
+                self.prb = None
+                self.prbViewButton.setEnabled(False)
+                QtWidgets.QMessageBox.critical(self, "Decode Failed", "Unable to decode probe file!\nInvalid JSON.",
+                                               QtWidgets.QMessageBox.StandardButton.Ok)
+                self.prbLine.clear()
         else:
             self.prb = None
             self.prbViewButton.setEnabled(False)
