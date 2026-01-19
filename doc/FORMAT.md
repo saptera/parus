@@ -1,6 +1,33 @@
-# PARUS Data Formats
+# PARUS Data File Formats
 
-## Data process and exchange format
+Custom data file formats have been defined in PARUS system.  
+All formats were designed to support cross-platform and cross programming language accessibility.  
+For clarity and ease of implementation, the details of each file format are described below.
+
+### Table of contents
+
+- [Data processing and exchange format](#data-processing-and-exchange-format)
+    - [Dataset key `frq`](#dataset-key-frq)
+    - [Dataset key `raw`](#dataset-key-raw)
+    - [Group key `spk`](#group-key-spk)
+    - [Group key `pos`](#group-key-pos)
+- [PARUS optimized file formats](#parus-optimized-file-formats)
+    - [Compressed pickled data (PKLZ) file](#compressed-pickled-data-pklz-file)
+    - [Compressed JSON with Secure Hash embedded (CJSH) file](#compressed-json-with-secure-hash-embedded-cjsh-file)
+- [Archived signal file formats](#archived-signal-file-formats)
+    - [Archived spike waveform (`*.arc`) file](#archived-spike-waveform-arc-file)
+    - [Archived background waveform (`*.noi`) file](#archived-background-waveform-noi-file)
+- [Simulated training dataset formats](#simulated-training-dataset-formats)
+    - [Training dataset (`*.sim`) file](#training-dataset-sim-file)
+    - [Generation statistics (`*.cjh`) file](#generation-statistics-cjh-file)
+- [Trained model formats](#trained-model-formats)
+    - [Hyperparameter (`hparams.json`) file](#hyperparameter-hparamsjson-file)
+    - [Training history (`history.json`) file](#training-history-historyjson-file)
+    - [Training log (`train.log`) file](#training-log-trainlog-file)
+    - [Test results (`*.pklz`) file](#test-results-pklz-file)
+- [Probe geometry (`*.prb`) file](#probe-geometry-prb-file)
+
+## Data processing and exchange format
 
 The standard data file format used by PARUS system is HDF5 (Hierarchical Data Format 5) with 4 keys reserved,
 which are `frq`, `raw`, `spk`, and `pos`.  
@@ -301,7 +328,7 @@ All model test results files are store with `PKLZ` format defined above.
 The model test results can be visualized with PARUS CLI `parus.scripts.prddsp` or
 GUI `Model Training` -> `Model Training` -> `View Testing Results`.
 
-## Probe geometry (*.prb) file
+## Probe geometry (`*.prb`) file
 
 The PRB file format is a structured container for JSON data.
 
