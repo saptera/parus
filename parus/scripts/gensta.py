@@ -1,4 +1,4 @@
-# Parus simulated signal statistics visualization SCRIPT
+# PARUS simulated signal statistics visualization SCRIPT
 
 import argparse
 import numpy as np

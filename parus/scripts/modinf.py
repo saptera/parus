@@ -1,3 +1,5 @@
+# PARUS model data inference SCRIPT
+
 import os
 import time
 import torch

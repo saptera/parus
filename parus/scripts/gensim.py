@@ -1,4 +1,4 @@
-# Parus simulated signal generation SCRIPT
+# PARUS simulated signal generation SCRIPT
 
 import os
 import argparse
@@ -319,13 +319,13 @@ def save_gen_h5(h5_fp, name, gen_typ, sig, lbl, pos):
     sdg = h5_fp.create_group(name)
     sdg.attrs.create(name='type', data=gen_typ, dtype=h5.string_dtype(encoding='utf-8', length=None))
     # Save signals
-    sdg.create_dataset(name='sig', data=sig, compression="gzip", compression_opts=9)
+    sdg.create_dataset(name='sig', data=sig, compression='gzip', compression_opts=9)
     # Save labels
     sdg_lbl = sdg.create_group('lbl')
-    sdg_lbl.create_dataset(name='signal', data=lbl['signal'], compression="gzip", compression_opts=9)
-    sdg_lbl.create_dataset(name='noise', data=lbl['noise'], compression="gzip", compression_opts=9)
+    sdg_lbl.create_dataset(name='signal', data=lbl['signal'], compression='gzip', compression_opts=9)
+    sdg_lbl.create_dataset(name='noise', data=lbl['noise'], compression='gzip', compression_opts=9)
     # Save spike positions
-    sdg.create_dataset(name='pos', data=pos, compression="gzip", compression_opts=9)
+    sdg.create_dataset(name='pos', data=pos, compression='gzip', compression_opts=9)
 
 
 # -------------------------------------------------------------------------------------------------------------------- #

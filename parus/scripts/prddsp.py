@@ -1,4 +1,4 @@
-# Parus inference results visualization SCRIPT
+# PARUS inference results visualization SCRIPT
 
 import os
 import argparse

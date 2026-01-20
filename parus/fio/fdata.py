@@ -1,4 +1,4 @@
-# Parus customized data file IO module
+# PARUS customized data file IO module
 
 import os
 import warnings

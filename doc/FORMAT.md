@@ -42,19 +42,19 @@ HDF5 (Hierarchical Data Format 5)
 ├── spk                       <- Isolated spike traces
 │   ├── [spk_typ_01]              <- Isolated spike trace type 01
 │   ├── [spk_typ_02]              <- Isolated spike trace type 02
-│   ├── ...                       <- Other isolated spike trace types
+│   └── ...                       <- Other isolated spike trace types
 ├── pos                       <- Sorted spike timestamps
 │   ├── [spk_typ_01]              <- Subgroup of spike type 01
 │   │   ├── [ch_idx_00]               <- Recording channel 00
 │   │   │   ├── [cell_id_00]              <- Detected cell 00
 │   │   │   ├── [cell_id_01]              <- Detected cell 01
-│   │   │   ├── ...                       <- Other detected cells
+│   │   │   └── ...                       <- Other detected cells
 │   │   ├── [ch_idx_01]               <- Recording channel 01
-│   │   │   ├── ...                       <- Detected cells in channel 01
-│   │   ├── ...                       <- Other recoding channels
+│   │   │   └── ...                       <- Detected cells in channel 01
+│   │   └── ...                       <- Other recoding channels
 │   ├── [spk_typ_02]              <- Subgroup of spike type 02
-│   │   ├── ...                       <- Recording channels and cells in spike type 02
-│   ├── ...                       <- Subgroup of other spike types
+│   │   └── ...                       <- Recording channels and cells in spike type 02
+│   └── ...                       <- Subgroup of other spike types
 ├── [user_keys]               <- All other group/dataset keys are reserved for user
 └── EOF                       <- End of file
 ```
@@ -222,12 +222,12 @@ HDF5 (Hierarchical Data Format 5)
 │   │   ├── sig                 <- Sample waveform
 │   │   ├── lbl                 <- Label waveform
 │   │   │   ├── signal              <- Pure spike waveform
-│   │   │   ├── noise               <- Pure background waveform
-│   │   ├── pos                 <- Spike position binary array
-│   ├── ...                 <- Other sample indices
+│   │   │   └── noise               <- Pure background waveform
+│   │   └── pos                 <- Spike position binary array
+│   └── ...                 <- Other sample indices
 ├── exeg                <- Extra signals for special validation purpose
 │   ├── [samp_idx_0]        <- Sample index '0', structure is identical to [sims]
-│   ├── ...                 <- Other sample indices
+│   └── ...                 <- Other sample indices
 └── EOF                 <- End of file
 ```
 

@@ -609,7 +609,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                             name = self.parent.idcs[w][c][i]
                             dat = np.zeros_like(self.parent.t, dtype=np.int8)
                             dat[v] = 1
-                            chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
+                            chn.create_dataset(name=name, data=dat, compression='gzip', compression_opts=9)
             fp.close()
             # Set flag
             self.success = True
@@ -671,7 +671,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                                 name = idcs[w][c][i]
                                 dat = np.zeros_like(spk[w][c], dtype=np.int8)
                                 dat[v] = 1
-                                chn.create_dataset(name=name, data=dat, compression="gzip", compression_opts=9)
+                                chn.create_dataset(name=name, data=dat, compression='gzip', compression_opts=9)
                     fp.close()
             # Set flag
             self.success = True
@@ -1588,7 +1588,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
                     chg = skg.create_group(c)
                     for p in self.data[k][c]:
                         new_pos = self.data[k][c][p]
-                        chg.create_dataset(name=p, data=new_pos, compression="gzip", compression_opts=9)
+                        chg.create_dataset(name=p, data=new_pos, compression='gzip', compression_opts=9)
             # Close file
             fp.close()
 

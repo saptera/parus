@@ -1,4 +1,4 @@
-# Parus customized meta file IO module
+# PARUS customized meta file IO module
 
 import warnings
 import csv

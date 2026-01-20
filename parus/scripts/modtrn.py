@@ -1,3 +1,5 @@
+# PARUS model training SCRIPT
+
 import os
 import time
 import torch

@@ -11,12 +11,12 @@ Function list:
   # Standard HDF5 file IOs
     h5_load_dat(pnt): Load HDF5 data.
     h5_load_ref(ref, pnt): Load HDF5 data by reference.
-  # Pickle enabled HDF5 object
-    _hpo_cache {dict}: Dictionary to record pickle enabled HDF5 file objects.
+  # Pickle compatible HDF5 object
+    _hpo_cache {dict}: Dictionary to record pickle compatible HDF5 file objects.
     _H5PklObj: Overriding [h5py] high level object, and serve as a base class for Group and Dataset.
-    H5PklDataset: Pickle serialization enabled HDF5 dataset object.
-    H5PklGroup: Pickle serialization enabled HDF5 group object.
-    H5PklFile: Pickle serialization enabled HDF5 file object.
+    H5PklDataset: Pickle serialization compatible HDF5 dataset object.
+    H5PklGroup: Pickle serialization compatible HDF5 group object.
+    H5PklFile: Pickle serialization compatible HDF5 file object.
 """
 
 
@@ -62,9 +62,9 @@ def h5_load_ref(ref, pnt):
         return h5_load_dat(tgt)
 
 
-# Pickle enabled HDF5 object ----------------------------------------------------------------------------------------- #
+# Pickle compatible HDF5 object -------------------------------------------------------------------------------------- #
 
-_hpo_record = {}  # Dictionary to record pickle enabled HDF file objects
+_hpo_record = {}  # Dictionary to record pickle compatible HDF file objects
 
 
 class _H5PklObj(h5.HLObject):
@@ -86,14 +86,14 @@ class _H5PklObj(h5.HLObject):
 
 
 class H5PklDataset(_H5PklObj, h5.Dataset):
-    """ Pickle serialization enabled HDF5 dataset object.
+    """ Pickle serialization compatible HDF5 dataset object.
         Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
     """
     pass
 
 
 class H5PklGroup(_H5PklObj, h5.Group):
-    """ Pickle serialization enabled HDF5 group object.
+    """ Pickle serialization compatible HDF5 group object.
         Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
     """
     def __getitem__(self, name):
@@ -114,7 +114,7 @@ class H5PklGroup(_H5PklObj, h5.Group):
 
 
 class H5PklFile(h5.File):
-    """ Pickle serialization enabled HDF5 file object.
+    """ Pickle serialization compatible HDF5 file object.
         Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
     """
     def __new__(cls, *args, **kwargs):
