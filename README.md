@@ -1,6 +1,6 @@
-<div style="text-align:center">
+<div style="text-align:center;">
   <img src="doc/assets/logo.svg" alt="logo" width="800">
-  <h3>Fully automated real-time spike analysis system</h3>
+  <p style="font-size:160%;"><b>Fully automated real-time spike analysis system</b></p>
 </div><br>
 
 ![os](https://img.shields.io/badge/os-linux%2C%20win%2C%20mac-blue.svg)
@@ -153,13 +153,13 @@ PARUS package (alphabetical order)
 
 Thanks to Daan van Vugt et al. for the open-source project [h5pickle](https://github.com/DaanVanVugt/h5pickle).
 
-To enable pickle-compatible HDF5 files for multiprocessing on platforms that use the `spawn` start method, 
+To enable pickle compatible HDF5 files for Python `multiprocessing` on platforms that use the `spawn` start method, 
 we adapted code from `h5pickle` in the `fio.hdf` module.  
 This ensures efficient file I/O while maintaining compatibility with `h5py`.
 
 ### Peak detection using z-score
 
-A z-score-based peak detection function, 
-inspired by a [Stack Overflow answer](https://stackoverflow.com/a/22640362/6029703) by J.P.G. van Brakel, 
-is included in `data.sig` (NumPy) and `model.post` (PyTorch) modules for potential future LFP applications, 
+Z-score based peak detection functions, inspired by a 
+[Stack Overflow answer](https://stackoverflow.com/a/22640362/6029703) by J.P.G. van Brakel, 
+are included in `data.sig` (NumPy based) and `model.post` (PyTorch based) modules for potential future LFP applications, 
 though it is not used in the current project.
