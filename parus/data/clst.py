@@ -21,7 +21,7 @@ Function list:
     post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
   # Multichannel cluster merge functions:
     get_sig_nbr(prb, lim=60): Get neighbouring channels of multichannel probe for possible same cell source.
-    find_crsch_sig(cls, grp, tot, rng=5, th=0.8): Find cross channel signal cells for multichannel probes.
+    find_crsch_sig(cls, grp, tot, lim=0, rng=5, th=0.8): Find cross channel signal cells for multichannel probes.
     crsch_grp(res): Grouping detected cross channel cells.
 Protected functions:
   _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0): Create a Gaussian weight vector centered at peak index.
@@ -429,13 +429,14 @@ def get_sig_nbr(prb, lim=60):
     return {c[i].item(): c[tgt[org == i]].tolist() for i in range(len(prb['site']))}
 
 
-def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
+def find_crsch_sig(cls, grp, tot, lim=0, rng=5, th=0.8):
     """ Find cross channel signal cells for multichannel probes.
 
     Args:
         cls (dict[int, list[np.ndarray]]): Multichannel spike cluster
         grp (dict[int, list[int]]): Probe channel neighbours
         tot (int): Total length of the source signal
+        lim (int): Minimum number of spikes for cluster
         rng (int): Allowed range for checking overlapping (default: 5)
         th (float): {[0, 1]} Threshold rate of overlapping (default: 0.8)
 
@@ -449,7 +450,7 @@ def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
     # Process scan
     for g in grp:
         chs = [c for c in grp[g] if c != g]
-        # Exclude empty clusters
+        # Exclude empty channels
         if (len(cls[g]) == 0) or (sum([len(cls[c]) for c in chs]) == 0):
             continue
         # Get cells in main channel
@@ -459,10 +460,13 @@ def find_crsch_sig(cls, grp, tot, rng=5, th=0.8):
             idx = np.clip(idx, a_min=0, a_max=tot - 1).reshape(-1, num, order='C')
             # Search in neighbouring channels
             for c in chs:
-                # Exclude empty clusters
+                # Exclude empty channel
                 if len(cls[c]) == 0:
                     continue
                 for j, tgt in enumerate(cls[c]):
+                    # Limit minimum cluster size
+                    if len(tgt) < lim:
+                        continue
                     # Find match clusters
                     loc = np.zeros(tot, dtype=np.int8)
                     loc[tgt] = 1
@@ -483,22 +487,39 @@ def crsch_grp(res):
     Returns:
         list[tuple(int, int)]: Signal group list as (channel, index) pair
     """
-    grp = []  # INIT VAR
-    for p in res:
+    if not res:
+        return [], []
+    # Initialize variables
+    pm = (res[0]['main']['ch'], res[0]['main']['id'])
+    ps = (res[0]['sub']['ch'], res[0]['sub']['id'])
+    grp = [[pm, ps]]
+    reg = [{pm[0]: [1, 0], ps[0]: [1, 1]}]
+    cnt = [[0, 0]]
+    # Find grouping pairs
+    for p in res[1:]:
         pm = (p['main']['ch'], p['main']['id'])
         ps = (p['sub']['ch'], p['sub']['id'])
-        if grp:
-            for g in grp:
-                ck_gm = pm in g
-                ck_gs = ps in g
-                if ck_gm or ck_gs:
-                    if not ck_gm:
-                        g.append(pm)
-                    if not ck_gs:
-                        g.append(ps)
-                    break
-            else:
-                grp.append([ps, pm])
+        for i, g in enumerate(grp):
+            ck_gm = pm in g
+            ck_gs = ps in g
+            if ck_gm or ck_gs:
+                pt = ps if ck_gm else pm
+                g.append(pt)
+                # Count for group in the same channel
+                if pt[0] in reg[i]:
+                    reg[i][pt[0]] = [reg[i][pt[0]][0] + 1, reg[i][pt[0]][1]]
+                    cnt[i].append(reg[i][pt[0]][0])
+                else:
+                    reg[i][pt[0]] = [1, len(g) - 1]
+                    cnt[i].append(0)
+                break
         else:
-            grp.append([ps, pm])
-    return grp
+            grp.append([pm, ps])
+            reg.append({pm[0]: [1, 0], ps[0]: [1, 1]})
+            cnt.append([0, 0])
+    # Final fittings for counting
+    for i, r in enumerate(reg):
+        for k in r:
+            if r[k][0] > 1:
+                cnt[i][r[k][1]] = 1
+    return grp, cnt

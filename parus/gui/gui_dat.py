@@ -584,11 +584,13 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                     self.parent.ngrp[w][n] = [(None, [n])] * len(sid)
                 # Check multi-channel
                 if self.nbr is not None:
-                    res = find_crsch_sig(self.parent.clst[w], self.nbr,
-                                         data['raw'].shape[-1], self.parent.max_spr, self.parent.ovp_pct)
-                    for i, g in enumerate(crsch_grp(res)):
-                        for gp in g:
-                            self.parent.idcs[w][gp[0]][gp[1]] = "%s_mc_%d" % (w, i + 1)
+                    res = find_crsch_sig(self.parent.clst[w], self.nbr, data['raw'].shape[-1],
+                                         lim=self.parent.min_cnt, rng=self.parent.max_spr, th=self.parent.ovp_pct)
+                    grp, cnt = crsch_grp(res)
+                    for i, (g, c) in enumerate(zip(grp, cnt)):
+                        for gp, ct in zip(g, c):
+                            name = "%s_mc_%d" % (w, i + 1) if ct == 0 else "%s_mc_%d_p%d" % (w, i + 1, ct)
+                            self.parent.idcs[w][gp[0]][gp[1]] = name
                             self.parent.selc[w][gp[0]][gp[1]] = True
                             self.parent.ngrp[w][gp[0]][gp[1]] = (i + 1, list(set([n[0] for n in g])))
             # Set flag
@@ -653,11 +655,13 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                             idcs[w][n] = ["%s_c%d_%d" % (w, n, i + 1) for i in range(len(sid))]
                         # Check multi-channel
                         if self.nbr is not None:
-                            res = find_crsch_sig(self.parent.clst[w], self.nbr,
-                                                 data['raw'].shape[-1], self.parent.max_spr, self.parent.ovp_pct)
-                            for i, g in enumerate(crsch_grp(res)):
-                                for gp in g:
-                                    idcs[w][gp[0]][gp[1]] = "%s_mc_%d" % (w, i + 1)
+                            res = find_crsch_sig(self.parent.clst[w], self.nbr, data['raw'].shape[-1],
+                                                 self.parent.min_cnt, self.parent.max_spr, self.parent.ovp_pct)
+                            grp, cnt = crsch_grp(res)
+                            for i, (g, c) in enumerate(zip(grp, cnt)):
+                                for gp, ct in zip(g, c):
+                                    name = "%s_mc_%d" % (w, i + 1) if ct == 0 else "%s_mc_%d_p%d" % (w, i + 1, ct)
+                                    idcs[w][gp[0]][gp[1]] = name
 
                     # Write file
                     if 'pos' in fp:
@@ -883,7 +887,8 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
     def __view_prb(self):
         """ View defined probe. """
-        fig, ax = plt.subplots(1, 1)
+        name = os.path.splitext(os.path.basename(self.prbLine.text()))[0]
+        fig, ax = plt.subplots(1, 1, num=name)
         plot_prb(self.prb, ax)
         fig.show()
 
