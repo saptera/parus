@@ -1,6 +1,6 @@
 <div style="text-align:center;">
-  <img src="doc/assets/logo.svg" alt="logo" width="800">
-  <p style="font-size:160%;"><b>Fully automated real-time spike analysis system</b></p>
+  <img src="doc/assets/banner.png" alt="banner" width="800">
+  <p style="font-size:200%;"><b>Fully automated real-time spike analysis system</b></p>
 </div><br>
 
 ![os](https://img.shields.io/badge/os-linux%2C%20win%2C%20mac-blue.svg)
