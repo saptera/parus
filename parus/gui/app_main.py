@@ -41,7 +41,8 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
         if os.path.isfile(self.__cfg_json):
             with open(self.__cfg_json, 'r') as fp:
                 self.__cfg = json.load(fp)
-                self.__cfg['cwd'] = os.path.expanduser('~') if self.__cfg['cwd'] is None else self.__cfg['cwd']
+                if (self.__cfg['cwd'] is None) or (not os.path.isdir(self.__cfg['cwd'])):
+                    self.__cfg['cwd'] = os.path.expanduser('~')
         else:
             self.__cfg = {'cwd': os.path.expanduser('~'), 'cs': 'auto'}
             with open(self.__cfg_json, 'w') as fp:
@@ -64,7 +65,7 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
     def __sel_cwd(self):
         """ Set default working directory. """
         path = path_selector(self.cwdPath, mode='path', caption="Select Default Working Directory", parent=self)
-        path = path if os.path.isdir(path) else os.path.expanduser('~')
+        path = path if os.path.isdir(str(path)) else os.path.expanduser('~')
         # Set path value
         self.__cfg['cwd'] = path
         os.chdir(path)
