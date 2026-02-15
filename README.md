@@ -102,6 +102,7 @@ PARUS package (alphabetical order)
 │   ├── hdf.py                <- Hierarchical Data Format (HDF) file IO module
 │   ├── intan.py              <- IntanTech file import module
 │   ├── matlab.py             <- MATLAB file import module
+│   ├── intan.py              <- CED Spike2 SMR file import module
 │   └── tdt.py                <- Tucker-Davis Technologies file import module
 ├── gui                   <- [parus.gui] GUI sub-package
 │   ├── assets/               <- GUI non-code resources
@@ -156,6 +157,13 @@ Thanks to Daan van Vugt et al. for the open-source project [h5pickle](https://gi
 To enable pickle compatible HDF5 files for Python `multiprocessing` on platforms that use the `spawn` start method, 
 we adapted code from `h5pickle` in the `fio.hdf` module.  
 This ensures efficient file I/O while maintaining compatibility with `h5py`.
+
+### CED Spike2 SMR file
+
+Thanks to Neural Ensemble for the open-source package [Neo](https://neuralensemble.org/).
+
+The SMR file import function is based on concepts from the Neo package 
+and has been substantially adapted to enable implementation using pure NumPy and native I/O functionality.
 
 ### Peak detection using z-score
 
