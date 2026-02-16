@@ -34,7 +34,10 @@ def mat_meta_read(file):
     with open(file, 'rb') as ts:
         b = ts.read(1)
         while b != b'\x00':
-            header += b.decode()
+            try:
+                header += b.decode()
+            except UnicodeDecodeError:
+                pass
             b = ts.read(1)
     header = header.strip()  # Remove blanks
 
