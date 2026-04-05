@@ -1,6 +1,7 @@
 # Source files
 *.py     text eol=lf diff=python
 *.pth    text eol=lf diff=python
+*.toml   text eol=lf
 *.bat    text eol=crlf
 
 # User interface files

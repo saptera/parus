@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parus"
+version = "1.0.0"
+authors = [
+    { name="Si-yang Yu" },
+    { name="XiaoLe Eddie Liu" }
+]
+description = "PARUS - a fully automated real-time spike analysis system"
+readme = "README.md"
+license = "AGPL-3.0"
+license-files = ["LICENSE"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.0.0",
+    "scipy>=1.14.0",
+    "torch",
+    "h5py",
+    "matplotlib>=3.8.4",
+    "plotext",
+    "PySide6>=6.8",
+    "pyqtgraph"
+]
+
+[project.urls]
+Homepage = "https://github.com/saptera/parus"
+Issues = "https://github.com/saptera/parus/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["parus*"]
+exclude = ["automation*", "doc*"]
+
+[tool.setuptools.package-data]
+"parus" = [
+    "gui/assets/*",
+    "rt/assets/*"
+]
