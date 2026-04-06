@@ -2,6 +2,9 @@
 *.py     text eol=lf diff=python
 *.pth    text eol=lf diff=python
 *.toml   text eol=lf
+
+# Automation scripts
+*.sh     text eol=lf
 *.bat    text eol=crlf
 
 # User interface files
@@ -14,5 +17,5 @@
 *.ckpt   -text filter=lfs diff=lfs merge=lfs
 *.pklz   -text filter=lfs diff=lfs merge=lfs
 
-# Documents
+# Documentations
 *.md     text eol=lf
