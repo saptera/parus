@@ -11,8 +11,8 @@ ECHO.
 
 :: Set Python interpreter
 FOR %%i IN ("%~dp0..\..") DO SET "PKG=%%~fi"
-IF EXIST %PKG%\venv\ (
-    SET TPR=%PKG%\venv\Scripts\python.exe
+IF EXIST "%PKG%\venv\" (
+    SET TPR="%PKG%\venv\Scripts\python.exe"
 ) ELSE (
     SET TPR=python
 )
@@ -26,7 +26,7 @@ PAUSE >NUL
 ECHO ----------------------------------------
 :: Call installation script
 FOR %%i IN ("%~dp0..") DO SET "SCPT=%%~fi\environment\install_parus.py"
-%TPR% %SCPT%
+%TPR% "%SCPT%"
 ECHO ----------------------------------------
 ECHO.
 :: Create desktop shortcuts
@@ -50,8 +50,8 @@ EXIT
 :createShortcut
 :: Create shortcut for PARUS Train
 ECHO Creating shortcut for model training GUI
-SET BAT_PATH=%PKG%\automation\Windows\ParusTrn.bat
-SET ICO_PATH=%PKG%\parus\gui\assets\icon_trn.ico
+SET BAT_PATH="%PKG%\automation\Windows\ParusTrn.bat"
+SET ICO_PATH="%PKG%\parus\gui\assets\icon_trn.ico"
 SET SHORTCUT_PATH="%USERPROFILE%\Desktop\PARUS Train.lnk"
 powershell -command ^
     $WshShell = New-Object -ComObject WScript.Shell; ^
@@ -61,8 +61,8 @@ powershell -command ^
     $Shortcut.Save()
 :: Create shortcut for PARUS Data
 ECHO Creating shortcut for data pipeline GUI
-SET BAT_PATH=%PKG%\automation\Windows\ParusDat.bat
-SET ICO_PATH=%PKG%\parus\gui\assets\icon_dat.ico
+SET BAT_PATH="%PKG%\automation\Windows\ParusDat.bat"
+SET ICO_PATH="%PKG%\parus\gui\assets\icon_dat.ico"
 SET SHORTCUT_PATH="%USERPROFILE%\Desktop\PARUS Data.lnk"
 powershell -command ^
     $WshShell = New-Object -ComObject WScript.Shell; ^
@@ -72,8 +72,8 @@ powershell -command ^
     $Shortcut.Save()
 :: Create shortcut for PARUS Real-Time
 ECHO Creating shortcut for real-time GUI
-SET BAT_PATH=%PKG%\automation\Windows\ParusRT.bat
-SET ICO_PATH=%PKG%\parus\rt\assets\icon_rt.ico
+SET BAT_PATH="%PKG%\automation\Windows\ParusRT.bat"
+SET ICO_PATH="%PKG%\parus\rt\assets\icon_rt.ico"
 SET SHORTCUT_PATH="%USERPROFILE%\Desktop\PARUS Real-Time.lnk"
 powershell -command ^
     $WshShell = New-Object -ComObject WScript.Shell; ^

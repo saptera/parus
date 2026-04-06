@@ -11,8 +11,8 @@ ECHO.
 
 :: Set Python interpreter
 FOR %%i IN ("%~dp0..\..") DO SET "PKG=%%~fi"
-IF EXIST %PKG%\venv\ (
-    SET TPR=%PKG%\venv\Scripts\python.exe
+IF EXIST "%PKG%\venv\" (
+    SET TPR="%PKG%\venv\Scripts\python.exe"
 ) ELSE (
     SET TPR=python
 )
@@ -27,7 +27,7 @@ ECHO.
 ECHO Python command line outputs
 ECHO ----------------------------------------
 
-SET GUI=%PKG%\parus\app\pac_rt.py
+SET GUI="%PKG%\parus\app\pac_rt.py"
 %TPR% %GUI%
 
 ECHO ----------------------------------------
