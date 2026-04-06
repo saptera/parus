@@ -71,7 +71,8 @@ except FileNotFoundError:
 # Add project path
 print("\nAdding [Parus] project path to library")
 pth_src = os.path.join(os.path.split(__file__)[0], 'proj_path.pth')
-pth_dst = os.path.join(venv, "Lib/site-packages/proj_path.pth")
+lib_dir = "Lib/" if os.name == 'nt' else "lib/python%d.%d/" % (sys.version_info.major, sys.version_info.minor)
+pth_dst = os.path.join(venv, lib_dir, "site-packages/proj_path.pth")
 shutil.copy2(pth_src, pth_dst)
 
 # Finalize
