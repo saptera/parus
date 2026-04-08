@@ -21,9 +21,9 @@ parser.add_argument('ckpt', type=str, help="[%(type)s] Absolute path to pre-trai
 # File IO arguments (optional, but at least one file/directory should be defined)
 pg_io = parser.add_argument_group("Data IO arguments")
 pg_io.add_argument('-f', '--file', dest='file', nargs='+', type=str, default=argparse.SUPPRESS, metavar="[str]",
-                   help="List of files (*.sig, *.pkl, *.pklz) to inference")
+                   help="List of files (*.h5) to inference")
 pg_io.add_argument('-d', '--dirs', dest='dirs', nargs='+', type=str, default=argparse.SUPPRESS, metavar="[str]",
-                   help="List of directories containing signals (*.sig, *.pkl, *.pklz) to inference")
+                   help="List of directories containing signals (*.h5) to inference")
 # Data process arguments (optional)
 pg_dt = parser.add_argument_group("Data process arguments")
 pg_dt.add_argument('-lp', '--overlap', dest='overlap', type=int, default=10, metavar="[int]",
