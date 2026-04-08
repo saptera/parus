@@ -53,15 +53,16 @@ Hardware for minimum performance
 
 ```
 PARUS repository
+├── parus                        <- PARUS source code (futher explained in the next section)
 ├── automation                   <- Program automation scripts
 │   ├── environment                  <- Execution environment building scripts
 │   │   ├── install_parus.py             <- Auto-installation script
 │   │   ├── proj_path.pth                <- Python [venv] project path injection
 │   │   └── README.md                    <- Readme file
-│   ├── Unix_like                    <- Unix-like OS exection scripts
+│   ├── POSIX                        <- POSIX OS (Unix/Linux/macOS) execution scripts
 │   │   ├── install_parus.sh             <- Installation caller script for POSIX
 │   │   └── README.md                    <- Readme file
-│   ├── Windows                      <- Window OS exection scripts
+│   ├── Windows                      <- Window OS execution scripts
 │   │   ├── install_parus.bat            <- Installation caller script for Windows
 │   │   ├── ParusTrn.bat                 <- Model training GUI caller
 │   │   ├── ParusDat.bat                 <- Data processing GUI caller
@@ -76,7 +77,7 @@ PARUS repository
 │   ├── REALTIME.md                  <- Real-time sub-system documentation
 │   └── API                          <- Application interface (functions) documentation
 │       └── ...                          <- Module documentation
-├── parus                        <- PARUS source code (futher explained below)
+├── pyproject.toml               <- Project build definitions
 ├── LICENSE                      <- AGPL-3.0 license
 ├── README.md                    <- [THIS FILE]
 ├── .gitattributes               <- Git Attributes source
@@ -102,7 +103,7 @@ PARUS package (alphabetical order)
 │   ├── hdf.py                <- Hierarchical Data Format (HDF) file IO module
 │   ├── intan.py              <- IntanTech file import module
 │   ├── matlab.py             <- MATLAB file import module
-│   ├── intan.py              <- CED Spike2 SMR file import module
+│   ├── smr.py                <- CED Spike2 SMR file import module
 │   └── tdt.py                <- Tucker-Davis Technologies file import module
 ├── gui                   <- [parus.gui] GUI sub-package
 │   ├── assets/               <- GUI non-code resources

@@ -9,12 +9,12 @@ This directory contains automation scripts tailored for specific operating syste
 Core scripts used to build a cross-platform execution environment.  
 Scripts written in Python.
 
-## Unix-like Systems
+## POSIX Systems
 
-- Subdirectory `Unix_like`
+- Subdirectory `POSIX`
 
-Automation scripts for Unix-like operating systems, including most Linux distributions and macOS.  
-Scripts written in POSIX-compliant shell.
+Automation scripts for POSIX operating systems, including most Unix and Linux distributions as well as macOS.  
+Scripts written in bash shell with maximum compatibility considered.
 
 ## Windows
 
