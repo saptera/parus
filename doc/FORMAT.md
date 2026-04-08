@@ -27,6 +27,8 @@ For clarity and ease of implementation, the details of each file format are desc
   - [Test results (`*.pklz`) file](#test-results-pklz-file)
 - [Probe geometry (`*.prb`) file](#probe-geometry-prb-file)
 
+---
+
 ## Data processing and exchange format
 
 The standard data file format used by PARUS system is HDF5 (Hierarchical Data Format 5) with 4 keys reserved,
@@ -93,6 +95,8 @@ Each spike-type subgroup contains multiple channel subgroups, where:
 
 Each dataset is a 1D `int8` array of binary values (`0` or `1`), where `1` indicates the occurrence of a spike event.
 
+---
+
 ## PARUS optimized file formats
 
 Two customized file type have been defined for optimized data storage and exchange in PARUS system.
@@ -119,6 +123,8 @@ The use of `JSON` and `ZLIB` enables data exchange across multiple programming l
 
 Files can be read using the `cjsh_read` API and written using the `cjsh_write` API from the `parus.fio` module.  
 Recognized file extensions are `.cjsh` and `.cjh`.
+
+---
 
 ## Archived signal file formats
 
@@ -202,6 +208,8 @@ The data structure of archived background waveform is defined as follows:
 Files can be created with PARUS `Model Training` GUI.  
 Files can be read using the `noi_read` API and written using the `noi_write` API from the `parus.fio` module.
 
+---
+
 ## Simulated training dataset formats
 
 The training set can be generated with PARUS CLI `parus.scripts.gensim` or GUI `Model Training` -> `Dataset Generation`.
@@ -241,6 +249,8 @@ This file contains statistical information associated with generated training da
 This file is store with CJSH format defined above.  
 The statistic results can be plotted with PARUS CLI `parus.scripts.gensta` or
 GUI `Model Training` -> `Dataset Generation` -> `View Statistics`.
+
+---
 
 ## Trained model formats
 
@@ -327,6 +337,8 @@ All model test results files are store with `PKLZ` format defined above.
 
 The model test results can be visualized with PARUS CLI `parus.scripts.prddsp` or
 GUI `Model Training` -> `Model Training` -> `View Testing Results`.
+
+---
 
 ## Probe geometry (`*.prb`) file
 

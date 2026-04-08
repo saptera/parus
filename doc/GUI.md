@@ -5,7 +5,16 @@ Two major workflows of PARUS system, `Model Traing` and `Data Processing`, are p
 > **Note:** All GUIs automatically save the most recently used parameters after a successful run, 
 > making repeated tasks faster and more convenient.
 
----
+### Table of contents
+
+- [Model Training](#model-training)
+  - [1. Create Archive Signal](#1-create-archive-signal)
+  - [2. Dataset Generation](#2-dataset-generation)
+  - [3. Model Training](#3-model-training)
+- [Data Processing](#data-processing)
+  - [1. Signal Separation (Model Inference)](#1-signal-separation-model-inference)
+  - [2. Spike Sorting](#2-spike-sorting)
+  - [3. View Results](#3-view-results)
 
 ---
 
@@ -135,7 +144,7 @@ In the `Training Settings` panel, configure key hyperparameters.
 ### Advanced Options
 
 The `Extra Options` section allows advanced users to define additional hyperparameters via command-line-style inputs.
-See [`CLI.md`](CLI.md) for full details.
+See [`CLI.md`](CLI.md#3-parusmodtrn---model-training) for full details.
 
 ### Execution
 
@@ -164,8 +173,6 @@ You can explore results (`tst_opt.pklz` and `tst_fin.pklz`) in the `Model Testin
 ![Model Testing Results](assets/gui_trn_optr.png)
 
 > **Tip:** Navigate between samples using the **arrow keys**
-
----
 
 ---
 
