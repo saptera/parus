@@ -5,8 +5,9 @@ SPHINXAPIDOC  = sphinx-apidoc
 SPHINXBUILD   = sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
+PUBLISHDIR    = reference
 
-.PHONY: help clean generate html rebuild
+.PHONY: help clean generate html rebuild publish
 
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
@@ -21,3 +22,6 @@ html:
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 
 rebuild: clean generate html
+
+publish:
+	@$cp -r "$(BUILDDIR)/html" "$(PUBLISHDIR)"
