@@ -50,7 +50,9 @@ coverage.xml
 *.pot
 
 # Sphinx documentation
-docs/_build/
+doc/API/make.bat
+doc/API/build/
+doc/API/source/_api
 
 # Environments
 .env

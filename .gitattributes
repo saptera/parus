@@ -19,3 +19,4 @@
 
 # Documentations
 *.md     text eol=lf
+*.rst    test eol=lf
