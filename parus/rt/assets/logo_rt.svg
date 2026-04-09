@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 16.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
@@ -7,7 +6,7 @@
 	<stop  offset="0" style="stop-color:#F39200"/>
 	<stop  offset="1" style="stop-color:#E94E1B"/>
 </linearGradient>
-<path id="path2231" sodipodi:nodetypes="ccsssssc" fill="none" stroke="url(#path2231_1_)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="
+<path id="path2231" fill="none" stroke="url(#path2231_1_)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="
 	M93.0429688,31.8925781c-9.3642578-0.1396484-11.7753906-0.6191406-18.3261719-11.71875
 	c-7.1582031-12.1240234-10.1601563-8.5888672-15.6435547,1.796875c-3.5009766,6.6347656-7.2304688,24.3945313-8.0771484,39.9072266
 	c-1.7558594,32.1337891-3.8486328,34.1308594-9.8583984,0.7246094c-0.8007813-4.4599609-3.4023438-13.8085938-5.953125-22.953125
