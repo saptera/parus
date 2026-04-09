@@ -1,0 +1,7 @@
+parus.scripts.gensim module
+===========================
+
+.. automodule:: parus.scripts.gensim
+   :members:
+   :show-inheritance:
+   :undoc-members:

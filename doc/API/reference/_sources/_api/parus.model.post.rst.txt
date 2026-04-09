@@ -1,0 +1,7 @@
+parus.model.post module
+=======================
+
+.. automodule:: parus.model.post
+   :members:
+   :show-inheritance:
+   :undoc-members:

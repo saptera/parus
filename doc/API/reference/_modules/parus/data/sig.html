@@ -1,0 +1,1396 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
+        <title>parus.data.sig - parus documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">parus  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">parus  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../_api/parus.html">parus package</a><input aria-label="Toggle navigation of parus package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.app.html">parus.app package</a><input aria-label="Toggle navigation of parus.app package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.afunc.html">parus.app.afunc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.pac_ma.html">parus.app.pac_ma module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.pac_rt.html">parus.app.pac_rt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.data.html">parus.data package</a><input aria-label="Toggle navigation of parus.data package" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.clst.html">parus.data.clst module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.plot.html">parus.data.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.proc.html">parus.data.proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.sig.html">parus.data.sig module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.fio.html">parus.fio package</a><input aria-label="Toggle navigation of parus.fio package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.fdata.html">parus.fio.fdata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.fmeta.html">parus.fio.fmeta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.hdf.html">parus.fio.hdf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.intan.html">parus.fio.intan module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.matlab.html">parus.fio.matlab module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.smr.html">parus.fio.smr module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.tdt.html">parus.fio.tdt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.gui.html">parus.gui package</a><input aria-label="Toggle navigation of parus.gui package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.app_main.html">parus.gui.app_main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_appdat.html">parus.gui.desg_appdat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_apptrn.html">parus.gui.desg_apptrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_arcmrk.html">parus.gui.desg_arcmrk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_genctl.html">parus.gui.desg_genctl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_modinf.html">parus.gui.desg_modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_modtrn.html">parus.gui.desg_modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_posadd.html">parus.gui.desg_posadd module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_resver.html">parus.gui.desg_resver module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_spksrt.html">parus.gui.desg_spksrt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_sysset.html">parus.gui.desg_sysset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_wfmsel.html">parus.gui.desg_wfmsel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.elm_plot.html">parus.gui.elm_plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.elm_proc.html">parus.gui.elm_proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.gui_dat.html">parus.gui.gui_dat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.gui_trn.html">parus.gui.gui_trn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.model.html">parus.model package</a><input aria-label="Toggle navigation of parus.model package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.dset.html">parus.model.dset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.eval.html">parus.model.eval module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.mio.html">parus.model.mio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.optim.html">parus.model.optim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.post.html">parus.model.post module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.transformer.html">parus.model.transformer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.wavenet.html">parus.model.wavenet module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.rt.html">parus.rt package</a><input aria-label="Toggle navigation of parus.rt package" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.app_rt.html">parus.rt.app_rt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.desg_apprtp.html">parus.rt.desg_apprtp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.hwio.html">parus.rt.hwio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.intan_rhx.html">parus.rt.intan_rhx module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.scripts.html">parus.scripts package</a><input aria-label="Toggle navigation of parus.scripts package" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.gensim.html">parus.scripts.gensim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.gensta.html">parus.scripts.gensta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.modinf.html">parus.scripts.modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.modtrn.html">parus.scripts.modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.prddsp.html">parus.scripts.prddsp module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.util.html">parus.util package</a><input aria-label="Toggle navigation of parus.util package" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.base.html">parus.util.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.cli.html">parus.util.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.disp.html">parus.util.disp module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for parus.data.sig</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Signal process module</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">stat</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="n">__package__</span> <span class="o">=</span> <span class="s1">&#39;parus.data&#39;</span>
+<span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;parus.data.sig&#39;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;spk_lowpass&#39;</span><span class="p">,</span> <span class="s1">&#39;spk_highpass&#39;</span><span class="p">,</span> <span class="s1">&#39;spk_bandpass&#39;</span><span class="p">,</span> <span class="s1">&#39;spk_notch&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;noise_white&#39;</span><span class="p">,</span> <span class="s1">&#39;noise_freq_decr&#39;</span><span class="p">,</span> <span class="s1">&#39;noise_freq_incr&#39;</span><span class="p">,</span> <span class="s1">&#39;bsl_sft_lin&#39;</span><span class="p">,</span> <span class="s1">&#39;bsl_sft_sin&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;neuron_sig_slc&#39;</span><span class="p">,</span> <span class="s1">&#39;sig_split&#39;</span><span class="p">,</span> <span class="s1">&#39;sig_merge&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;loc_ext_1d&#39;</span><span class="p">,</span> <span class="s1">&#39;sig_peak_zsc&#39;</span><span class="p">,</span> <span class="s1">&#39;sig_peak_fwd&#39;</span><span class="p">,</span> <span class="s1">&#39;peak_extremum&#39;</span><span class="p">,</span> <span class="s1">&#39;peak_reloc_ex&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bin_spk_frq&#39;</span><span class="p">,</span> <span class="s1">&#39;tpt_spk_frq&#39;</span><span class="p">,</span> <span class="s1">&#39;bin_spk_isi&#39;</span><span class="p">,</span> <span class="s1">&#39;tpt_spk_isi&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bin_spk_cv&#39;</span><span class="p">,</span> <span class="s1">&#39;tpt_spk_cv&#39;</span><span class="p">,</span> <span class="s1">&#39;bin_spk_cv2&#39;</span><span class="p">,</span> <span class="s1">&#39;tpt_spk_cv2&#39;</span><span class="p">,</span> <span class="s1">&#39;tpt_kde_frq&#39;</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Function list:</span>
+<span class="sd">  # Neuronal signal filters:</span>
+<span class="sd">    spk_lowpass(x, fpass, fs): Digital lowpass Butterworth filter for neurological signals.</span>
+<span class="sd">    spk_highpass(x, fpass, fs): Digital highpass Butterworth filter for neurological signals.</span>
+<span class="sd">    spk_bandpass(x, fpass, fs): Digital bandpass Butterworth filter for neurological signals.</span>
+<span class="sd">    spk_notch(x, fnotch, fs): Digital notch filter for neurological signals.</span>
+<span class="sd">  # Noise generators:</span>
+<span class="sd">    noise_white(size, mode=0, amp=1.0, seed=None): White noise generator.</span>
+<span class="sd">    noise_freq_decr(size, mode=0, amp=1.0, seed=None): Pink and brown (red) noise generator.</span>
+<span class="sd">    noise_freq_incr(size, mode=0, amp=1.0, seed=None): Blue (azure) and violet (purple) noise generator.</span>
+<span class="sd">    bsl_sft_lin(size, amp_rng): Linear baseline shifting generator.</span>
+<span class="sd">    bsl_sft_sin(size, fs, amp_rng, freq_rng): Sinusoid baseline shifting generator.</span>
+<span class="sd">  # Neuronal signal operations:</span>
+<span class="sd">    neuron_sig_slc(rec, loc, rng): Slice and pad neuronal signal to individual spikes with defined length.</span>
+<span class="sd">    sig_split(src, size, overlap=10, endpad=0.0): Split signal into a list of parts with defined size.</span>
+<span class="sd">    sig_merge(src, overlap=10, trim=0): Merge a list of signal parts into a signal trace.</span>
+<span class="sd">  # Peak process functions:</span>
+<span class="sd">    loc_ext_1d(arr, allow_plateau=True): Detect local extrema of given 1D list or array.</span>
+<span class="sd">    sig_peak_zsc(signal, lag, th, influence=0.0): Robust signal peak detection using z-scores.</span>
+<span class="sd">    sig_peak_fwd(signal, th, neg=True): Signal peak detection using forward difference.</span>
+<span class="sd">    peak_extremum(signal, peak, th, neg=True, smp=None): Find the extremum point of peak detections for [sig_peak_zsc].</span>
+<span class="sd">    peak_reloc_ex(signal, peak, th=None, neg=True, smp=10): Find the extremum point near the peak location for labels.</span>
+<span class="sd">  # Feature process functions:</span>
+<span class="sd">    bin_spk_frq(spk, fs, t=None, g=None): Compute average firing frequency for binary (one-hot) spikes.</span>
+<span class="sd">    tpt_spk_frq(spk, t=None, g=None, org=0, end=None): Compute average firing frequency for timestamp spikes.</span>
+<span class="sd">    bin_spk_isi(spk, fs, t=None, g=None, lst=False): Compute inter spike interval (ISI) for binary (one-hot) spikes.</span>
+<span class="sd">    tpt_spk_isi(spk, t=None, g=None, org=0, end=None, lst=False): Compute ISI for timestamp spikes.</span>
+<span class="sd">    bin_spk_cv(spk, fs, t=None, g=None, ddof=0): Compute coefficient of variation (CV) for binary (one-hot) spikes.</span>
+<span class="sd">    tpt_spk_cv(spk, t=None, g=None, org=0, end=None, ddof=0): Compute CV for timestamp spikes.</span>
+<span class="sd">    bin_spk_cv2(spk, fs, t=None, g=None): Compute 2-point coefficient of variation (CV2) for binary (one-hot) spikes.</span>
+<span class="sd">    tpt_spk_cv2(spk, t=None, g=None, org=0, end=None): Compute 2-point coefficient of variation for timestamp spikes.</span>
+<span class="sd">    tpt_kde_frq(spk, bw=None, **kwargs): Estimate timestamp spike firing rate using Gaussian kernels.</span>
+<span class="sd">Private functions:</span>
+<span class="sd">  # Feature process functions:</span>
+<span class="sd">    __bin_smp(spk, fs, t, g=None): Time window sampling function for binary (one-hot) spikes.</span>
+<span class="sd">    __tpt_rng(spk, org=0, end=None): Set time range for timestamp spikes.</span>
+<span class="sd">    __tpt_smp(tpt, t, g, org, end): Time window sampling function for timestamp spikes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Neuronal signal filters -------------------------------------------------------------------------------------------- #</span>
+
+<div class="viewcode-block" id="spk_lowpass">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.spk_lowpass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spk_lowpass</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">fpass</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Digital lowpass Butterworth filter for neurological signals.</span>
+
+<span class="sd">    Automatic design a digital lowpass Butterworth filter for neurological signals with input frequency</span>
+<span class="sd">    and perform forward-backward digital filtering using cascaded second-order sections.</span>
+<span class="sd">    --------</span>
+<span class="sd">    The Butterworth filter has maximally flat frequency response in the passband.</span>
+<span class="sd">    --------</span>
+<span class="sd">    This function applies a linear digital filter twice, once forward and once backwards.</span>
+<span class="sd">    The combined filter has zero phase and a filter order twice that of the original.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (np.ndarray): The array of data to be filtered</span>
+<span class="sd">        fpass (float): Passband edge frequency (Hz)</span>
+<span class="sd">        fs (float): The sampling frequency of the digital system (Hz)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The filtered output with the same shape as x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ws</span> <span class="o">=</span> <span class="n">fpass</span> <span class="o">*</span> <span class="mf">1.1</span>
+    <span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">buttord</span><span class="p">(</span><span class="n">fpass</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">sos</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">butter</span><span class="p">(</span><span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span><span class="p">,</span> <span class="s1">&#39;lowpass&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;sos&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">sosfiltfilt</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<div class="viewcode-block" id="spk_highpass">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.spk_highpass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spk_highpass</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">fpass</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Digital highpass Butterworth filter for neurological signals.</span>
+
+<span class="sd">    Automatic design a digital highpass Butterworth filter for neurological signals with input frequency</span>
+<span class="sd">    and perform forward-backward digital filtering using cascaded second-order sections.</span>
+<span class="sd">    --------</span>
+<span class="sd">    The Butterworth filter has maximally flat frequency response in the passband.</span>
+<span class="sd">    --------</span>
+<span class="sd">    This function applies a linear digital filter twice, once forward and once backwards.</span>
+<span class="sd">    The combined filter has zero phase and a filter order twice that of the original.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (np.ndarray): The array of data to be filtered</span>
+<span class="sd">        fpass (float): Passband edge frequency (Hz)</span>
+<span class="sd">        fs (float): The sampling frequency of the digital system (Hz)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The filtered output with the same shape as x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ws</span> <span class="o">=</span> <span class="n">fpass</span> <span class="o">*</span> <span class="mf">0.9</span>
+    <span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">buttord</span><span class="p">(</span><span class="n">fpass</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">sos</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">butter</span><span class="p">(</span><span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span><span class="p">,</span> <span class="s1">&#39;highpass&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;sos&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">sosfiltfilt</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<div class="viewcode-block" id="spk_bandpass">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.spk_bandpass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spk_bandpass</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">fpass</span><span class="p">,</span> <span class="n">fstop</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Digital bandpass Butterworth filter for neurological signals.</span>
+
+<span class="sd">    Automatic design a digital bandpass Butterworth filter for neurological signals with input frequency</span>
+<span class="sd">    and perform forward-backward digital filtering using cascaded second-order sections.</span>
+<span class="sd">    --------</span>
+<span class="sd">    The Butterworth filter has maximally flat frequency response in the passband.</span>
+<span class="sd">    --------</span>
+<span class="sd">    This function applies a linear digital filter twice, once forward and once backwards.</span>
+<span class="sd">    The combined filter has zero phase and a filter order twice that of the original.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (np.ndarray): The array of data to be filtered</span>
+<span class="sd">        fpass (float): Passband edge frequency (Hz)</span>
+<span class="sd">        fstop (float): Stopband edge frequency (Hz)</span>
+<span class="sd">        fs (float): The sampling frequency of the digital system (Hz)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The filtered output with the same shape as x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wp</span> <span class="o">=</span> <span class="p">[</span><span class="n">fpass</span><span class="p">,</span> <span class="n">fstop</span><span class="p">]</span>
+    <span class="n">ws</span> <span class="o">=</span> <span class="p">[</span><span class="n">fpass</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">fstop</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">]</span>
+    <span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">buttord</span><span class="p">(</span><span class="n">wp</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">sos</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">butter</span><span class="p">(</span><span class="n">ordr</span><span class="p">,</span> <span class="n">wn</span><span class="p">,</span> <span class="s1">&#39;bandpass&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;sos&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">sosfiltfilt</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<div class="viewcode-block" id="spk_notch">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.spk_notch">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spk_notch</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">fnotch</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Digital notch filter for neurological signals.</span>
+
+<span class="sd">    Automatic design a digital notch filter for neurological signals with input frequency</span>
+<span class="sd">    and perform forward-backward digital filtering.</span>
+<span class="sd">    --------</span>
+<span class="sd">    A notch filter is a band-stop filter with a narrow bandwidth (high quality factor).</span>
+<span class="sd">    It rejects a narrow frequency band and leaves the rest of the spectrum little changed.</span>
+<span class="sd">    --------</span>
+<span class="sd">    This function applies a linear digital filter twice, once forward and once backwards.</span>
+<span class="sd">    The combined filter has zero phase and a filter order twice that of the original.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (np.ndarray): The array of data to be filtered</span>
+<span class="sd">        fnotch (float): Frequency to remove from a signal (Hz)</span>
+<span class="sd">        fs (float): The sampling frequency of the digital system (Hz)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The filtered output with the same shape as x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">fnotch</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">b</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">iirnotch</span><span class="p">(</span><span class="n">fnotch</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">filtfilt</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+
+
+
+<span class="c1"># Noise generators --------------------------------------------------------------------------------------------------- #</span>
+
+<div class="viewcode-block" id="noise_white">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.noise_white">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_white</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">amp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; White noise generator.</span>
+
+<span class="sd">    White noise is a signal, with a flat frequency spectrum when plotted as a linear function of frequency.</span>
+<span class="sd">    The signal has equal power in any band of a given bandwidth (power spectral density).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Number of samples to be generated</span>
+<span class="sd">        mode (int): {0 | 1} White noise random distribution type. (default: 0 = UNIFORM)</span>
+<span class="sd">            - 0 = UNIFORM distribution</span>
+<span class="sd">            - 1 = GAUSSIAN distribution</span>
+<span class="sd">        amp (float): Amplitude of noise (default: 1.0 -&gt; [-0.5 0.5))</span>
+<span class="sd">        seed (int | None): Random seed used to initialize the pseudo-random number generator</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Generated white noise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random status</span>
+    <span class="n">ran</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># Generate noise signal</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mode error: mode should be either 0 or 1, got </span><span class="si">%d</span><span class="s2"> instead&quot;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># Normalize output</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span> <span class="o">*</span> <span class="n">amp</span> <span class="o">-</span> <span class="n">amp</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">noise</span></div>
+
+
+
+<div class="viewcode-block" id="noise_freq_decr">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.noise_freq_decr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_freq_decr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">amp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Pink and brown (red) noise generator.</span>
+
+<span class="sd">    Pink noise&#39;s power density decreases 3 dB per octave</span>
+<span class="sd">    with increasing frequency (density proportional to 1/f) finite frequency range.</span>
+<span class="sd">    The frequency spectrum of pink noise is linear in logarithmic scale;</span>
+<span class="sd">    it has equal power in bands that are proportionally wide.</span>
+<span class="sd">    --------</span>
+<span class="sd">    Brown noise&#39;s power density decreases 6 dB per octave</span>
+<span class="sd">    with increasing frequency (density proportional to 1/f^2) finite frequency range.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Number of samples to be generated</span>
+<span class="sd">        mode (int): {0 | 1} White noise random distribution type (default: 0 = PINK)</span>
+<span class="sd">            - 0 = PINK noise generation</span>
+<span class="sd">            - 1 = BROWN (RED) noise generation</span>
+<span class="sd">        amp (float): Amplitude of noise (default: 1.0 -&gt; [-0.5 0.5))</span>
+<span class="sd">        seed (int | None): Random seed used to initialize the pseudo-random number generator</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Generated noise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random status</span>
+    <span class="n">ran</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># Generate noise signal</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">ran</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>    <span class="c1"># Filter, avoid ZeroDivisionError by [+1]</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>    <span class="c1"># Filter, avoid ZeroDivisionError by [+1]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mode error: mode should be either 0 or 1, got </span><span class="si">%d</span><span class="s2"> instead&quot;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">f</span> <span class="o">/</span> <span class="n">s</span><span class="p">))</span><span class="o">.</span><span class="n">real</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">size</span> <span class="o">%</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">noise</span>
+    <span class="c1"># Calculate transform parameters</span>
+    <span class="n">amp</span> <span class="o">*=</span> <span class="n">ran</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.9</span>    <span class="c1"># Get a random amplitude</span>
+    <span class="n">cet</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.1</span>    <span class="c1"># Get a random center</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+    <span class="n">const</span> <span class="o">=</span> <span class="p">(</span><span class="n">amp</span> <span class="o">*</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">+</span> <span class="p">(</span><span class="n">amp</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">cet</span><span class="p">)</span>
+    <span class="c1"># Normalize output</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span> <span class="o">*</span> <span class="n">rate</span> <span class="o">-</span> <span class="n">const</span>
+    <span class="k">return</span> <span class="n">noise</span></div>
+
+
+
+<div class="viewcode-block" id="noise_freq_incr">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.noise_freq_incr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_freq_incr</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">amp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Blue (azure) and violet (purple) noise generator.</span>
+
+<span class="sd">    Blue noise&#39;s power density increases 3 dB per octave,</span>
+<span class="sd">    with increasing frequency (density proportional to f) over a finite frequency range.</span>
+<span class="sd">    --------</span>
+<span class="sd">    Violet noise&#39;s power density increases 6 dB per octave,</span>
+<span class="sd">    with increasing frequency (density proportional to f^2) over a finite frequency range.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Number of samples to be generated</span>
+<span class="sd">        mode (int): {0 | 1} White noise random distribution type (default: 0 = BLUE)</span>
+<span class="sd">            - 0 = BLUE (AZURE) noise generation</span>
+<span class="sd">            - 1 = VIOLET (PURPLE) noise generation</span>
+<span class="sd">        amp (float): Amplitude of noise (default: 1.0 -&gt; [-0.5 0.5))</span>
+<span class="sd">        seed (int | None): Random seed used to initialize the pseudo-random number generator</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Generated noise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random status</span>
+    <span class="n">ran</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># Generate noise signal</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">ran</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>    <span class="c1"># Filter, avoid ZeroDivisionError by [+1]</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>    <span class="c1"># Filter, avoid ZeroDivisionError by [+1]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mode error: mode should be either 0 or 1, got </span><span class="si">%d</span><span class="s2"> instead&quot;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">f</span> <span class="o">*</span> <span class="n">s</span><span class="p">))</span><span class="o">.</span><span class="n">real</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">size</span> <span class="o">%</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">noise</span>
+    <span class="c1"># Calculate transform parameters</span>
+    <span class="n">amp</span> <span class="o">*=</span> <span class="n">ran</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.1</span> <span class="o">+</span> <span class="mf">0.9</span>    <span class="c1"># Get a random amplitude</span>
+    <span class="n">cet</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">*</span> <span class="mf">0.1</span>    <span class="c1"># Get a random center</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+    <span class="n">const</span> <span class="o">=</span> <span class="p">(</span><span class="n">amp</span> <span class="o">*</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">noise</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">+</span> <span class="p">(</span><span class="n">amp</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">cet</span><span class="p">)</span>
+    <span class="c1"># Normalize output</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span> <span class="o">*</span> <span class="n">rate</span> <span class="o">-</span> <span class="n">const</span>
+    <span class="k">return</span> <span class="n">noise</span></div>
+
+
+
+<div class="viewcode-block" id="bsl_sft_lin">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bsl_sft_lin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bsl_sft_lin</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">amp_rng</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Linear baseline shifting generator.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Number of samples to be generated</span>
+<span class="sd">        amp_rng (tuple[int | float, int | float]): Randomize range of baseline shift amplitude</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Generated baseline shift</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute random values for periodic signal</span>
+    <span class="n">amp_a</span><span class="p">,</span> <span class="n">amp_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">amp_rng</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">amp_rng</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># Compute randomized signal</span>
+    <span class="n">sft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">amp_a</span><span class="p">,</span> <span class="n">amp_p</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sft</span></div>
+
+
+
+<div class="viewcode-block" id="bsl_sft_sin">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bsl_sft_sin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bsl_sft_sin</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">amp_rng</span><span class="p">,</span> <span class="n">freq_rng</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Sinusoid baseline shifting generator.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        size (int): Number of samples to be generated</span>
+<span class="sd">        fs (int | float): The sampling frequency of the digital system (Hz)</span>
+<span class="sd">        amp_rng (tuple[int | float, int | float]): Randomize range of baseline shift amplitude</span>
+<span class="sd">        freq_rng (tuple[int | float, int | float]): Randomize range of baseline shift frequency (Hz)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Generated baseline shift</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute random values for periodic signal</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">amp_rng</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">amp_rng</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">freq_rng</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">freq_rng</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">fs</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="c1"># Compute randomized signal</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">freq</span> <span class="o">+</span> <span class="n">phase</span>
+    <span class="n">sft</span> <span class="o">=</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sft</span></div>
+
+
+
+<span class="c1"># Neuronal signal operations ----------------------------------------------------------------------------------------- #</span>
+
+<div class="viewcode-block" id="neuron_sig_slc">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.neuron_sig_slc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neuron_sig_slc</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Slice and pad neuronal signal to individual spikes with defined length.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        rec (np.ndarray): {1D-scalar} Recorded neuronal signal</span>
+<span class="sd">        loc (list[int]): Detected spike peak locations, stored as index of iterable [rec]</span>
+<span class="sd">        rng (list[tuple[int, int]]): Length of data points for each [loc], in order (anterior, posterior)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[np.ndarray]: {1D-scalar, n*rng} Sliced signals</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extract and convert data from inputs</span>
+    <span class="n">tot_spk</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tot_spk</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">srt_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+        <span class="n">sig_abs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span>
+    <span class="c1"># INIT VAR; spike list, list of NumPy 1D-array must be adopted as spikes may not have the same length</span>
+    <span class="n">spk_lst</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Get slicing parameters for the first spike</span>
+    <span class="n">curr_loc_a</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># _a = anterior, same for all variables ends with [_a] below</span>
+    <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># _p = posterior, same for all variables ends with [_p] below</span>
+    <span class="n">next_loc_a</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">-</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Check anterior padding</span>
+    <span class="k">if</span> <span class="n">curr_loc_a</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">curr_pad_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">curr_loc_a</span><span class="p">),</span> <span class="n">rec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">curr_loc_a</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">curr_pad_a</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Check posterior padding</span>
+    <span class="k">if</span> <span class="n">curr_loc_p</span> <span class="o">&gt;</span> <span class="n">next_loc_a</span><span class="p">:</span>
+        <span class="n">slc_a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">next_loc_a</span><span class="p">)</span>
+        <span class="n">slc_p</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">curr_loc_p</span><span class="p">,</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">slc_idx</span> <span class="o">=</span> <span class="n">slc_a</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">sig_abs</span><span class="p">[</span><span class="n">slc_a</span><span class="p">:</span><span class="n">slc_p</span><span class="p">])</span>
+        <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">curr_loc_p</span> <span class="o">-</span> <span class="n">slc_idx</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">slc_idx</span><span class="p">])</span>
+        <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="n">slc_idx</span>
+        <span class="c1"># Get anterior padding values for next spike</span>
+        <span class="n">next_pad_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">slc_idx</span> <span class="o">-</span> <span class="n">next_loc_a</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">slc_idx</span><span class="p">])</span>
+        <span class="n">next_loc_a</span> <span class="o">=</span> <span class="n">slc_idx</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">next_pad_a</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Store spike</span>
+    <span class="n">spk_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">curr_pad_a</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">curr_loc_a</span><span class="p">:</span><span class="n">curr_loc_p</span><span class="p">],</span> <span class="n">curr_pad_p</span><span class="p">)))</span>
+
+    <span class="c1"># Get slicing parameters for intermediate spikes</span>
+    <span class="k">if</span> <span class="n">tot_spk</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">spk_lst</span>
+    <span class="k">elif</span> <span class="n">tot_spk</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">srt_idx</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Transfer anterior padding info from last iteration</span>
+            <span class="n">curr_loc_a</span> <span class="o">=</span> <span class="n">next_loc_a</span>
+            <span class="n">curr_pad_a</span> <span class="o">=</span> <span class="n">next_pad_a</span>
+            <span class="c1"># Check posterior padding for current iteration</span>
+            <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">+</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">next_loc_a</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">-</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">curr_loc_p</span> <span class="o">&gt;</span> <span class="n">next_loc_a</span><span class="p">:</span>
+                <span class="n">slc_a</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">next_loc_a</span><span class="p">)</span>
+                <span class="n">slc_p</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">curr_loc_p</span><span class="p">,</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]])</span>
+                <span class="n">slc_idx</span> <span class="o">=</span> <span class="n">slc_a</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">sig_abs</span><span class="p">[</span><span class="n">slc_a</span><span class="p">:</span><span class="n">slc_p</span><span class="p">])</span>
+                <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">curr_loc_p</span> <span class="o">-</span> <span class="n">slc_idx</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">slc_idx</span><span class="p">])</span>
+                <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="n">slc_idx</span>
+                <span class="c1"># Get anterior padding values for next spike</span>
+                <span class="n">next_pad_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">slc_idx</span> <span class="o">-</span> <span class="n">next_loc_a</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">slc_idx</span><span class="p">])</span>
+                <span class="n">next_loc_a</span> <span class="o">=</span> <span class="n">slc_idx</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">next_pad_a</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Store spike</span>
+            <span class="n">spk_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">curr_pad_a</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">curr_loc_a</span><span class="p">:</span><span class="n">curr_loc_p</span><span class="p">],</span> <span class="n">curr_pad_p</span><span class="p">)))</span>
+
+    <span class="c1"># Get slicing parameters for the last spike</span>
+    <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+</span> <span class="n">rng</span><span class="p">[</span><span class="n">srt_idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">curr_loc_p</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rec</span><span class="p">):</span>
+        <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">curr_loc_p</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">curr_loc_p</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">curr_pad_p</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Store spike, direct use anterior padding info from last iteration as no next check required</span>
+    <span class="n">spk_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">next_pad_a</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="n">next_loc_a</span><span class="p">:</span><span class="n">curr_loc_p</span><span class="p">],</span> <span class="n">curr_pad_p</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">spk_lst</span></div>
+
+
+
+<div class="viewcode-block" id="sig_split">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.sig_split">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sig_split</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">endpad</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Split signal into a list of parts with defined size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        src (np.ndarray | list[int | float]): {1D-scalar} Input signal</span>
+<span class="sd">        size (int): Sample size of each signal part</span>
+<span class="sd">        overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)</span>
+<span class="sd">        endpad (int | float): Padding value of the last part to the target size (default: 0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[np.ndarray]: {1D-scalar, n*size} Output list of split signal</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+    <span class="n">tot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tot</span><span class="p">,</span> <span class="n">size</span> <span class="o">-</span> <span class="n">overlap</span><span class="p">)):</span>
+        <span class="n">ep</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">size</span>
+        <span class="c1"># Check if pad needed</span>
+        <span class="k">if</span> <span class="n">ep</span> <span class="o">&gt;</span> <span class="n">tot</span><span class="p">:</span>
+            <span class="n">pad</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="c1"># Slice data</span>
+        <span class="n">dst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">ep</span><span class="p">])</span>
+    <span class="c1"># Check the end padding</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pad</span><span class="p">:</span>
+        <span class="n">dst</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dst</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">dst</span><span class="p">[</span><span class="n">c</span><span class="p">]),</span> <span class="n">endpad</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dst</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dst</span></div>
+
+
+
+<div class="viewcode-block" id="sig_merge">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.sig_merge">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sig_merge</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Merge a list of signal parts into a signal trace.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        src (list[np.ndarray | list[int | float]] | np.ndarray): {1D(n * size) | 2D(n, size)} Input list of split signal</span>
+<span class="sd">        overlap (int): Overlapping sample size between 2 consecutive parts (default: 10)</span>
+<span class="sd">        trim (int): Samples to remove at the end of merged signal</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-scalar} Output merged signal</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get sizes</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">lead</span> <span class="o">=</span> <span class="n">size</span> <span class="o">-</span> <span class="n">overlap</span>
+    <span class="n">tot_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">overlap</span><span class="p">)</span> <span class="o">+</span> <span class="n">overlap</span>
+    <span class="c1"># Initialize arrays</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tot_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="c1"># Process merge</span>
+    <span class="k">if</span> <span class="n">overlap</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">overlap</span><span class="p">]</span>
+        <span class="c1"># Process merge</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">overlap</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">src</span><span class="p">))]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
+            <span class="n">dst</span><span class="p">[</span><span class="n">p</span><span class="p">:</span><span class="n">p</span><span class="o">+</span><span class="n">overlap</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">src</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="n">overlap</span><span class="p">],</span> <span class="n">crs</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">dst</span><span class="p">[</span><span class="n">p</span><span class="o">+</span><span class="n">overlap</span><span class="p">:</span><span class="n">p</span><span class="o">+</span><span class="n">lead</span><span class="p">]</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">overlap</span><span class="p">:</span><span class="o">-</span><span class="n">overlap</span><span class="p">]</span>
+            <span class="n">crs</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="o">-</span><span class="n">overlap</span><span class="p">:]</span>
+        <span class="c1"># Process ending and return</span>
+        <span class="n">dst</span><span class="p">[</span><span class="o">-</span><span class="n">overlap</span><span class="p">:]</span> <span class="o">=</span> <span class="n">crs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dst</span><span class="p">[:</span><span class="n">tot_len</span><span class="o">-</span><span class="n">trim</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># Peak process functions --------------------------------------------------------------------------------------------- #</span>
+
+<div class="viewcode-block" id="loc_ext_1d">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.loc_ext_1d">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">loc_ext_1d</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">allow_plateau</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Detect local extrema of given 1D list or array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arr (list[int | float] | np.ndarray): Input array</span>
+<span class="sd">        allow_plateau (bool): Allow to detect first index of extrema with plateau (default: True)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict[str, np.ndarray]: Detected local extrema</span>
+<span class="sd">            - max (np.ndarray): Local maxima</span>
+<span class="sd">            - min (np.ndarray): Local minima</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">allow_plateau</span><span class="p">:</span>
+        <span class="n">dif</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">to_begin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Padding 1 to the beginning, forcing keep first value</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">dif</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Mask consecutive repeat values, allowing plateau</span>
+        <span class="n">cmp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+        <span class="n">cmp</span> <span class="o">=</span> <span class="n">arr</span>
+    <span class="c1"># Check local maximum (peaks) and minimum (dips)</span>
+    <span class="n">mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">((</span><span class="n">cmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">cmp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">cmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">cmp</span><span class="p">[</span><span class="mi">2</span><span class="p">:]),</span> <span class="n">pad_width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;edge&#39;</span><span class="p">)</span>
+    <span class="n">mi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">((</span><span class="n">cmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">cmp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">cmp</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">cmp</span><span class="p">[</span><span class="mi">2</span><span class="p">:]),</span> <span class="n">pad_width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;edge&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">[</span><span class="n">mx</span><span class="p">],</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">[</span><span class="n">mi</span><span class="p">]}</span></div>
+
+
+
+<div class="viewcode-block" id="sig_peak_zsc">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.sig_peak_zsc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sig_peak_zsc</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">lag</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">influence</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Robust signal peak detection using z-scores.</span>
+<span class="sd">        Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal</span>
+<span class="sd">        lag (int): The length of data will be smoothed, larger lags should be included for more stationary data</span>
+<span class="sd">        th (int | float): Threshold of standard deviations from the moving mean above to classify as peak</span>
+<span class="sd">        influence (float): {0 ~ 1} The influence of signals on the algorithm&#39;s detection threshold (default: 0.0)</span>
+<span class="sd">            - 0: Signals have no influence on the threshold, implicitly assume signal is stationary</span>
+<span class="sd">            - 1: Signals have full influence of normal data points</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D-int} Detected peak indices. 1 = positive peak, -1 = negative peak, 0 = no peak</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize operational series</span>
+    <span class="n">peak</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">signal</span><span class="p">[:</span><span class="n">lag</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">signal</span><span class="p">))</span>
+    <span class="c1"># Compute sliding window initial values</span>
+    <span class="n">win_fac</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">lag</span>
+    <span class="n">lin_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">filt</span><span class="p">[:</span><span class="n">lag</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">sqr_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">filt</span><span class="p">[:</span><span class="n">lag</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">signal</span><span class="p">):</span>
+        <span class="c1"># Update filter</span>
+        <span class="n">avg</span> <span class="o">=</span> <span class="n">lin_sum</span> <span class="o">*</span> <span class="n">win_fac</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sqr_sum</span> <span class="o">*</span> <span class="n">win_fac</span> <span class="o">-</span> <span class="n">avg</span> <span class="o">*</span> <span class="n">avg</span><span class="p">))</span>  <span class="c1"># abs() to avoid negative lavue caused by precision loss</span>
+        <span class="c1"># Peak detection with influence</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">avg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">th</span> <span class="o">*</span> <span class="n">std</span><span class="p">:</span>
+            <span class="n">peak</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="n">avg</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">filt</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">lag</span><span class="p">]</span> <span class="o">=</span> <span class="n">influence</span> <span class="o">*</span> <span class="n">s</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">influence</span><span class="p">)</span> <span class="o">*</span> <span class="n">filt</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">lag</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Update sliding window sums</span>
+        <span class="n">lin_sum</span> <span class="o">=</span> <span class="n">lin_sum</span> <span class="o">+</span> <span class="n">filt</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">lag</span><span class="p">]</span> <span class="o">-</span> <span class="n">filt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">sqr_sum</span> <span class="o">=</span> <span class="n">sqr_sum</span> <span class="o">+</span> <span class="p">(</span><span class="n">filt</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">lag</span><span class="p">]</span> <span class="o">+</span> <span class="n">filt</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">filt</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">lag</span><span class="p">]</span> <span class="o">-</span> <span class="n">filt</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">peak</span></div>
+
+
+
+<div class="viewcode-block" id="sig_peak_fwd">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.sig_peak_fwd">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sig_peak_fwd</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Signal peak detection using forward difference.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal</span>
+<span class="sd">        th (int | float): Peak detection threshold</span>
+<span class="sd">        neg (bool): Negative peak flag -- True = peak less than threshold, False = peak greater than threshold</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {int} Detected peak indices -- 1 = peak, 0 = no peak</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">to_end</span><span class="o">=</span><span class="n">signal</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]))</span>
+    <span class="n">diff</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">diff</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">diff</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">signal</span> <span class="o">&lt;</span> <span class="n">th</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">neg</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">signal</span> <span class="o">&gt;</span> <span class="n">th</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">det</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="peak_extremum">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.peak_extremum">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">peak_extremum</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Find the extremum point of peak detections.</span>
+<span class="sd">            - This function should be used in pipeline with [sig_peak_zsc]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal</span>
+<span class="sd">        peak (list[int] | np.ndarray): {1D-int} Detected peak (1 = positive peak, -1 = negative peak, 0 = no peak)</span>
+<span class="sd">        th (int | float): Limit for the extremum value</span>
+<span class="sd">        neg (bool): Flag to define the negative peak direction (default: True)</span>
+<span class="sd">        smp (int | None): Number of flanking samples to extract around the extremum (default: None = No sampling)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[np.ndarray, np.ndarray | None]: {1D-int} Peak extremum indices; {2D-float | None} Signal samples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">neg</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">th</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">th</span><span class="p">)</span>
+    <span class="c1"># Detect extremum position</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peak</span> <span class="o">==</span> <span class="n">val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">grp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">grp</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">th</span><span class="p">]</span>
+    <span class="c1"># Sampling signal and return</span>
+    <span class="k">if</span> <span class="n">smp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">smp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rng</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">smp</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">rng</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">smp</span></div>
+
+
+
+<div class="viewcode-block" id="peak_reloc_ex">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.peak_reloc_ex">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">peak_reloc_ex</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smp</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Find the extremum point near the peak location.</span>
+<span class="sd">            - This function should be used in for aligning manual labelled peaks</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal</span>
+<span class="sd">        peak (list[int] | np.ndarray): {1D-int} One-hot peak indices</span>
+<span class="sd">        th (int | float | None): Limit for the extremum value (default: None = no limit)</span>
+<span class="sd">        neg (bool): Flag to define the negative peak direction (default: True)</span>
+<span class="sd">        smp (int): Number of flanking samples to extract around the extremum (default: 10)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {int} Relocated peak indices -- 1 = peak, 0 = no peak</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get search range</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">([</span><span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">smp</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">smp</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">det</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Detect local extrema</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">rng</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">neg</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">rng</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">rng</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">det</span><span class="p">)),</span> <span class="n">idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">th</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span> <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">th</span><span class="p">])</span> <span class="k">if</span> <span class="n">neg</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span> <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">th</span><span class="p">])</span>
+    <span class="c1"># Cast to output type</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">res</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<span class="c1"># Feature process functions ------------------------------------------------------------------------------------------ #</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__bin_smp</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Time window sampling function for binary (one-hot) spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} One-hot spike event data</span>
+<span class="sd">        fs (int | float): Data sampling frequency (Hz)</span>
+<span class="sd">        t (int | float): Time window to compute feature</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[np.ndarray]: Samples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">win</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">fs</span> <span class="o">*</span> <span class="n">t</span><span class="p">,</span> <span class="n">ndigits</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">stp</span> <span class="o">=</span> <span class="n">win</span> <span class="k">if</span> <span class="n">g</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">round</span><span class="p">(</span><span class="n">fs</span> <span class="o">*</span> <span class="n">g</span><span class="p">,</span> <span class="n">ndigits</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">smp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">stride_tricks</span><span class="o">.</span><span class="n">sliding_window_view</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">win</span><span class="p">)[::</span><span class="n">stp</span><span class="p">]</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">smp</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+    <span class="k">return</span> <span class="n">pos</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__tpt_rng</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">org</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Set time range for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)</span>
+<span class="sd">        end (int | float | None): The end time of timestamps (default: None = use last value of [spk])</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[np.ndarray, int | float, int | float]: Sampled spike event and time range</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sort timestamps for valid results</span>
+    <span class="n">tpt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;stable&#39;</span><span class="p">)</span>
+    <span class="c1"># Get time range</span>
+    <span class="n">org</span> <span class="o">=</span> <span class="n">tpt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="n">org</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">org</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">tpt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">end</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;=</span> <span class="n">org</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Timestamp origin must be LESS than end.&quot;</span><span class="p">)</span>
+    <span class="c1"># Limit timestamps between [org, end)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">tpt</span> <span class="o">&gt;=</span> <span class="n">org</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">tpt</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">tpt</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__tpt_smp</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Time window sampling function for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tpt (np.ndarray): {1D-SORTED} Spike event data by timestamp</span>
+<span class="sd">        t (int | float): Time window to compute feature</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature</span>
+<span class="sd">        org (int | float): Beginning of timestamps</span>
+<span class="sd">        end (int | float): The end time of timestamps</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[np.ndarray]: Samples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stp</span> <span class="o">=</span> <span class="n">t</span> <span class="k">if</span> <span class="n">g</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">g</span>
+    <span class="n">wini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">stp</span><span class="p">)</span>
+    <span class="n">wstp</span> <span class="o">=</span> <span class="n">wini</span> <span class="o">+</span> <span class="n">t</span>
+    <span class="n">wstp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">wstp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.0001</span>  <span class="c1"># Make sure the last timestamp is included</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">tpt</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">tpt</span> <span class="o">&gt;=</span> <span class="n">wini</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">tpt</span> <span class="o">&lt;</span> <span class="n">wstp</span><span class="p">[</span><span class="n">i</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wini</span><span class="p">))]</span>
+    <span class="k">return</span> <span class="n">pos</span>
+
+
+<div class="viewcode-block" id="bin_spk_frq">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bin_spk_frq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bin_spk_frq</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute average firing frequency for binary (one-hot) spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} One-hot spike event data</span>
+<span class="sd">        fs (int | float): Data sampling frequency (Hz)</span>
+<span class="sd">        t (int | float | None): Time window to compute feature (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Average firing frequency (Hz) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">spk</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">pos</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">spk</span><span class="p">)</span> <span class="o">*</span> <span class="n">fs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">__bin_smp</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">t</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="tpt_spk_frq">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.tpt_spk_frq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tpt_spk_frq</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute average firing frequency for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        t (int | float | None): Time window to compute feature (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)</span>
+<span class="sd">        end (int | float | None): The end time of timestamps (default: None = use last value of [spk])</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Average firing frequency (Hz) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Sort timestamps and get time range</span>
+    <span class="n">tpt</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">__tpt_rng</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+    <span class="c1"># Compute frequency</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tpt</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">org</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">__tpt_smp</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">t</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="bin_spk_isi">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bin_spk_isi">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bin_spk_isi</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute inter spike interval (ISI) for binary (one-hot) spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data</span>
+<span class="sd">        fs (int | float): Data sampling frequency (Hz)</span>
+<span class="sd">        t (int | float | None): Time window to compute (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        lst (bool): Return 2-point ISI list flag, t = None only (default: False)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Inter spike interval (ISI) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">spk</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute ISI, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">lst</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Sampling</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">__bin_smp</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+            <span class="c1"># Check and compute</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="tpt_spk_isi">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.tpt_spk_isi">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tpt_spk_isi</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute inter spike interval (ISI) for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        t (int | float | None): Time window to compute feature (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)</span>
+<span class="sd">        end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)</span>
+<span class="sd">        lst (bool): Return 2-point ISI list flag, t = None only (default: False)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Inter spike interval (ISI) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">spk</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute ISI, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># Sort timestamps and get time range</span>
+    <span class="n">tpt</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">__tpt_rng</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+    <span class="c1"># Compute ISI</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">tpt</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">gap</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">lst</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Compute sample locations</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">__tpt_smp</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="c1"># ISI with samples</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="bin_spk_cv">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bin_spk_cv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bin_spk_cv</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute coefficient of variation (CV) for binary (one-hot) spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data</span>
+<span class="sd">        fs (int | float): Data sampling frequency (Hz)</span>
+<span class="sd">        t (int | float | None): Time window to compute (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        ddof (int | float): Means delta degrees of freedom (default: 0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Coefficient of variation (CV) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">spk</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">lim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ddof</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">lim</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute CV, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="n">ddof</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Sampling</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">__bin_smp</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+            <span class="c1"># Check and compute</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">lim</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="n">ddof</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="tpt_spk_cv">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.tpt_spk_cv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tpt_spk_cv</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute coefficient of variation (CV) for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        t (int | float | None): Time window to compute feature (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)</span>
+<span class="sd">        end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)</span>
+<span class="sd">        ddof (int | float): Means delta degrees of freedom (default: 0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: Coefficient of variation (CV) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ddof</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">spk</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">lim</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute CV, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># Sort timestamps and get time range</span>
+    <span class="n">tpt</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">__tpt_rng</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+    <span class="c1"># Compute CV</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">tpt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="n">ddof</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Compute sample locations</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">__tpt_smp</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="c1"># CV with samples</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">lim</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gap</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="n">ddof</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gap</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="bin_spk_cv2">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.bin_spk_cv2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bin_spk_cv2</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute 2-point coefficient of variation (CV2) for binary (one-hot) spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] | np.ndarray): {1D} One-hot spike event data</span>
+<span class="sd">        fs (int | float): Data sampling frequency (Hz)</span>
+<span class="sd">        t (int | float | None): Time window to compute (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: 2-point coefficient of variation (CV2) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">spk</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pos</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute CV2, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+            <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">gap</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">gap</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">gap</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Sampling</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">__bin_smp</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+            <span class="c1"># Check and compute</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">fs</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">gap</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">gap</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">gap</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="tpt_spk_cv2">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.tpt_spk_cv2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tpt_spk_cv2</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute 2-point coefficient of variation (CV2) for timestamp spikes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        t (int | float | None): Time window to compute feature (default: None = compute whole trace)</span>
+<span class="sd">        g (int | float | None): Time sampling step to compute feature (default: None = the same as [t])</span>
+<span class="sd">        org (int | float | None): Beginning of timestamps, set None to use first value of [spk] (default: 0)</span>
+<span class="sd">        end (int | float | None): End of timestamps, set None to use last value of [spk] (default: None)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float | list[float]: 2-point coefficient of variation (CV2) of spike data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">spk</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Not enough spikes detected to compute CV2, NaN returned.&quot;</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># Sort timestamps and get time range</span>
+    <span class="n">tpt</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">__tpt_rng</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+    <span class="c1"># Compute CV2</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">tpt</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">gap</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">gap</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">gap</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Compute sample locations</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">__tpt_smp</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="c1"># CV2 with samples</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ediff1d</span><span class="p">(</span><span class="n">gap</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">gap</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">gap</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="tpt_kde_frq">
+<a class="viewcode-back" href="../../../_api/parus.data.sig.html#parus.data.sig.tpt_kde_frq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tpt_kde_frq</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Estimate timestamp spike firing rate using Gaussian kernels.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp</span>
+<span class="sd">        bw (int | float | str | function | None): The method used to calculate the estimator bandwidth (default: None)</span>
+<span class="sd">            - (int | float): Value will be used directly as bandwidth factor</span>
+<span class="sd">            - {&#39;scott&#39;}: Auto compute Scott&#39;s factor</span>
+<span class="sd">            - {&#39;silverman&#39;}: Auto compute Silverman&#39;s factor</span>
+<span class="sd">            - (function): Callable take a gaussian_kde instance as only parameter and return a scalar</span>
+<span class="sd">            - {None}: Using &#39;scott&#39;</span>
+
+<span class="sd">   Keyword Args:</span>
+<span class="sd">       smp (list[int | float] or np.ndarray): {1D} Resample data by timestamp, ignore [org] [end] [num] if defined</span>
+<span class="sd">       org (int | float | None): Beginning of timestamps, use first value of [spk] if undefined</span>
+<span class="sd">       end (int | float | None): End of timestamps, use last value of [spk] if undefined</span>
+<span class="sd">       num (int): Number of samples to compute, 1000 if undefined</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Firing rate estimations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tpt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">spk</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;stable&#39;</span><span class="p">)</span>
+    <span class="c1"># Get sampling range</span>
+    <span class="n">smp</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;smp&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">smp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">org</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;org&#39;</span><span class="p">,</span> <span class="n">tpt</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;end&#39;</span><span class="p">,</span> <span class="n">tpt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">smp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">org</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+    <span class="c1"># Compute Gaussian kernel-density estimate</span>
+    <span class="n">kde</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">tpt</span><span class="p">,</span> <span class="n">bw_method</span><span class="o">=</span><span class="n">bw</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">est</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">smp</span><span class="p">)</span> <span class="o">*</span> <span class="n">tpt</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">est</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Si-yang Yu, XiaoLe &#39;Eddie&#39; Liu
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

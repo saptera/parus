@@ -1,0 +1,719 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
+        <title>parus.data.proc - parus documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">parus  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">parus  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../_api/parus.html">parus package</a><input aria-label="Toggle navigation of parus package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.app.html">parus.app package</a><input aria-label="Toggle navigation of parus.app package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.afunc.html">parus.app.afunc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.pac_ma.html">parus.app.pac_ma module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.app.pac_rt.html">parus.app.pac_rt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.data.html">parus.data package</a><input aria-label="Toggle navigation of parus.data package" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.clst.html">parus.data.clst module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.plot.html">parus.data.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.proc.html">parus.data.proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.data.sig.html">parus.data.sig module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.fio.html">parus.fio package</a><input aria-label="Toggle navigation of parus.fio package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.fdata.html">parus.fio.fdata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.fmeta.html">parus.fio.fmeta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.hdf.html">parus.fio.hdf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.intan.html">parus.fio.intan module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.matlab.html">parus.fio.matlab module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.smr.html">parus.fio.smr module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.fio.tdt.html">parus.fio.tdt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.gui.html">parus.gui package</a><input aria-label="Toggle navigation of parus.gui package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.app_main.html">parus.gui.app_main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_appdat.html">parus.gui.desg_appdat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_apptrn.html">parus.gui.desg_apptrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_arcmrk.html">parus.gui.desg_arcmrk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_genctl.html">parus.gui.desg_genctl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_modinf.html">parus.gui.desg_modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_modtrn.html">parus.gui.desg_modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_posadd.html">parus.gui.desg_posadd module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_resver.html">parus.gui.desg_resver module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_spksrt.html">parus.gui.desg_spksrt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_sysset.html">parus.gui.desg_sysset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.desg_wfmsel.html">parus.gui.desg_wfmsel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.elm_plot.html">parus.gui.elm_plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.elm_proc.html">parus.gui.elm_proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.gui_dat.html">parus.gui.gui_dat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.gui.gui_trn.html">parus.gui.gui_trn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.model.html">parus.model package</a><input aria-label="Toggle navigation of parus.model package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.dset.html">parus.model.dset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.eval.html">parus.model.eval module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.mio.html">parus.model.mio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.optim.html">parus.model.optim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.post.html">parus.model.post module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.transformer.html">parus.model.transformer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.model.wavenet.html">parus.model.wavenet module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.rt.html">parus.rt package</a><input aria-label="Toggle navigation of parus.rt package" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.app_rt.html">parus.rt.app_rt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.desg_apprtp.html">parus.rt.desg_apprtp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.hwio.html">parus.rt.hwio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.rt.intan_rhx.html">parus.rt.intan_rhx module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.scripts.html">parus.scripts package</a><input aria-label="Toggle navigation of parus.scripts package" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.gensim.html">parus.scripts.gensim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.gensta.html">parus.scripts.gensta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.modinf.html">parus.scripts.modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.modtrn.html">parus.scripts.modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.scripts.prddsp.html">parus.scripts.prddsp module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_api/parus.util.html">parus.util package</a><input aria-label="Toggle navigation of parus.util package" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.base.html">parus.util.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.cli.html">parus.util.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_api/parus.util.disp.html">parus.util.disp module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for parus.data.proc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Basic data process module</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span><span class="p">,</span> <span class="n">laplace</span>
+
+<span class="n">__package__</span> <span class="o">=</span> <span class="s1">&#39;parus.data&#39;</span>
+<span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;parus.data.proc&#39;</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;arr_rand_samp&#39;</span><span class="p">,</span> <span class="s1">&#39;norm_lst_gen&#39;</span><span class="p">,</span> <span class="s1">&#39;laplace_lst_gen&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;spk_merge&#39;</span><span class="p">,</span> <span class="s1">&#39;neuron_rnd_samp&#39;</span><span class="p">,</span> <span class="s1">&#39;neuron_sig_samp&#39;</span><span class="p">,</span> <span class="s1">&#39;neuron_sig_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;pred_mae&#39;</span><span class="p">,</span> <span class="s1">&#39;nsd_asgnv&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;chk_settle&#39;</span>
+<span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Function list:</span>
+<span class="sd">  arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.</span>
+<span class="sd">  norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.</span>
+<span class="sd">  laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.</span>
+<span class="sd">  spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. </span>
+<span class="sd">  neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal for training models.</span>
+<span class="sd">  neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.</span>
+<span class="sd">  neuron_sig_mean(sig, time, lbl, size=50, pos=None, method=&#39;none&#39;, rng_srch=10): Extract neuronal signal for archiving.</span>
+<span class="sd">  pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.</span>
+<span class="sd">  nsd_asgnv(sig_data, rng_asgn, val_lst, method=&#39;min&#39;, rng_srch=10): Assign a value list around the signal.</span>
+<span class="sd">  chk_settle(sig, win=10): Locate the first point where the signal settles to baseline. (SUPERVISION NEEDED)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="arr_rand_samp">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.arr_rand_samp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">arr_rand_samp</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">n_samp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Random sampling of unique samples from a NumPy array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arr (np.ndarray): Input array</span>
+<span class="sd">        n_samp (int): Number of samples</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: {1D} Samples from original array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_samp</span> <span class="o">+</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">n_samp</span><span class="p">))</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">arr</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="norm_lst_gen">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.norm_lst_gen">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">norm_lst_gen</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate a list obeying normal distribution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        peak (float): Peak (centre) value of output</span>
+<span class="sd">        side (int): Number of samples around the peak</span>
+<span class="sd">        level (int): {1 | 2 | 3}: Level of three-sigma rule within the [size]. (default: 2)</span>
+<span class="sd">            - 1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%</span>
+<span class="sd">            - 2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%</span>
+<span class="sd">            - 3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[float]: Output list of generated value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lvl_dic</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+    <span class="n">nd</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">side</span> <span class="o">/</span> <span class="n">lvl_dic</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>  <span class="c1"># Normal distribution sigma range</span>
+    <span class="n">fac</span> <span class="o">=</span> <span class="n">peak</span> <span class="o">/</span> <span class="n">nd</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Peak stretch factor</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">side</span><span class="p">,</span> <span class="n">side</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nd</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<div class="viewcode-block" id="laplace_lst_gen">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.laplace_lst_gen">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">laplace_lst_gen</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate a list obeying laplace distribution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        peak (float): Peak (centre) value of output</span>
+<span class="sd">        side (int): Number of samples around the peak</span>
+<span class="sd">        scale (int | float): : Diversity of generated samples (default: 1)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[float]: Output list of generated value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ld</span> <span class="o">=</span> <span class="n">laplace</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>  <span class="c1"># Laplace distribution with scale</span>
+    <span class="n">fac</span> <span class="o">=</span> <span class="n">peak</span> <span class="o">/</span> <span class="n">ld</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Peak stretch factor</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">side</span><span class="p">,</span> <span class="n">side</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ld</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">*</span> <span class="n">fac</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<div class="viewcode-block" id="spk_merge">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.spk_merge">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spk_merge</span><span class="p">(</span><span class="n">spk_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Merge and sort channel arranged spike data for data sampling.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        spk_data (dict[int, dict[int, np.ndarray]]): Channel type spike timing data, data structure as follows:</span>
+<span class="sd">                                                     {prob_ch: {cell_id: spk_time}}</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict[int, np.ndarray]: Merged and sorted spike timing data, data structure as: {prob_ch: merged_spk_time}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out_data</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">spk_data</span><span class="p">:</span>
+        <span class="n">spk_keys</span> <span class="o">=</span> <span class="n">spk_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">spk_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">spk_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">spk_keys</span><span class="p">]),</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;mergesort&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">spk_keys</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">out_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">spk_out</span>
+    <span class="k">return</span> <span class="n">out_data</span></div>
+
+
+
+<div class="viewcode-block" id="neuron_rnd_samp">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.neuron_rnd_samp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neuron_rnd_samp</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Random slice and extract neuronal signal data for training models.</span>
+<span class="sd">            This function only return NumPy-int8[0|1] (one-hot) type labels</span>
+<span class="sd">            Samples from this function are simple random slices of raw signal</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data</span>
+<span class="sd">        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]</span>
+<span class="sd">        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes</span>
+<span class="sd">        num (int): Number of samples to extract (default: 1000)</span>
+<span class="sd">        size (int): Data point length of each sample (default: 150)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:</span>
+<span class="sd">                                     list[{&#39;sig&#39;: np.ndarray(1D-float64), &#39;lbl&#39;: np.ndarray(1D-int8)}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get label marker from time array</span>
+    <span class="n">tmk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">mrk_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">tmk</span><span class="p">[</span><span class="n">mrk_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">high_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span> <span class="o">-</span> <span class="n">size</span>
+    <span class="c1"># Sampling with defined parameters</span>
+    <span class="n">sig_samp</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+        <span class="n">samp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sig&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;lbl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>  <span class="c1"># INIT/RESET VAR</span>
+        <span class="c1"># Get random index range</span>
+        <span class="n">min_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">high_idx</span><span class="p">)</span>
+        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">min_idx</span> <span class="o">+</span> <span class="n">size</span>
+        <span class="c1"># Extract data</span>
+        <span class="n">samp</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="n">min_idx</span><span class="p">:</span><span class="n">max_idx</span><span class="p">]</span>
+        <span class="n">samp</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmk</span><span class="p">[</span><span class="n">min_idx</span><span class="p">:</span><span class="n">max_idx</span><span class="p">]</span>
+        <span class="n">sig_samp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">samp</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sig_samp</span></div>
+
+
+
+<div class="viewcode-block" id="neuron_sig_samp">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.neuron_sig_samp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neuron_sig_samp</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Slice and extract neuronal signal data for training models.</span>
+<span class="sd">            This function only return NumPy-int8[0|1] (one-hot) type labels</span>
+<span class="sd">            Samples from this function will always contain spikes</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data</span>
+<span class="sd">        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]</span>
+<span class="sd">        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes</span>
+<span class="sd">        num (int): Number of samples to extract (default: 1000)</span>
+<span class="sd">        size (int): Data point length of each sample (default: 150)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:</span>
+<span class="sd">                                     list[{&#39;sig&#39;: np.ndarray(1D-float64), &#39;lbl&#39;: np.ndarray(1D-int8)}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get label marker from time array</span>
+    <span class="n">tmk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">mrk_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">tmk</span><span class="p">[</span><span class="n">mrk_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">max_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+    <span class="c1"># Sampling with defined parameters</span>
+    <span class="n">lsp</span> <span class="o">=</span> <span class="n">arr_rand_samp</span><span class="p">(</span><span class="n">mrk_idx</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span>
+    <span class="n">sig_samp</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">lsp</span><span class="p">:</span>
+        <span class="n">samp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sig&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;lbl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>  <span class="c1"># INIT/RESET VAR</span>
+        <span class="c1"># Get random index range</span>
+        <span class="n">min_idx</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">))</span>
+        <span class="n">min_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">min_idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">min_idx</span>  <span class="c1"># Verify</span>
+        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">min_idx</span> <span class="o">+</span> <span class="n">size</span>
+        <span class="n">min_idx</span> <span class="o">=</span> <span class="n">max_len</span> <span class="o">-</span> <span class="n">size</span> <span class="k">if</span> <span class="n">max_idx</span> <span class="o">&gt;</span> <span class="n">max_len</span> <span class="k">else</span> <span class="n">min_idx</span>  <span class="c1"># Verify</span>
+        <span class="c1"># Extract data</span>
+        <span class="n">samp</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="n">min_idx</span><span class="p">:</span><span class="n">max_idx</span><span class="p">]</span>
+        <span class="n">samp</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmk</span><span class="p">[</span><span class="n">min_idx</span><span class="p">:</span><span class="n">max_idx</span><span class="p">]</span>
+        <span class="n">sig_samp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">samp</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sig_samp</span></div>
+
+
+
+<div class="viewcode-block" id="neuron_sig_mean">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.neuron_sig_mean">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neuron_sig_mean</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">rng_srch</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Extract neuronal signal for archiving.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data</span>
+<span class="sd">        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]</span>
+<span class="sd">        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes</span>
+<span class="sd">        size (int): Data point length of sample (default: 50)</span>
+<span class="sd">        pos (int | None): Location of spike (default: None = centre of sample)</span>
+<span class="sd">        method (str): {&#39;min&#39; | &#39;max&#39; | &#39;none&#39;}: Local extremum search method. (default: &#39;none&#39;)</span>
+<span class="sd">            - &#39;min&#39;:  detect minimum of signal within [-rng_srch, rng_srch]</span>
+<span class="sd">            - &#39;max&#39;:  detect maximum of signal within [-rng_srch, rng_srch]</span>
+<span class="sd">            - &#39;none&#39;: keep original label from [sig_data], ignoring [rng_srch]</span>
+<span class="sd">        rng_srch (int): Range to search local extremum (default: 10)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[np.ndarray, int]: Averaged signal sample</span>
+<span class="sd">            - mean: {1D-float64} Neuronal signal samples</span>
+<span class="sd">            - pos: {int} Index of spike</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">pos</span>
+    <span class="c1"># Verify inputs</span>
+    <span class="k">if</span> <span class="n">pos</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for [pos]. [pos] must be a positive integer less than [size].&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid type for [method]. Expected &#39;min&#39;, &#39;max&#39; or &#39;none&#39;.&quot;</span><span class="p">)</span>
+    <span class="c1"># Get label marker from time array</span>
+    <span class="n">tmk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+    <span class="n">mrk_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">tmk</span><span class="p">[</span><span class="n">mrk_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># Sampling with defined parameters</span>
+    <span class="n">sig_samp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">mrk_idx</span><span class="p">),</span> <span class="n">size</span><span class="p">))</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mrk_idx</span><span class="p">)):</span>
+        <span class="c1"># Relocating signal peak</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">loc</span> <span class="o">=</span> <span class="n">mrk_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get search range</span>
+            <span class="n">lst_min</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">mrk_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">-</span> <span class="n">rng_srch</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">mrk_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="n">rng_srch</span>
+            <span class="n">lst_max</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span> <span class="k">if</span> <span class="n">mrk_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+</span> <span class="n">rng_srch</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span> <span class="k">else</span> <span class="n">mrk_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="n">rng_srch</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lst_srch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lst_min</span><span class="p">,</span> <span class="n">lst_max</span><span class="p">))</span>
+            <span class="c1"># Search for local extremum</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span>
+                <span class="n">loc</span> <span class="o">=</span> <span class="n">lst_srch</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="n">lst_srch</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loc</span> <span class="o">=</span> <span class="n">lst_srch</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="n">lst_srch</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+        <span class="c1"># Get index range</span>
+        <span class="n">min_idx</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">-</span> <span class="n">pos</span>
+        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">min_idx</span> <span class="o">+</span> <span class="n">size</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">min_idx</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">))</span>
+        <span class="c1"># Assign value</span>
+        <span class="n">sig_samp</span><span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sig_samp</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">pos</span></div>
+
+
+
+<div class="viewcode-block" id="pred_mae">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.pred_mae">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pred_mae</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="mi">35</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Get evaluation score of predicted signal, by computing mean absolute error (MAE).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict): Denoised signal output from model, structure as below:</span>
+<span class="sd">            - &#39;inp&#39;: (np.ndarray): Input signal</span>
+<span class="sd">            - &#39;prd&#39;: (np.ndarray): Predicted signal</span>
+<span class="sd">            - &#39;lbl&#39;: (np.ndarray): Signal label</span>
+<span class="sd">        th (int | float): Quality threshold (default: 10)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[float, bool]: Mean absolute error (MAE) result of prediction</span>
+<span class="sd">            - score: {float} Evaluation score</span>
+<span class="sd">            - q: {bool} Quality check result</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;prd&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="n">th</span>
+    <span class="k">return</span> <span class="n">score</span><span class="p">,</span> <span class="n">q</span></div>
+
+
+
+<div class="viewcode-block" id="nsd_asgnv">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.nsd_asgnv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nsd_asgnv</span><span class="p">(</span><span class="n">sig_data</span><span class="p">,</span> <span class="n">rng_asgn</span><span class="p">,</span> <span class="n">val_lst</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="n">rng_srch</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Assign a value list around the signal.</span>
+<span class="sd">            This function only accept NumPy-int8[0|1] (one-hot) type labels</span>
+<span class="sd">            This function will return NumPy-float64 type labels</span>
+<span class="sd">    Args:</span>
+<span class="sd">        sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:</span>
+<span class="sd">                                          {&#39;sig&#39;: np.ndarray(1D-float64), &#39;lbl&#39;: np.ndarray(1D-int8[0|1])}</span>
+<span class="sd">        rng_asgn (int): Range to assign values</span>
+<span class="sd">        val_lst (list | np.ndarray): List of value to be assigned</span>
+<span class="sd">        method (str): {&#39;min&#39; | &#39;max&#39; | &#39;none&#39;}: Local extremum search method (default: &#39;min&#39;)</span>
+<span class="sd">            - &#39;min&#39;:  detect minimum of signal within [-rng_srch, rng_srch]</span>
+<span class="sd">            - &#39;max&#39;:  detect maximum of signal within [-rng_srch, rng_srch]</span>
+<span class="sd">            - &#39;none&#39;: keep original label from [sig_data], ignoring [rng_srch]</span>
+<span class="sd">        rng_srch (int): Range to search local extremum (default: 10)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:</span>
+<span class="sd">                               {&#39;sig&#39;: np.ndarray(1D-float64), &#39;lbl&#39;: np.ndarray(1D-float64)}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig_data_out</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">sig_data</span><span class="p">)</span>  <span class="c1"># Make copy, avoid unexpected changes</span>
+    <span class="c1"># Verify inputs</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_lst</span><span class="p">)</span> <span class="o">!=</span> <span class="n">rng_asgn</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length of [val_lst] must be equal to [rng_asgn] * 2 + 1.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid type for [method]. Expected &#39;min&#39;, &#39;max&#39; or &#39;none&#39;.&quot;</span><span class="p">)</span>
+    <span class="c1"># Search around the labels</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">lbl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">loc</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get search range</span>
+            <span class="n">lst_min</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">i</span> <span class="o">-</span> <span class="n">rng_srch</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">i</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="n">rng_srch</span>
+            <span class="n">lst_max</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="n">rng_srch</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="n">i</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="n">rng_srch</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">lst_srch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">lst_min</span><span class="p">,</span> <span class="n">lst_max</span><span class="p">))</span>
+            <span class="c1"># Search for local extremum</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span>
+                <span class="n">loc</span> <span class="o">=</span> <span class="n">lst_srch</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">][</span><span class="n">lst_srch</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">loc</span> <span class="o">=</span> <span class="n">lst_srch</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">][</span><span class="n">lst_srch</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()]</span>
+        <span class="c1"># Assign value to original</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rng_asgn</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">curr_idx</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">-</span> <span class="n">rng_asgn</span> <span class="o">+</span> <span class="n">j</span>
+            <span class="k">if</span> <span class="n">curr_idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="n">curr_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig_data</span><span class="p">[</span><span class="s1">&#39;sig&#39;</span><span class="p">]):</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lbl</span><span class="p">[</span><span class="n">curr_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">val_lst</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+    <span class="c1"># Return values</span>
+    <span class="n">sig_data_out</span><span class="p">[</span><span class="s1">&#39;lbl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lbl</span>
+    <span class="k">return</span> <span class="n">sig_data_out</span></div>
+
+
+
+<div class="viewcode-block" id="chk_settle">
+<a class="viewcode-back" href="../../../_api/parus.data.proc.html#parus.data.proc.chk_settle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chk_settle</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">win</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Locate the first point where the signal settles to baseline.</span>
+
+<span class="sd">    This function is largely depends on the window size, cannot be used without supervision.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sig (list[int | float] | np.ndarray): Input signal</span>
+<span class="sd">        win (int): Sliding window size</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: Settle point</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute sliding window initial values</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span> <span class="o">-</span> <span class="n">win</span>
+    <span class="n">win_fac</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">win</span>
+    <span class="n">lin_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sig</span><span class="p">[:</span><span class="n">win</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">sqr_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">sig</span><span class="p">[:</span><span class="n">win</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Compute global effects</span>
+    <span class="n">abs_glob</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span>
+    <span class="n">std_glob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+
+    <span class="n">abs_rec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># INIT VAR</span>
+    <span class="n">std_rec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># INIT VAR</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">step</span><span class="p">):</span>
+        <span class="c1"># Update filter</span>
+        <span class="n">avg</span> <span class="o">=</span> <span class="n">lin_sum</span> <span class="o">*</span> <span class="n">win_fac</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sqr_sum</span> <span class="o">*</span> <span class="n">win_fac</span> <span class="o">-</span> <span class="n">avg</span> <span class="o">*</span> <span class="n">avg</span><span class="p">))</span>  <span class="c1"># abs() to avoid negative value caused by precision loss</span>
+        <span class="c1"># Update sliding window sums</span>
+        <span class="n">lin_sum</span> <span class="o">=</span> <span class="n">lin_sum</span> <span class="o">+</span> <span class="n">sig</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">win</span><span class="p">]</span> <span class="o">-</span> <span class="n">sig</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">sqr_sum</span> <span class="o">=</span> <span class="n">sqr_sum</span> <span class="o">+</span> <span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">win</span><span class="p">]</span> <span class="o">+</span> <span class="n">sig</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">sig</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">win</span><span class="p">]</span> <span class="o">-</span> <span class="n">sig</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Record value</span>
+        <span class="n">abs_rec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">avg</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span>  <span class="c1"># Plus distance penalty</span>
+        <span class="n">std_rec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">std</span>
+
+    <span class="c1"># Compare and return</span>
+    <span class="n">comp</span> <span class="o">=</span> <span class="n">abs_rec</span> <span class="o">/</span> <span class="n">abs_glob</span> <span class="o">+</span> <span class="n">std_rec</span> <span class="o">/</span> <span class="n">std_glob</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="n">win</span> <span class="o">//</span> <span class="mi">2</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Si-yang Yu, XiaoLe &#39;Eddie&#39; Liu
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

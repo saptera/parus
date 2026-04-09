@@ -1,0 +1,7 @@
+parus.gui.desg\_wfmsel module
+=============================
+
+.. automodule:: parus.gui.desg_wfmsel
+   :members:
+   :show-inheritance:
+   :undoc-members:

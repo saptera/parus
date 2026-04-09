@@ -1,0 +1,7 @@
+parus.gui.desg\_genctl module
+=============================
+
+.. automodule:: parus.gui.desg_genctl
+   :members:
+   :show-inheritance:
+   :undoc-members:

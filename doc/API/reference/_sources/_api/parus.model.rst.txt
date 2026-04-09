@@ -1,0 +1,21 @@
+parus.model package
+===================
+
+.. automodule:: parus.model
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   parus.model.dset
+   parus.model.eval
+   parus.model.mio
+   parus.model.optim
+   parus.model.post
+   parus.model.transformer
+   parus.model.wavenet

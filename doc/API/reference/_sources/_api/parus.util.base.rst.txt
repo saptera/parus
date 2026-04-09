@@ -1,0 +1,7 @@
+parus.util.base module
+======================
+
+.. automodule:: parus.util.base
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.fio.fdata module
+======================
+
+.. automodule:: parus.fio.fdata
+   :members:
+   :show-inheritance:
+   :undoc-members:

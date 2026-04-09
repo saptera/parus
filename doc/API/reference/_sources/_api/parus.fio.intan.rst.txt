@@ -1,0 +1,7 @@
+parus.fio.intan module
+======================
+
+.. automodule:: parus.fio.intan
+   :members:
+   :show-inheritance:
+   :undoc-members:

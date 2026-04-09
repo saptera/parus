@@ -1,0 +1,30 @@
+parus.gui package
+=================
+
+.. automodule:: parus.gui
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   parus.gui.app_main
+   parus.gui.desg_appdat
+   parus.gui.desg_apptrn
+   parus.gui.desg_arcmrk
+   parus.gui.desg_genctl
+   parus.gui.desg_modinf
+   parus.gui.desg_modtrn
+   parus.gui.desg_posadd
+   parus.gui.desg_resver
+   parus.gui.desg_spksrt
+   parus.gui.desg_sysset
+   parus.gui.desg_wfmsel
+   parus.gui.elm_plot
+   parus.gui.elm_proc
+   parus.gui.gui_dat
+   parus.gui.gui_trn

@@ -1,0 +1,7 @@
+parus.app.pac\_ma module
+========================
+
+.. automodule:: parus.app.pac_ma
+   :members:
+   :show-inheritance:
+   :undoc-members:

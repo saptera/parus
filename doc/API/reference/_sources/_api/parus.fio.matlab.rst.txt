@@ -1,0 +1,7 @@
+parus.fio.matlab module
+=======================
+
+.. automodule:: parus.fio.matlab
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.gui.gui\_dat module
+=========================
+
+.. automodule:: parus.gui.gui_dat
+   :members:
+   :show-inheritance:
+   :undoc-members:

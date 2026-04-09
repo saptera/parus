@@ -1,0 +1,22 @@
+parus package
+=============
+
+.. automodule:: parus
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   parus.app
+   parus.data
+   parus.fio
+   parus.gui
+   parus.model
+   parus.rt
+   parus.scripts
+   parus.util

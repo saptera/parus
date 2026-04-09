@@ -1,0 +1,7 @@
+parus.model.dset module
+=======================
+
+.. automodule:: parus.model.dset
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.gui.desg\_resver module
+=============================
+
+.. automodule:: parus.gui.desg_resver
+   :members:
+   :show-inheritance:
+   :undoc-members:

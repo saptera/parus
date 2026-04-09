@@ -1,0 +1,1793 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#"><link rel="search" title="Search" href="search.html">
+        <link rel="prefetch" href="_static/logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 --><title>Index - parus documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">parus  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">parus  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="_api/parus.html">parus package</a><input aria-label="Toggle navigation of parus package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.app.html">parus.app package</a><input aria-label="Toggle navigation of parus.app package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.app.afunc.html">parus.app.afunc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.app.pac_ma.html">parus.app.pac_ma module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.app.pac_rt.html">parus.app.pac_rt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.data.html">parus.data package</a><input aria-label="Toggle navigation of parus.data package" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.data.clst.html">parus.data.clst module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.data.plot.html">parus.data.plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.data.proc.html">parus.data.proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.data.sig.html">parus.data.sig module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.fio.html">parus.fio package</a><input aria-label="Toggle navigation of parus.fio package" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.fdata.html">parus.fio.fdata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.fmeta.html">parus.fio.fmeta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.hdf.html">parus.fio.hdf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.intan.html">parus.fio.intan module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.matlab.html">parus.fio.matlab module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.smr.html">parus.fio.smr module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.fio.tdt.html">parus.fio.tdt module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.gui.html">parus.gui package</a><input aria-label="Toggle navigation of parus.gui package" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.app_main.html">parus.gui.app_main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_appdat.html">parus.gui.desg_appdat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_apptrn.html">parus.gui.desg_apptrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_arcmrk.html">parus.gui.desg_arcmrk module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_genctl.html">parus.gui.desg_genctl module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_modinf.html">parus.gui.desg_modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_modtrn.html">parus.gui.desg_modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_posadd.html">parus.gui.desg_posadd module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_resver.html">parus.gui.desg_resver module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_spksrt.html">parus.gui.desg_spksrt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_sysset.html">parus.gui.desg_sysset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.desg_wfmsel.html">parus.gui.desg_wfmsel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.elm_plot.html">parus.gui.elm_plot module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.elm_proc.html">parus.gui.elm_proc module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.gui_dat.html">parus.gui.gui_dat module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.gui.gui_trn.html">parus.gui.gui_trn module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.model.html">parus.model package</a><input aria-label="Toggle navigation of parus.model package" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.dset.html">parus.model.dset module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.eval.html">parus.model.eval module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.mio.html">parus.model.mio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.optim.html">parus.model.optim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.post.html">parus.model.post module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.transformer.html">parus.model.transformer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.model.wavenet.html">parus.model.wavenet module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.rt.html">parus.rt package</a><input aria-label="Toggle navigation of parus.rt package" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.rt.app_rt.html">parus.rt.app_rt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.rt.desg_apprtp.html">parus.rt.desg_apprtp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.rt.hwio.html">parus.rt.hwio module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.rt.intan_rhx.html">parus.rt.intan_rhx module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.scripts.html">parus.scripts package</a><input aria-label="Toggle navigation of parus.scripts package" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.scripts.gensim.html">parus.scripts.gensim module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.scripts.gensta.html">parus.scripts.gensta module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.scripts.modinf.html">parus.scripts.modinf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.scripts.modtrn.html">parus.scripts.modtrn module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.scripts.prddsp.html">parus.scripts.prddsp module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="_api/parus.util.html">parus.util package</a><input aria-label="Toggle navigation of parus.util package" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.util.base.html">parus.util.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.util.cli.html">parus.util.cli module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_api/parus.util.disp.html">parus.util.disp module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#H"><strong>H</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#J"><strong>J</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#Q"><strong>Q</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#V"><strong>V</strong></a> | <a href="#W"><strong>W</strong></a> | <a href="#Y"><strong>Y</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.add_arguments">add_arguments() (parus.gui.elm_proc.PyScriptExec method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.BlitManager.add_artist">add_artist() (parus.gui.elm_plot.BlitManager method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.add_pos">add_pos() (parus.gui.elm_plot.ResPltLoader method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.add_pos">(parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.util.base.html#parus.util.base.altmk_outdirs">altmk_outdirs() (in module parus.util.base)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.arc_plot">arc_plot() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.arc_read">arc_read() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.arc_write">arc_write() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ArcPreviewPlot">ArcPreviewPlot (class in parus.gui.elm_plot)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ArcPrv">ArcPrv (class in parus.gui.gui_trn)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.arr_rand_samp">arr_rand_samp() (in module parus.data.proc)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bin_spk_cv">bin_spk_cv() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bin_spk_cv2">bin_spk_cv2() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bin_spk_frq">bin_spk_frq() (in module parus.data.sig)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bin_spk_isi">bin_spk_isi() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.BlitManager">BlitManager (class in parus.gui.elm_plot)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bsl_sft_lin">bsl_sft_lin() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.bsl_sft_sin">bsl_sft_sin() (in module parus.data.sig)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.cancelled">cancelled (parus.gui.elm_proc.PyScriptExec attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.CellCheckbox">CellCheckbox (class in parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.CellData">CellData (class in parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.check_correction">check_correction() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.PosAdd.chk_cid_name">chk_cid_name() (parus.gui.gui_dat.PosAdd method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.chk_cor">chk_cor() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.chk_settle">chk_settle() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR">CircularBufferCR (class in parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL">CircularBufferFL (class in parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.cjsh_read">cjsh_read() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.cjsh_write">cjsh_write() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.clear">clear() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_file_in">cli_file_in() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_float_in">cli_float_in() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_int_in">cli_int_in() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_list_sel">cli_list_sel() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_outdir">cli_outdir() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.cli_path_in">cli_path_in() (in module parus.util.cli)</a>
+</li>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.H5PklFile.close">close() (parus.fio.hdf.H5PklFile method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ArcPreviewPlot.close">(parus.gui.elm_plot.ArcPreviewPlot method)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer.close">(parus.gui.elm_plot.ClstFeatViewer method)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.close">(parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+          <li><a href="_api/parus.model.dset.html#parus.model.dset.InferenceDataset.close">(parus.model.dset.InferenceDataset method)</a>
+</li>
+          <li><a href="_api/parus.model.dset.html#parus.model.dset.TrainingDataset.close">(parus.model.dset.TrainingDataset method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProgBusyDialog.closeEvent">closeEvent() (parus.gui.elm_proc.ProgBusyDialog method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusInf.closeEvent">(parus.gui.gui_dat.ParusInf method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.closeEvent">(parus.gui.gui_dat.ParusRes method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.closeEvent">(parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ArcPrv.closeEvent">(parus.gui.gui_trn.ArcPrv method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusArc.closeEvent">(parus.gui.gui_trn.ParusArc method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.closeEvent">(parus.gui.gui_trn.ParusGen method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn.closeEvent">(parus.gui.gui_trn.ParusTrn method)</a>
+</li>
+          <li><a href="_api/parus.rt.app_rt.html#parus.rt.app_rt.ParusRtApp.closeEvent">(parus.rt.app_rt.ParusRtApp method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.cls_cosamp_blk">cls_cosamp_blk() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.cls_cosamp_prg">cls_cosamp_prg() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.cls_crscor_blk">cls_crscor_blk() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.cls_crscor_prg">cls_crscor_prg() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer">ClstFeatViewer (class in parus.gui.elm_plot)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.config_channel">config_channel() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.connect_to_server">connect_to_server() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProcConsole.console_copy">console_copy() (parus.gui.elm_proc.ProcConsole method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProcConsole.console_init">console_init() (parus.gui.elm_proc.ProcConsole method)</a>
+</li>
+        <li><a href="_api/parus.fio.fmeta.html#parus.fio.fmeta.conv_lin_prb">conv_lin_prb() (in module parus.fio.fmeta)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.crsch_grp">crsch_grp() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.gui.html#parus.gui.cs_dark">cs_dark() (in module parus.gui)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusInf.ctrl_enable">ctrl_enable() (parus.gui.gui_dat.ParusInf method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.ctrl_enable">(parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusArc.ctrl_enable">(parus.gui.gui_trn.ParusArc method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn.ctrl_enable">(parus.gui.gui_trn.ParusTrn method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread.data">data (parus.gui.gui_dat.ParusRes.SaveResThread attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.del_pos">del_pos() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.del_rcv_pos">del_rcv_pos() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.disconnect_server">disconnect_server() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread.dst">dst (parus.gui.gui_dat.ParusRes.SaveResThread attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.WfmSel.emit_sig">emit_sig() (parus.gui.gui_dat.WfmSel method)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.empty">empty() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.empty">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.empty">(parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.transformer.html#parus.model.transformer.EncoderTransformer">EncoderTransformer (class in parus.model.transformer)</a>
+</li>
+        <li><a href="_api/parus.model.eval.html#parus.model.eval.eval_bin_cls">eval_bin_cls() (in module parus.model.eval)</a>
+</li>
+        <li><a href="_api/parus.model.post.html#parus.model.post.eval_pos">eval_pos() (in module parus.model.post)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.find_crsch_sig">find_crsch_sig() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.find_extremum">find_extremum() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.find_nearest">find_nearest() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.finished">finished (parus.gui.elm_proc.PyScriptExec attribute)</a>
+</li>
+        <li><a href="_api/parus.util.disp.html#parus.util.disp.fit_exp_loss">fit_exp_loss() (in module parus.util.disp)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.flush">flush() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.flush">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.transformer.html#parus.model.transformer.EncoderTransformer.forward">forward() (parus.model.transformer.EncoderTransformer method)</a>
+
+        <ul>
+          <li><a href="_api/parus.model.wavenet.html#parus.model.wavenet.WaveNet.forward">(parus.model.wavenet.WaveNet method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.frame_per_block">frame_per_block (parus.rt.intan_rhx.IntanRHXmTCP attribute)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.full">full() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.full">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.full">(parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.gen_ctrl_enable">gen_ctrl_enable() (parus.gui.gui_trn.ParusGen method)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.get">get() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.get">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.get">(parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.get_cor">get_cor() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.model.optim.html#parus.model.optim.get_learning_rate">get_learning_rate() (in module parus.model.optim)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.get_nowait">get_nowait() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.get_sig_nbr">get_sig_nbr() (in module parus.data.clst)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="H" class="genindex-section">
+  <h2>H</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.h5_load_dat">h5_load_dat() (in module parus.fio.hdf)</a>
+</li>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.h5_load_ref">h5_load_ref() (in module parus.fio.hdf)</a>
+</li>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.H5PklDataset">H5PklDataset (class in parus.fio.hdf)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.H5PklFile">H5PklFile (class in parus.fio.hdf)</a>
+</li>
+        <li><a href="_api/parus.fio.hdf.html#parus.fio.hdf.H5PklGroup">H5PklGroup (class in parus.fio.hdf)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.help_window">help_window() (parus.gui.gui_dat.ParusRes method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.eval.html#parus.model.eval.Inference">Inference (class in parus.model.eval)</a>
+</li>
+        <li><a href="_api/parus.model.dset.html#parus.model.dset.InferenceDataset">InferenceDataset (class in parus.model.dset)</a>
+</li>
+        <li><a href="_api/parus.model.eval.html#parus.model.eval.Inference.init_output">init_output() (parus.model.eval.Inference method)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_board_adc_read">intan_board_adc_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_board_din_read">intan_board_din_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_board_dout_read">intan_board_dout_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_ch_adc_read">intan_ch_adc_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_ch_amp_read">intan_ch_amp_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_ch_aux_read">intan_ch_aux_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_ch_dio_read">intan_ch_dio_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_ch_vdd_read">intan_ch_vdd_read() (in module parus.fio.intan)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_port_amp_read">intan_port_amp_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_port_aux_read">intan_port_aux_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_port_vdd_read">intan_port_vdd_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_time_read">intan_time_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_typ_adc_read">intan_typ_adc_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_typ_amp_read">intan_typ_amp_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_typ_aux_read">intan_typ_aux_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_typ_dio_read">intan_typ_dio_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.fio.intan.html#parus.fio.intan.intan_typ_vdd_read">intan_typ_vdd_read() (in module parus.fio.intan)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP">IntanRHXmTCP (class in parus.rt.intan_rhx)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.CellCheckbox.isChecked">isChecked() (parus.gui.elm_proc.CellCheckbox method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="J" class="genindex-section">
+  <h2>J</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.join">join() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="K" class="genindex-section">
+  <h2>K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.PosAdd.key_sig">key_sig (parus.gui.gui_dat.PosAdd attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.keyPressEvent">keyPressEvent() (parus.gui.gui_dat.ParusRes method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.keyPressEvent">(parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.keyReleaseEvent">keyReleaseEvent() (parus.gui.gui_dat.ParusRes method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.laplace_lst_gen">laplace_lst_gen() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.load_all_datasets">load_all_datasets() (in module parus.model.mio)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.load_hparams">load_hparams() (in module parus.model.mio)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.load_model">load_model() (in module parus.model.mio)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.loc_ext_1d">loc_ext_1d() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.locate">locate() (parus.rt.hwio.CircularBufferCR method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.LoopedColormap">LoopedColormap (class in parus.gui.elm_plot)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.magic_number">magic_number (parus.rt.intan_rhx.IntanRHXmTCP attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.make_correction">make_correction() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.util.base.html#parus.util.base.make_outdir">make_outdir() (in module parus.util.base)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue">MapArrayQueue (class in parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.fio.matlab.html#parus.fio.matlab.mat_data_read">mat_data_read() (in module parus.fio.matlab)</a>
+</li>
+        <li><a href="_api/parus.fio.matlab.html#parus.fio.matlab.mat_meta_read">mat_meta_read() (in module parus.fio.matlab)</a>
+</li>
+        <li>
+    module
+
+        <ul>
+          <li><a href="_api/parus.html#module-parus">parus</a>
+</li>
+          <li><a href="_api/parus.app.html#module-parus.app">parus.app</a>
+</li>
+          <li><a href="_api/parus.app.afunc.html#module-parus.app.afunc">parus.app.afunc</a>
+</li>
+          <li><a href="_api/parus.data.html#module-parus.data">parus.data</a>
+</li>
+          <li><a href="_api/parus.data.clst.html#module-parus.data.clst">parus.data.clst</a>
+</li>
+          <li><a href="_api/parus.data.plot.html#module-parus.data.plot">parus.data.plot</a>
+</li>
+          <li><a href="_api/parus.data.proc.html#module-parus.data.proc">parus.data.proc</a>
+</li>
+          <li><a href="_api/parus.data.sig.html#module-parus.data.sig">parus.data.sig</a>
+</li>
+          <li><a href="_api/parus.fio.html#module-parus.fio">parus.fio</a>
+</li>
+          <li><a href="_api/parus.fio.fdata.html#module-parus.fio.fdata">parus.fio.fdata</a>
+</li>
+          <li><a href="_api/parus.fio.fmeta.html#module-parus.fio.fmeta">parus.fio.fmeta</a>
+</li>
+          <li><a href="_api/parus.fio.hdf.html#module-parus.fio.hdf">parus.fio.hdf</a>
+</li>
+          <li><a href="_api/parus.fio.intan.html#module-parus.fio.intan">parus.fio.intan</a>
+</li>
+          <li><a href="_api/parus.fio.matlab.html#module-parus.fio.matlab">parus.fio.matlab</a>
+</li>
+          <li><a href="_api/parus.fio.smr.html#module-parus.fio.smr">parus.fio.smr</a>
+</li>
+          <li><a href="_api/parus.fio.tdt.html#module-parus.fio.tdt">parus.fio.tdt</a>
+</li>
+          <li><a href="_api/parus.gui.html#module-parus.gui">parus.gui</a>
+</li>
+          <li><a href="_api/parus.gui.app_main.html#module-parus.gui.app_main">parus.gui.app_main</a>
+</li>
+          <li><a href="_api/parus.gui.desg_appdat.html#module-parus.gui.desg_appdat">parus.gui.desg_appdat</a>
+</li>
+          <li><a href="_api/parus.gui.desg_apptrn.html#module-parus.gui.desg_apptrn">parus.gui.desg_apptrn</a>
+</li>
+          <li><a href="_api/parus.gui.desg_arcmrk.html#module-parus.gui.desg_arcmrk">parus.gui.desg_arcmrk</a>
+</li>
+          <li><a href="_api/parus.gui.desg_genctl.html#module-parus.gui.desg_genctl">parus.gui.desg_genctl</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modinf.html#module-parus.gui.desg_modinf">parus.gui.desg_modinf</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modtrn.html#module-parus.gui.desg_modtrn">parus.gui.desg_modtrn</a>
+</li>
+          <li><a href="_api/parus.gui.desg_posadd.html#module-parus.gui.desg_posadd">parus.gui.desg_posadd</a>
+</li>
+          <li><a href="_api/parus.gui.desg_resver.html#module-parus.gui.desg_resver">parus.gui.desg_resver</a>
+</li>
+          <li><a href="_api/parus.gui.desg_spksrt.html#module-parus.gui.desg_spksrt">parus.gui.desg_spksrt</a>
+</li>
+          <li><a href="_api/parus.gui.desg_sysset.html#module-parus.gui.desg_sysset">parus.gui.desg_sysset</a>
+</li>
+          <li><a href="_api/parus.gui.desg_wfmsel.html#module-parus.gui.desg_wfmsel">parus.gui.desg_wfmsel</a>
+</li>
+          <li><a href="_api/parus.gui.elm_plot.html#module-parus.gui.elm_plot">parus.gui.elm_plot</a>
+</li>
+          <li><a href="_api/parus.gui.elm_proc.html#module-parus.gui.elm_proc">parus.gui.elm_proc</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#module-parus.gui.gui_dat">parus.gui.gui_dat</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#module-parus.gui.gui_trn">parus.gui.gui_trn</a>
+</li>
+          <li><a href="_api/parus.model.html#module-parus.model">parus.model</a>
+</li>
+          <li><a href="_api/parus.model.dset.html#module-parus.model.dset">parus.model.dset</a>
+</li>
+          <li><a href="_api/parus.model.eval.html#module-parus.model.eval">parus.model.eval</a>
+</li>
+          <li><a href="_api/parus.model.mio.html#module-parus.model.mio">parus.model.mio</a>
+</li>
+          <li><a href="_api/parus.model.optim.html#module-parus.model.optim">parus.model.optim</a>
+</li>
+          <li><a href="_api/parus.model.post.html#module-parus.model.post">parus.model.post</a>
+</li>
+          <li><a href="_api/parus.model.transformer.html#module-parus.model.transformer">parus.model.transformer</a>
+</li>
+          <li><a href="_api/parus.model.wavenet.html#module-parus.model.wavenet">parus.model.wavenet</a>
+</li>
+          <li><a href="_api/parus.rt.html#module-parus.rt">parus.rt</a>
+</li>
+          <li><a href="_api/parus.rt.app_rt.html#module-parus.rt.app_rt">parus.rt.app_rt</a>
+</li>
+          <li><a href="_api/parus.rt.desg_apprtp.html#module-parus.rt.desg_apprtp">parus.rt.desg_apprtp</a>
+</li>
+          <li><a href="_api/parus.rt.hwio.html#module-parus.rt.hwio">parus.rt.hwio</a>
+</li>
+          <li><a href="_api/parus.rt.intan_rhx.html#module-parus.rt.intan_rhx">parus.rt.intan_rhx</a>
+</li>
+          <li><a href="_api/parus.scripts.html#module-parus.scripts">parus.scripts</a>
+</li>
+          <li><a href="_api/parus.util.html#module-parus.util">parus.util</a>
+</li>
+          <li><a href="_api/parus.util.base.html#module-parus.util.base">parus.util.base</a>
+</li>
+          <li><a href="_api/parus.util.cli.html#module-parus.util.cli">parus.util.cli</a>
+</li>
+          <li><a href="_api/parus.util.disp.html#module-parus.util.disp">parus.util.disp</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.neuron_rnd_samp">neuron_rnd_samp() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.neuron_sig_mean">neuron_sig_mean() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.neuron_sig_samp">neuron_sig_samp() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.neuron_sig_slc">neuron_sig_slc() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.noi_read">noi_read() (in module parus.fio.fdata)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.noi_write">noi_write() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.noise_freq_decr">noise_freq_decr() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.noise_freq_incr">noise_freq_incr() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.noise_white">noise_white() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.norm_lst_gen">norm_lst_gen() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.nsd_asgnv">nsd_asgnv() (in module parus.data.proc)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.BlitManager.on_draw">on_draw() (parus.gui.elm_plot.BlitManager method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    parus
+
+        <ul>
+          <li><a href="_api/parus.html#module-parus">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.app
+
+        <ul>
+          <li><a href="_api/parus.app.html#module-parus.app">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.app.afunc
+
+        <ul>
+          <li><a href="_api/parus.app.afunc.html#module-parus.app.afunc">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.data
+
+        <ul>
+          <li><a href="_api/parus.data.html#module-parus.data">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.data.clst
+
+        <ul>
+          <li><a href="_api/parus.data.clst.html#module-parus.data.clst">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.data.plot
+
+        <ul>
+          <li><a href="_api/parus.data.plot.html#module-parus.data.plot">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.data.proc
+
+        <ul>
+          <li><a href="_api/parus.data.proc.html#module-parus.data.proc">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.data.sig
+
+        <ul>
+          <li><a href="_api/parus.data.sig.html#module-parus.data.sig">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio
+
+        <ul>
+          <li><a href="_api/parus.fio.html#module-parus.fio">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.fdata
+
+        <ul>
+          <li><a href="_api/parus.fio.fdata.html#module-parus.fio.fdata">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.fmeta
+
+        <ul>
+          <li><a href="_api/parus.fio.fmeta.html#module-parus.fio.fmeta">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.hdf
+
+        <ul>
+          <li><a href="_api/parus.fio.hdf.html#module-parus.fio.hdf">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.intan
+
+        <ul>
+          <li><a href="_api/parus.fio.intan.html#module-parus.fio.intan">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.matlab
+
+        <ul>
+          <li><a href="_api/parus.fio.matlab.html#module-parus.fio.matlab">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.smr
+
+        <ul>
+          <li><a href="_api/parus.fio.smr.html#module-parus.fio.smr">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.fio.tdt
+
+        <ul>
+          <li><a href="_api/parus.fio.tdt.html#module-parus.fio.tdt">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui
+
+        <ul>
+          <li><a href="_api/parus.gui.html#module-parus.gui">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.app_main
+
+        <ul>
+          <li><a href="_api/parus.gui.app_main.html#module-parus.gui.app_main">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_appdat
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_appdat.html#module-parus.gui.desg_appdat">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_apptrn
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_apptrn.html#module-parus.gui.desg_apptrn">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_arcmrk
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_arcmrk.html#module-parus.gui.desg_arcmrk">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_genctl
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_genctl.html#module-parus.gui.desg_genctl">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_modinf
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_modinf.html#module-parus.gui.desg_modinf">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_modtrn
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_modtrn.html#module-parus.gui.desg_modtrn">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_posadd
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_posadd.html#module-parus.gui.desg_posadd">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_resver
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_resver.html#module-parus.gui.desg_resver">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_spksrt
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_spksrt.html#module-parus.gui.desg_spksrt">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_sysset
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_sysset.html#module-parus.gui.desg_sysset">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.desg_wfmsel
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_wfmsel.html#module-parus.gui.desg_wfmsel">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.elm_plot
+
+        <ul>
+          <li><a href="_api/parus.gui.elm_plot.html#module-parus.gui.elm_plot">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.elm_proc
+
+        <ul>
+          <li><a href="_api/parus.gui.elm_proc.html#module-parus.gui.elm_proc">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.gui_dat
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_dat.html#module-parus.gui.gui_dat">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.gui.gui_trn
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_trn.html#module-parus.gui.gui_trn">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model
+
+        <ul>
+          <li><a href="_api/parus.model.html#module-parus.model">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.dset
+
+        <ul>
+          <li><a href="_api/parus.model.dset.html#module-parus.model.dset">module</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    parus.model.eval
+
+        <ul>
+          <li><a href="_api/parus.model.eval.html#module-parus.model.eval">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.mio
+
+        <ul>
+          <li><a href="_api/parus.model.mio.html#module-parus.model.mio">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.optim
+
+        <ul>
+          <li><a href="_api/parus.model.optim.html#module-parus.model.optim">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.post
+
+        <ul>
+          <li><a href="_api/parus.model.post.html#module-parus.model.post">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.transformer
+
+        <ul>
+          <li><a href="_api/parus.model.transformer.html#module-parus.model.transformer">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.model.wavenet
+
+        <ul>
+          <li><a href="_api/parus.model.wavenet.html#module-parus.model.wavenet">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.rt
+
+        <ul>
+          <li><a href="_api/parus.rt.html#module-parus.rt">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.rt.app_rt
+
+        <ul>
+          <li><a href="_api/parus.rt.app_rt.html#module-parus.rt.app_rt">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.rt.desg_apprtp
+
+        <ul>
+          <li><a href="_api/parus.rt.desg_apprtp.html#module-parus.rt.desg_apprtp">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.rt.hwio
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#module-parus.rt.hwio">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.rt.intan_rhx
+
+        <ul>
+          <li><a href="_api/parus.rt.intan_rhx.html#module-parus.rt.intan_rhx">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.scripts
+
+        <ul>
+          <li><a href="_api/parus.scripts.html#module-parus.scripts">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.util
+
+        <ul>
+          <li><a href="_api/parus.util.html#module-parus.util">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.util.base
+
+        <ul>
+          <li><a href="_api/parus.util.base.html#module-parus.util.base">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.util.cli
+
+        <ul>
+          <li><a href="_api/parus.util.cli.html#module-parus.util.cli">module</a>
+</li>
+        </ul></li>
+        <li>
+    parus.util.disp
+
+        <ul>
+          <li><a href="_api/parus.util.disp.html#module-parus.util.disp">module</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusArc">ParusArc (class in parus.gui.gui_trn)</a>
+</li>
+        <li><a href="_api/parus.app.afunc.html#parus.app.afunc.ParusData">ParusData() (in module parus.app.afunc)</a>
+</li>
+        <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.ParusDatApp">ParusDatApp (class in parus.gui.app_main)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen">ParusGen (class in parus.gui.gui_trn)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusInf">ParusInf (class in parus.gui.gui_dat)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes">ParusRes (class in parus.gui.gui_dat)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread">ParusRes.SaveResThread (class in parus.gui.gui_dat)</a>
+</li>
+        <li><a href="_api/parus.app.afunc.html#parus.app.afunc.ParusRT">ParusRT() (in module parus.app.afunc)</a>
+</li>
+        <li><a href="_api/parus.rt.app_rt.html#parus.rt.app_rt.ParusRtApp">ParusRtApp (class in parus.rt.app_rt)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt">ParusSrt (class in parus.gui.gui_dat)</a>
+</li>
+        <li><a href="_api/parus.app.afunc.html#parus.app.afunc.ParusTrain">ParusTrain() (in module parus.app.afunc)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn">ParusTrn (class in parus.gui.gui_trn)</a>
+</li>
+        <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.ParusTrnApp">ParusTrnApp (class in parus.gui.app_main)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.path_selector">path_selector() (in module parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.peak_extremum">peak_extremum() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.model.post.html#parus.model.post.peak_fwd_torch">peak_fwd_torch() (in module parus.model.post)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.peak_reloc_ex">peak_reloc_ex() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.model.post.html#parus.model.post.peak_zsc_torch">peak_zsc_torch() (in module parus.model.post)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.pklz_read">pklz_read() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.pklz_write">pklz_write() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.data.plot.html#parus.data.plot.plot_prb">plot_prb() (in module parus.data.plot)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.plt_ch">plt_ch() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.util.disp.html#parus.util.disp.plt_mod_cli">plt_mod_cli() (in module parus.util.disp)</a>
+</li>
+        <li><a href="_api/parus.util.disp.html#parus.util.disp.plt_mod_img">plt_mod_img() (in module parus.util.disp)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.pos_ripple_flt">pos_ripple_flt() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.PosAdd">PosAdd (class in parus.gui.gui_dat)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.position">position() (parus.rt.hwio.CircularBufferCR method)</a>
+</li>
+        <li><a href="_api/parus.data.clst.html#parus.data.clst.post_cls_chk">post_cls_chk() (in module parus.data.clst)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.pred_mae">pred_mae() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProcConsole">ProcConsole (class in parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.util.base.html#parus.util.base.prog_print">prog_print() (in module parus.util.base)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProgBusyDialog">ProgBusyDialog (class in parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.put">put() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.put">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.put">(parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.put_nowait">put_nowait() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec">PyScriptExec (class in parus.gui.elm_proc)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Q" class="genindex-section">
+  <h2>Q</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.qsize">qsize() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.read">read() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.fio.fmeta.html#parus.fio.fmeta.read_cell_type">read_cell_type() (in module parus.fio.fmeta)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_int16">read_int16() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_int32">read_int32() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_int64">read_int64() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_int8">read_int8() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.fio.fmeta.html#parus.fio.fmeta.read_spk_info">read_spk_info() (in module parus.fio.fmeta)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_uint16">read_uint16() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_uint32">read_uint32() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_uint64">read_uint64() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.read_uint8">read_uint8() (in module parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer.reload_data">reload_data() (parus.gui.elm_plot.ClstFeatViewer method)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.remainder">remainder() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.BlitManager.remove_artist">remove_artist() (parus.gui.elm_plot.BlitManager method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.reset_all">reset_all() (parus.gui.gui_trn.ParusGen method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.reset_arguments">reset_arguments() (parus.gui.elm_proc.PyScriptExec method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.reset_cor">reset_cor() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferCR.resize">resize() (parus.rt.hwio.CircularBufferCR method)</a>
+
+        <ul>
+          <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.CircularBufferFL.resize">(parus.rt.hwio.CircularBufferFL method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader">ResPltLoader (class in parus.gui.elm_plot)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_appdat.html#parus.gui.desg_appdat.Ui_ParusDatWindow.retranslateUi">retranslateUi() (parus.gui.desg_appdat.Ui_ParusDatWindow method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_apptrn.html#parus.gui.desg_apptrn.Ui_ParusTrnWindow.retranslateUi">(parus.gui.desg_apptrn.Ui_ParusTrnWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_arcmrk.html#parus.gui.desg_arcmrk.Ui_ParusArcWindow.retranslateUi">(parus.gui.desg_arcmrk.Ui_ParusArcWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_genctl.html#parus.gui.desg_genctl.Ui_ParusGenWindow.retranslateUi">(parus.gui.desg_genctl.Ui_ParusGenWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modinf.html#parus.gui.desg_modinf.Ui_ParusInfWindow.retranslateUi">(parus.gui.desg_modinf.Ui_ParusInfWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modtrn.html#parus.gui.desg_modtrn.Ui_ParusTrnWindow.retranslateUi">(parus.gui.desg_modtrn.Ui_ParusTrnWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_posadd.html#parus.gui.desg_posadd.Ui_PosAddWindow.retranslateUi">(parus.gui.desg_posadd.Ui_PosAddWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_resver.html#parus.gui.desg_resver.Ui_ParusResWindow.retranslateUi">(parus.gui.desg_resver.Ui_ParusResWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_spksrt.html#parus.gui.desg_spksrt.Ui_ParusSrtWindow.retranslateUi">(parus.gui.desg_spksrt.Ui_ParusSrtWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_sysset.html#parus.gui.desg_sysset.Ui_SysSetWindow.retranslateUi">(parus.gui.desg_sysset.Ui_SysSetWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_wfmsel.html#parus.gui.desg_wfmsel.Ui_WfmSelWindow.retranslateUi">(parus.gui.desg_wfmsel.Ui_WfmSelWindow method)</a>
+</li>
+          <li><a href="_api/parus.rt.desg_apprtp.html#parus.rt.desg_apprtp.Ui_ParusRtpWindow.retranslateUi">(parus.rt.desg_apprtp.Ui_ParusRtpWindow method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread.run">run() (parus.gui.gui_dat.ParusRes.SaveResThread method)</a>
+
+        <ul>
+          <li><a href="_api/parus.model.eval.html#parus.model.eval.Inference.run">(parus.model.eval.Inference method)</a>
+</li>
+          <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.run">(parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.save_correction">save_correction() (parus.gui.gui_dat.ParusRes method)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.save_hparams">save_hparams() (in module parus.model.mio)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.save_model">save_model() (in module parus.model.mio)</a>
+</li>
+        <li><a href="_api/parus.util.base.html#parus.util.base.search_files">search_files() (in module parus.util.base)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.WfmSel.sel_sig">sel_sig (parus.gui.gui_dat.WfmSel attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.sel_wfm">sel_wfm() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.selection_operator">selection_operator() (in module parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer.set_act_clst">set_act_clst() (parus.gui.elm_plot.ClstFeatViewer method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.set_act_pos">set_act_pos() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.set_act_wfm">set_act_wfm() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.set_amp">set_amp() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.set_arguments">set_arguments() (parus.gui.elm_proc.PyScriptExec method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProcConsole.set_auto_scroll">set_auto_scroll() (parus.gui.elm_proc.ProcConsole method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.set_auto_scroll">(parus.gui.elm_proc.PyScriptExec method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer.set_channel">set_channel() (parus.gui.elm_plot.ClstFeatViewer method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.set_chn">set_chn() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.gui.html#parus.gui.set_color_scheme">set_color_scheme() (in module parus.gui)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.set_command_buffer_size">set_command_buffer_size() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.set_gensim_args">set_gensim_args() (parus.gui.gui_trn.ParusGen method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.set_pos">set_pos() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusInf.set_proc_args">set_proc_args() (parus.gui.gui_dat.ParusInf method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProgBusyDialog.set_progress">set_progress() (parus.gui.elm_proc.ProgBusyDialog method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.set_time">set_time() (parus.gui.elm_plot.ResPltLoader method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn.set_train_args">set_train_args() (parus.gui.gui_trn.ParusTrn method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn.set_view_args">set_view_args() (parus.gui.gui_trn.ParusTrn method)</a>
+</li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.set_waveform_buffer_size">set_waveform_buffer_size() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker.set_wfm">set_wfm() (parus.gui.elm_plot.WfmPosMarker method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.CellCheckbox.setChecked">setChecked() (parus.gui.elm_proc.CellCheckbox method)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_appdat.html#parus.gui.desg_appdat.Ui_ParusDatWindow.setupUi">setupUi() (parus.gui.desg_appdat.Ui_ParusDatWindow method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_apptrn.html#parus.gui.desg_apptrn.Ui_ParusTrnWindow.setupUi">(parus.gui.desg_apptrn.Ui_ParusTrnWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_arcmrk.html#parus.gui.desg_arcmrk.Ui_ParusArcWindow.setupUi">(parus.gui.desg_arcmrk.Ui_ParusArcWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_genctl.html#parus.gui.desg_genctl.Ui_ParusGenWindow.setupUi">(parus.gui.desg_genctl.Ui_ParusGenWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modinf.html#parus.gui.desg_modinf.Ui_ParusInfWindow.setupUi">(parus.gui.desg_modinf.Ui_ParusInfWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_modtrn.html#parus.gui.desg_modtrn.Ui_ParusTrnWindow.setupUi">(parus.gui.desg_modtrn.Ui_ParusTrnWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_posadd.html#parus.gui.desg_posadd.Ui_PosAddWindow.setupUi">(parus.gui.desg_posadd.Ui_PosAddWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_resver.html#parus.gui.desg_resver.Ui_ParusResWindow.setupUi">(parus.gui.desg_resver.Ui_ParusResWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_spksrt.html#parus.gui.desg_spksrt.Ui_ParusSrtWindow.setupUi">(parus.gui.desg_spksrt.Ui_ParusSrtWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_sysset.html#parus.gui.desg_sysset.Ui_SysSetWindow.setupUi">(parus.gui.desg_sysset.Ui_SysSetWindow method)</a>
+</li>
+          <li><a href="_api/parus.gui.desg_wfmsel.html#parus.gui.desg_wfmsel.Ui_WfmSelWindow.setupUi">(parus.gui.desg_wfmsel.Ui_WfmSelWindow method)</a>
+</li>
+          <li><a href="_api/parus.rt.desg_apprtp.html#parus.rt.desg_apprtp.Ui_ParusRtpWindow.setupUi">(parus.rt.desg_apprtp.Ui_ParusRtpWindow method)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.sig_merge">sig_merge() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.sig_peak_fwd">sig_peak_fwd() (in module parus.data.sig)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.sig_peak_zsc">sig_peak_zsc() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.sig_split">sig_split() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.sim_args_read">sim_args_read() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.fio.fdata.html#parus.fio.fdata.sim_data_read">sim_data_read() (in module parus.fio.fdata)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.SingletonIO">SingletonIO (class in parus.rt.hwio)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_conv_tsp">smr_conv_tsp() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_conv_wfm">smr_conv_wfm() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_load">smr_load() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_parse_header">smr_parse_header() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_read_chn">smr_read_chn() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.fio.smr.html#parus.fio.smr.smr_read_raw">smr_read_raw() (in module parus.fio.smr)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.spk_bandpass">spk_bandpass() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.plot.html#parus.data.plot.spk_correlogram">spk_correlogram() (in module parus.data.plot)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.spk_highpass">spk_highpass() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.spk_lowpass">spk_lowpass() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.proc.html#parus.data.proc.spk_merge">spk_merge() (in module parus.data.proc)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.spk_notch">spk_notch() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread.src">src (parus.gui.gui_dat.ParusRes.SaveResThread attribute)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.started">started (parus.gui.elm_proc.PyScriptExec attribute)</a>
+</li>
+        <li><a href="_api/parus.data.plot.html#parus.data.plot.stat_plvl">stat_plvl() (in module parus.data.plot)</a>
+</li>
+        <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.ParusDatApp.staticMetaObject">staticMetaObject (parus.gui.app_main.ParusDatApp attribute)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.ParusTrnApp.staticMetaObject">(parus.gui.app_main.ParusTrnApp attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.SysSet.staticMetaObject">(parus.gui.app_main.SysSet attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ArcPreviewPlot.staticMetaObject">(parus.gui.elm_plot.ArcPreviewPlot attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ResPltLoader.staticMetaObject">(parus.gui.elm_plot.ResPltLoader attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.CellCheckbox.staticMetaObject">(parus.gui.elm_proc.CellCheckbox attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.ProgBusyDialog.staticMetaObject">(parus.gui.elm_proc.ProgBusyDialog attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.staticMetaObject">(parus.gui.elm_proc.PyScriptExec attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusInf.staticMetaObject">(parus.gui.gui_dat.ParusInf attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.staticMetaObject">(parus.gui.gui_dat.ParusRes attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.SaveResThread.staticMetaObject">(parus.gui.gui_dat.ParusRes.SaveResThread attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.staticMetaObject">(parus.gui.gui_dat.ParusSrt attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.PosAdd.staticMetaObject">(parus.gui.gui_dat.PosAdd attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.WfmSel.staticMetaObject">(parus.gui.gui_dat.WfmSel attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ArcPrv.staticMetaObject">(parus.gui.gui_trn.ArcPrv attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusArc.staticMetaObject">(parus.gui.gui_trn.ParusArc attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.staticMetaObject">(parus.gui.gui_trn.ParusGen attribute)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusTrn.staticMetaObject">(parus.gui.gui_trn.ParusTrn attribute)</a>
+</li>
+          <li><a href="_api/parus.rt.app_rt.html#parus.rt.app_rt.ParusRtApp.staticMetaObject">(parus.rt.app_rt.ParusRtApp attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.stop">stop() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.data.plot.html#parus.data.plot.swarm_cord">swarm_cord() (in module parus.data.plot)</a>
+</li>
+        <li><a href="_api/parus.gui.app_main.html#parus.gui.app_main.SysSet">SysSet (class in parus.gui.app_main)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.table_loader">table_loader() (in module parus.gui.elm_proc)</a>
+</li>
+        <li><a href="_api/parus.rt.hwio.html#parus.rt.hwio.MapArrayQueue.task_done">task_done() (parus.rt.hwio.MapArrayQueue method)</a>
+</li>
+        <li><a href="_api/parus.fio.tdt.html#parus.fio.tdt.tdt_chs_arng">tdt_chs_arng() (in module parus.fio.tdt)</a>
+</li>
+        <li><a href="_api/parus.fio.tdt.html#parus.fio.tdt.tdt_tev_read">tdt_tev_read() (in module parus.fio.tdt)</a>
+</li>
+        <li><a href="_api/parus.fio.tdt.html#parus.fio.tdt.tdt_tsq_read">tdt_tsq_read() (in module parus.fio.tdt)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_proc.html#parus.gui.elm_proc.PyScriptExec.terminate">terminate() (parus.gui.elm_proc.PyScriptExec method)</a>
+</li>
+        <li><a href="_api/parus.model.eval.html#parus.model.eval.testing">testing() (in module parus.model.eval)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusRes.timerEvent">timerEvent() (parus.gui.gui_dat.ParusRes method)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.timerEvent">(parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+          <li><a href="_api/parus.gui.gui_trn.html#parus.gui.gui_trn.ParusGen.timerEvent">(parus.gui.gui_trn.ParusGen method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.WfmSel.toggle_channel">toggle_channel() (parus.gui.gui_dat.WfmSel method)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.tpt_kde_frq">tpt_kde_frq() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.tpt_spk_cv">tpt_spk_cv() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.tpt_spk_cv2">tpt_spk_cv2() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.tpt_spk_frq">tpt_spk_frq() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.data.sig.html#parus.data.sig.tpt_spk_isi">tpt_spk_isi() (in module parus.data.sig)</a>
+</li>
+        <li><a href="_api/parus.model.optim.html#parus.model.optim.train">train() (in module parus.model.optim)</a>
+</li>
+        <li><a href="_api/parus.model.dset.html#parus.model.dset.TrainingDataset">TrainingDataset (class in parus.model.dset)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.desg_arcmrk.html#parus.gui.desg_arcmrk.Ui_ParusArcWindow">Ui_ParusArcWindow (class in parus.gui.desg_arcmrk)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_appdat.html#parus.gui.desg_appdat.Ui_ParusDatWindow">Ui_ParusDatWindow (class in parus.gui.desg_appdat)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_genctl.html#parus.gui.desg_genctl.Ui_ParusGenWindow">Ui_ParusGenWindow (class in parus.gui.desg_genctl)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_modinf.html#parus.gui.desg_modinf.Ui_ParusInfWindow">Ui_ParusInfWindow (class in parus.gui.desg_modinf)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_resver.html#parus.gui.desg_resver.Ui_ParusResWindow">Ui_ParusResWindow (class in parus.gui.desg_resver)</a>
+</li>
+        <li><a href="_api/parus.rt.desg_apprtp.html#parus.rt.desg_apprtp.Ui_ParusRtpWindow">Ui_ParusRtpWindow (class in parus.rt.desg_apprtp)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_spksrt.html#parus.gui.desg_spksrt.Ui_ParusSrtWindow">Ui_ParusSrtWindow (class in parus.gui.desg_spksrt)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_apptrn.html#parus.gui.desg_apptrn.Ui_ParusTrnWindow">Ui_ParusTrnWindow (class in parus.gui.desg_apptrn)</a>
+
+        <ul>
+          <li><a href="_api/parus.gui.desg_modtrn.html#parus.gui.desg_modtrn.Ui_ParusTrnWindow">(class in parus.gui.desg_modtrn)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.gui.desg_posadd.html#parus.gui.desg_posadd.Ui_PosAddWindow">Ui_PosAddWindow (class in parus.gui.desg_posadd)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_sysset.html#parus.gui.desg_sysset.Ui_SysSetWindow">Ui_SysSetWindow (class in parus.gui.desg_sysset)</a>
+</li>
+        <li><a href="_api/parus.gui.desg_wfmsel.html#parus.gui.desg_wfmsel.Ui_WfmSelWindow">Ui_WfmSelWindow (class in parus.gui.desg_wfmsel)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.PosAdd.upd_pos_lst">upd_pos_lst() (parus.gui.gui_dat.PosAdd method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.BlitManager.update">update() (parus.gui.elm_plot.BlitManager method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.update_avgcor_table">update_avgcor_table() (parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.ClstFeatViewer.update_cluster">update_cluster() (parus.gui.elm_plot.ClstFeatViewer method)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.ParusSrt.update_spkcid_table">update_spkcid_table() (parus.gui.gui_dat.ParusSrt method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="V" class="genindex-section">
+  <h2>V</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.eval.html#parus.model.eval.validation">validation() (in module parus.model.eval)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="W" class="genindex-section">
+  <h2>W</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.model.wavenet.html#parus.model.wavenet.WaveNet">WaveNet (class in parus.model.wavenet)</a>
+</li>
+        <li><a href="_api/parus.gui.elm_plot.html#parus.gui.elm_plot.WfmPosMarker">WfmPosMarker (class in parus.gui.elm_plot)</a>
+</li>
+        <li><a href="_api/parus.gui.gui_dat.html#parus.gui.gui_dat.WfmSel">WfmSel (class in parus.gui.gui_dat)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.rt.intan_rhx.html#parus.rt.intan_rhx.IntanRHXmTCP.write_data_queue">write_data_queue() (parus.rt.intan_rhx.IntanRHXmTCP method)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.write_train_history">write_train_history() (in module parus.model.mio)</a>
+</li>
+        <li><a href="_api/parus.model.mio.html#parus.model.mio.write_train_log">write_train_log() (in module parus.model.mio)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Y" class="genindex-section">
+  <h2>Y</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="_api/parus.util.cli.html#parus.util.cli.yn_query">yn_query() (in module parus.util.cli)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Si-yang Yu, XiaoLe &#39;Eddie&#39; Liu
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

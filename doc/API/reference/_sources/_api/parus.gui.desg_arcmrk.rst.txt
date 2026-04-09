@@ -1,0 +1,7 @@
+parus.gui.desg\_arcmrk module
+=============================
+
+.. automodule:: parus.gui.desg_arcmrk
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.gui.gui\_trn module
+=========================
+
+.. automodule:: parus.gui.gui_trn
+   :members:
+   :show-inheritance:
+   :undoc-members:

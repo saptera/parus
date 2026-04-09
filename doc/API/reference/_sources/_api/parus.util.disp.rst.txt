@@ -1,0 +1,7 @@
+parus.util.disp module
+======================
+
+.. automodule:: parus.util.disp
+   :members:
+   :show-inheritance:
+   :undoc-members:

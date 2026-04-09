@@ -1,0 +1,7 @@
+parus.app.afunc module
+======================
+
+.. automodule:: parus.app.afunc
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.model.mio module
+======================
+
+.. automodule:: parus.model.mio
+   :members:
+   :show-inheritance:
+   :undoc-members:

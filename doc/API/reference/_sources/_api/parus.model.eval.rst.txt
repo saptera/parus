@@ -1,0 +1,7 @@
+parus.model.eval module
+=======================
+
+.. automodule:: parus.model.eval
+   :members:
+   :show-inheritance:
+   :undoc-members:

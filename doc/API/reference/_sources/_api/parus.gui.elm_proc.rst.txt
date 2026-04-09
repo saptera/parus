@@ -1,0 +1,7 @@
+parus.gui.elm\_proc module
+==========================
+
+.. automodule:: parus.gui.elm_proc
+   :members:
+   :show-inheritance:
+   :undoc-members:

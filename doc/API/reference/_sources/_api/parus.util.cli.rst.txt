@@ -1,0 +1,7 @@
+parus.util.cli module
+=====================
+
+.. automodule:: parus.util.cli
+   :members:
+   :show-inheritance:
+   :undoc-members:

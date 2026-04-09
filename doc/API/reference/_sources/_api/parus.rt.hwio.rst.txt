@@ -1,0 +1,7 @@
+parus.rt.hwio module
+====================
+
+.. automodule:: parus.rt.hwio
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+parus.gui.desg\_posadd module
+=============================
+
+.. automodule:: parus.gui.desg_posadd
+   :members:
+   :show-inheritance:
+   :undoc-members:

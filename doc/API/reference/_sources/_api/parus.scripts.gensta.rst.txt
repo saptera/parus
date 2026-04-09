@@ -1,0 +1,7 @@
+parus.scripts.gensta module
+===========================
+
+.. automodule:: parus.scripts.gensta
+   :members:
+   :show-inheritance:
+   :undoc-members:

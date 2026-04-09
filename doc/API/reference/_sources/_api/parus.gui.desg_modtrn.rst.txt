@@ -1,0 +1,7 @@
+parus.gui.desg\_modtrn module
+=============================
+
+.. automodule:: parus.gui.desg_modtrn
+   :members:
+   :show-inheritance:
+   :undoc-members:

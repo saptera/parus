@@ -1,0 +1,17 @@
+parus.app package
+=================
+
+.. automodule:: parus.app
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   parus.app.afunc
+   parus.app.pac_ma
+   parus.app.pac_rt
