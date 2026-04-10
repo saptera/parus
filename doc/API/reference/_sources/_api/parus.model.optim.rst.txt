@@ -1,7 +1,0 @@
-parus.model.optim module
-========================
-
-.. automodule:: parus.model.optim
-   :members:
-   :show-inheritance:
-   :undoc-members:

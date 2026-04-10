@@ -1,7 +1,0 @@
-parus.fio.smr module
-====================
-
-.. automodule:: parus.fio.smr
-   :members:
-   :show-inheritance:
-   :undoc-members:

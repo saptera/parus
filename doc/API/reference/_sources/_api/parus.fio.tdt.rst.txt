@@ -1,7 +1,0 @@
-parus.fio.tdt module
-====================
-
-.. automodule:: parus.fio.tdt
-   :members:
-   :show-inheritance:
-   :undoc-members:

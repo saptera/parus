@@ -1,7 +1,0 @@
-parus.scripts.prddsp module
-===========================
-
-.. automodule:: parus.scripts.prddsp
-   :members:
-   :show-inheritance:
-   :undoc-members:

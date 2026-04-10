@@ -1,7 +1,0 @@
-parus.data.plot module
-======================
-
-.. automodule:: parus.data.plot
-   :members:
-   :show-inheritance:
-   :undoc-members:

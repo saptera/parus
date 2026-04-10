@@ -1,7 +1,0 @@
-parus.rt.desg\_apprtp module
-============================
-
-.. automodule:: parus.rt.desg_apprtp
-   :members:
-   :show-inheritance:
-   :undoc-members:

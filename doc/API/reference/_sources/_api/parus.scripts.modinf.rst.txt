@@ -1,7 +1,0 @@
-parus.scripts.modinf module
-===========================
-
-.. automodule:: parus.scripts.modinf
-   :members:
-   :show-inheritance:
-   :undoc-members:

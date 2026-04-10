@@ -1,7 +1,0 @@
-parus.scripts.modtrn module
-===========================
-
-.. automodule:: parus.scripts.modtrn
-   :members:
-   :show-inheritance:
-   :undoc-members:

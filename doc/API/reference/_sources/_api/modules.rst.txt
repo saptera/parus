@@ -1,7 +1,0 @@
-Parus
-=====
-
-.. toctree::
-   :maxdepth: 4
-
-   parus

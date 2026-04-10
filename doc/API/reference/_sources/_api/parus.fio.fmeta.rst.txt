@@ -1,7 +1,0 @@
-parus.fio.fmeta module
-======================
-
-.. automodule:: parus.fio.fmeta
-   :members:
-   :show-inheritance:
-   :undoc-members:

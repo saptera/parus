@@ -1,7 +1,0 @@
-parus.data.sig module
-=====================
-
-.. automodule:: parus.data.sig
-   :members:
-   :show-inheritance:
-   :undoc-members:

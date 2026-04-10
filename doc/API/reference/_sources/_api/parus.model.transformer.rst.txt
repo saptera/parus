@@ -1,7 +1,0 @@
-parus.model.transformer module
-==============================
-
-.. automodule:: parus.model.transformer
-   :members:
-   :show-inheritance:
-   :undoc-members:

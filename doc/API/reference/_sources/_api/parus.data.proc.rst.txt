@@ -1,7 +1,0 @@
-parus.data.proc module
-======================
-
-.. automodule:: parus.data.proc
-   :members:
-   :show-inheritance:
-   :undoc-members:

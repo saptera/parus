@@ -1,7 +1,0 @@
-parus.rt.app\_rt module
-=======================
-
-.. automodule:: parus.rt.app_rt
-   :members:
-   :show-inheritance:
-   :undoc-members:

@@ -1,7 +1,0 @@
-parus.gui.desg\_spksrt module
-=============================
-
-.. automodule:: parus.gui.desg_spksrt
-   :members:
-   :show-inheritance:
-   :undoc-members:

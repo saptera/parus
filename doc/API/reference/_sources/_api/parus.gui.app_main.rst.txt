@@ -1,7 +1,0 @@
-parus.gui.app\_main module
-==========================
-
-.. automodule:: parus.gui.app_main
-   :members:
-   :show-inheritance:
-   :undoc-members:

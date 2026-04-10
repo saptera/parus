@@ -1,7 +1,0 @@
-parus.model.wavenet module
-==========================
-
-.. automodule:: parus.model.wavenet
-   :members:
-   :show-inheritance:
-   :undoc-members:

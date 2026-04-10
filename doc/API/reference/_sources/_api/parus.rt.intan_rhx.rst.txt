@@ -1,7 +1,0 @@
-parus.rt.intan\_rhx module
-==========================
-
-.. automodule:: parus.rt.intan_rhx
-   :members:
-   :show-inheritance:
-   :undoc-members:

@@ -1,7 +1,0 @@
-parus.fio.hdf module
-====================
-
-.. automodule:: parus.fio.hdf
-   :members:
-   :show-inheritance:
-   :undoc-members:

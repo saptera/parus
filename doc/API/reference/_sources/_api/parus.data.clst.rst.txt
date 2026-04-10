@@ -1,7 +1,0 @@
-parus.data.clst module
-======================
-
-.. automodule:: parus.data.clst
-   :members:
-   :show-inheritance:
-   :undoc-members:
