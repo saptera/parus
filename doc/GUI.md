@@ -1,4 +1,4 @@
-# PARUS GUI
+# PARUS Graphical User Interface (GUI)
 
 Two major workflows of PARUS system, `Model Traing` and `Data Processing`, are provided in two central GUIs.
 

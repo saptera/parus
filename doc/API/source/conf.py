@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../../../"))
 
 project = 'parus'
-copyright = "2026, Si-yang Yu, XiaoLe 'Eddie' Liu"
+copyright = "2020-%Y, Research Group Saptera"
 author = "Si-yang Yu, XiaoLe 'Eddie' Liu"
 
 
@@ -27,7 +27,13 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
 templates_path = ['_templates']
-exclude_patterns = ['*assets*']
+exclude_patterns = [
+    '**/*scripts*',  # CLI sub-package (documentation available separately)
+    '**/*gui*',      # GUI sub-package (documentation available separately)
+    '**/*app.pac*',  # Offline application caller scripts
+    '**/*rt.app*',   # Real-time application caller script
+    '**/*desg*'      # Compiled Qt UI design files
+]
 source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown"
@@ -39,6 +45,3 @@ source_suffix = {
 html_theme = "furo"
 html_static_path = ['_static']
 html_logo = "_static/logo.png"
-html_theme_options = {
-    "logo_only": True
-}

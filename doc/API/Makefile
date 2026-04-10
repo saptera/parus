@@ -5,7 +5,7 @@ SPHINXAPIDOC  = sphinx-apidoc
 SPHINXBUILD   = sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
-PUBLISHDIR    = reference
+PUBLISHFILE   = api.zip
 
 .PHONY: help clean generate html rebuild publish
 
@@ -31,9 +31,9 @@ rebuild: clean generate html
 
 publish:
 ifeq ($(OS),Windows_NT)
-	@if exist "$(PUBLISHDIR)" rd /s /q "$(PUBLISHDIR)"
-	@xcopy /s "$(BUILDDIR)\\html\\" "$(PUBLISHDIR)\\"
+	@if exist "$(PUBLISHFILE)" del /f "$(PUBLISHFILE)"
+	@powershell Compress-Archive "$(BUILDDIR)\\html\\*" "$(PUBLISHFILE)"
 else
-	@rm -rf "$(PUBLISHDIR)"
-	@cp -r "$(BUILDDIR)/html" "$(PUBLISHDIR)/"
+	@rm -f "$(PUBLISHFILE)"
+	@zip -r "$(PUBLISHFILE)" "$(BUILDDIR)/html/*"
 endif

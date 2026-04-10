@@ -147,7 +147,7 @@ PARUS package (alphabetical order)
 - [CLI](doc/CLI.md)
 - [GUI](doc/GUI.md)
 - [Real-time](doc/REALTIME.md)
-- [API](doc/API/reference/index.html)
+- [API](doc/API)
 
 ## Acknowledgements
 
