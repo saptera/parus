@@ -23,6 +23,45 @@ Two major workflows of PARUS system, `Model Traing` and `Data Processing`, are p
 The PARUS model training workflow consists of **three main stages**, accessible through a central GUI.
 The main interface guides users through the pipeline in the correct order.
 
+User can start the PARUS model training application using one of the following methods, 
+depending on the installation type.
+
+### 1. Installation via PyPI
+
+If PARUS was installed using PyPI, launch the application with the following Python code:
+
+```python
+from parus.app import ParusTrain
+
+ParusTrain()
+```
+
+### 2. Installation via Automation Script
+
+#### a. Using a Desktop Shortcut
+
+If user selected the option to create a desktop shortcut during installation:
+
+- Double-click the `PARUS Training` icon on the desktop to launch the application.
+
+#### b. Without a Desktop Shortcut
+
+If no desktop shortcut was created, use the appropriate script for the operating system:
+
+- **Unix / Linux / macOS**  
+  Navigate to the `automation/POSIX/` directory and run:
+
+  ```bash
+  parus_trn.sh
+  ```
+
+- **Windows**  
+  Navigate to the `automation/Windows/` directory and run (double click):
+
+  ```bat
+  ParusTrn.bat
+  ```
+
 ![Model Training Main Window](assets/gui_trn_main.png)
 
 The main interface also allows you to configure:
@@ -180,6 +219,45 @@ You can explore results (`tst_opt.pklz` and `tst_fin.pklz`) in the `Model Testin
 
 The PARUS data processing workflow also consists of **three main stages**, accessible through a central GUI.
 The main interface guides users through the pipeline in the correct order.
+
+User can start the PARUS data processing application using one of the following methods, 
+depending on the installation type.
+
+### 1. Installation via PyPI
+
+If PARUS was installed using PyPI, launch the application with the following Python code:
+
+```python
+from parus.app import ParusData
+
+ParusData()
+```
+
+### 2. Installation via Automation Script
+
+#### a. Using a Desktop Shortcut
+
+If user selected the option to create a desktop shortcut during installation:
+
+- Double-click the `PARUS Data` icon on the desktop to launch the application.
+
+#### b. Without a Desktop Shortcut
+
+If no desktop shortcut was created, use the appropriate script for the operating system:
+
+- **Unix / Linux / macOS**  
+  Navigate to the `automation/POSIX/` directory and run:
+
+  ```bash
+  parus_dat.sh
+  ```
+
+- **Windows**  
+  Navigate to the `automation/Windows/` directory and run (double click):
+
+  ```bat
+  ParusDat.bat
+  ```
 
 ![Data Processing Main Window](assets/gui_dat_main.png)
 
