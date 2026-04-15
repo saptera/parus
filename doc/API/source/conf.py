@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.abspath("../../../"))
 project = 'parus'
 copyright = "2020-%Y, Research Group Saptera"
 author = "Si-yang Yu, XiaoLe 'Eddie' Liu"
+version = "1.0"
+release = "1.0.0"
 
 
 # -- General configuration ---------------------------------------------------

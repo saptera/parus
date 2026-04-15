@@ -5,7 +5,7 @@ import os
 
 __package__ = 'parus'
 __name__ = 'parus'
-version = 1.0
+version = "1.0.0"
 
 # Add package path to system
 pkg_root = os.path.dirname(__file__)
