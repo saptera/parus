@@ -3,13 +3,22 @@
 This document describes the command-line tools available in the PARUS pipeline 
 for simulated neural signal generation, model training, evaluation, and inference.
 
+CLI scripts are located at `parus/scripts/`
+
+All scripts support following flags:
+
+| Option            | Description                                |
+|-------------------|--------------------------------------------|
+| `-h`, `--help`    | Show help message and exit                 |
+| `-v`, `--version` | Displays the current version of the script |
+
 ### Table of contents
 
-- [Simulated Dataset Generation `gensim`](#1-parusgensim---simulated-dataset-generation)
-- [Dataset Statistics Visualization `gensta`](#2-parusgenstat---dataset-statistics-visualization)
-- [Model Training `modtrn`](#3-parusmodtrn---model-training)
-- [Prediction Visualization `prddsp`](#4-parusprddsp---prediction-visualization)
-- [Model Inference `modinf`](#5-parusdatinf---model-inference)
+- [Simulated Dataset Generation `ParusGenSim`](#1-parusgensim---simulated-dataset-generation)
+- [Dataset Statistics Visualization `ParusGenStat`](#2-parusgenstat---dataset-statistics-visualization)
+- [Model Training `ParusModTrn`](#3-parusmodtrn---model-training)
+- [Prediction Visualization `ParusPrdDsp`](#4-parusprddsp---prediction-visualization)
+- [Model Inference `ParusModInf`](#5-parusdatinf---model-inference)
 
 ---
 
@@ -19,9 +28,17 @@ Generate simulated neural signal datasets for model training.
 
 ### Usage
 
-```bash
-ParusGenSim signalFolder noiseFolder outputFolder sampleNumber [options]
-```
+- Unix / Linux / macOS
+
+  ```bash
+  python3 gensim.py signalFolder noiseFolder outputFolder sampleNumber [options]
+  ```
+
+- Windows
+
+  ```bat
+  py gensim.py signalFolder noiseFolder outputFolder sampleNumber [options]
+  ```
 
 ### Description
 
@@ -79,9 +96,17 @@ Visualize statistics of generated datasets.
 
 ### Usage
 
-```bash
-ParusGenStat reportFile
-```
+- Unix / Linux / macOS
+
+  ```bash
+  python3 gensta.py reportFile
+  ```
+
+- Windows
+
+  ```bat
+  py gensta.py reportFile
+  ```
 
 ### Arguments
 
@@ -97,9 +122,17 @@ Train a neural signal separation model.
 
 ### Usage
 
-```bash
-ParusModTrn art_dir dat_dir [options]
-```
+- Unix / Linux / macOS
+
+  ```bash
+  python3 modtrn.py art_dir dat_dir [options]
+  ```
+
+- Windows
+
+  ```bat
+  py modtrn.py art_dir dat_dir [options]
+  ```
 
 ### Description
 
@@ -162,9 +195,17 @@ Display model predictions versus input signals.
 
 ### Usage
 
-```bash
-ParusPrdDsp resultPath [options]
-```
+- Unix / Linux / macOS
+
+  ```bash
+  python3 prddsp.py resultPath [options]
+  ```
+
+- Windows
+
+  ```bat
+  py prddsp.py resultPath [options]
+  ```
 
 ### Arguments
 
@@ -210,9 +251,17 @@ Run inference using a trained model.
 
 ### Usage
 
-```bash
-ParusDatInf ckpt [options]
-```
+- Unix / Linux / macOS
+
+  ```bash
+  python3 modinf.py ckpt [paths] [options]
+  ```
+
+- Windows
+
+  ```bat
+  py modinf.py ckpt [paths] [options]
+  ```
 
 ### Description
 
@@ -223,8 +272,6 @@ Apply a trained model to raw signal data.
 | Argument | Type | Description                      |
 |----------|------|----------------------------------|
 | `ckpt`   | str  | Path to trained model checkpoint |
-
----
 
 ### Data Input
 
@@ -241,14 +288,3 @@ Apply a trained model to raw signal data.
 | `-tm`, `--memory`   | flag      | False   | Load entire file into memory |
 | `-bs,` `--batch`    | int       | 2048    | Batch size                   |
 | `-cp`, `--compress` | int (0–9) | 4       | Output compression level     |
-
----
-
-## Shared Flags (All Scripts)
-
-All scripts support:
-
-| Option            | Description                                |
-|-------------------|--------------------------------------------|
-| `-v`, `--version` | Displays the current version of the script |
-| `-h`, `--help`    | Show help message and exit                 |
