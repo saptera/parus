@@ -1,11 +1,24 @@
 # PARUS project main Makefile
+# Build requires:    Python-3 with `setuptools` `wheel` `build`
+# Autodoc requires:  Python-3 with `sphinx` `sphinx-autodoc-typehints` `furo`
 
-SEMVER    ?=    # Semantic version number, allowed value `X.Y.Z` or `X.Y.ZrcN`
 
-.PHONY: help clean version build rebuild gendoc release
+# Semantic version number, allowed value `X.Y.Z` or `X.Y.ZrcN`
+VERSION    ?=
+
+# OS based Python command
+ifeq ($(OS),Windows_NT)
+    PYTHON := py
+else
+    PYTHON := python3
+endif
+
+.PHONY: help clean semver build rebuild gendoc release
+
 
 help:
-	@echo PARUS project build automation, valid rules ['clean', 'version', 'build', 'rebuild', 'gendoc', 'release']
+	@echo PARUS project build automation
+	@echo Valid targets ['clean', 'semver', 'build', 'rebuild', 'gendoc', 'release']
 
 clean:
 ifeq ($(OS),Windows_NT)
@@ -15,19 +28,11 @@ else
 	@rm -rf "dist" "parus.egg-info"
 endif
 
-version:
-ifeq ($(OS),Windows_NT)
-	@py "automation/environment/set_version.py" $(SEMVER)
-else
-	@python3 "automation/environment/set_version.py" $(SEMVER)
-endif
+semver:
+	@$(PYTHON) automation/environment/set_version.py $(VERSION)
 
 build:
-ifeq ($(OS),Windows_NT)
-	@py -m build
-else
-	@python3 -m build
-endif
+	@$(PYTHON) -m build
 
 rebuild: clean build
 
@@ -35,4 +40,4 @@ gendoc:
 	@$(MAKE) -C "doc/API" rebuild publish
 	@$(MAKE) -C "doc/API" clean
 
-release: version clean build gendoc
+release: semver clean build gendoc
