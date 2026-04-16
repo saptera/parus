@@ -58,9 +58,13 @@ PARUS repository
 │   ├── environment                  <- Execution environment building scripts
 │   │   ├── install_parus.py             <- Auto-installation script
 │   │   ├── proj_path.pth                <- Python [venv] project path injection
+│   │   ├── set_version.py               <- Project version setting script
 │   │   └── README.md                    <- Readme file
 │   ├── POSIX                        <- POSIX OS (Unix/Linux/macOS) execution scripts
 │   │   ├── install_parus.sh             <- Installation caller script for POSIX
+│   │   ├── parus_trn.sh                 <- Model training GUI caller
+│   │   ├── parus_dat.sh                 <- Data processing GUI caller
+│   │   ├── parus_rt.sh                  <- Real-time GUI caller
 │   │   └── README.md                    <- Readme file
 │   ├── Windows                      <- Window OS execution scripts
 │   │   ├── install_parus.bat            <- Installation caller script for Windows
@@ -75,9 +79,16 @@ PARUS repository
 │   ├── CLI.md                       <- Commandline interface documentation
 │   ├── GUI.md                       <- Graphical user interface documentation
 │   ├── REALTIME.md                  <- Real-time sub-system documentation
-│   └── API                          <- Application interface (functions) documentation
-│       └── ...                          <- Module documentation
+│   └── API                          <- Application programming interface documentation
+│       ├── source                       <- Sphinx documentation source directory
+│       │   ├── _static/                     <- Documentation HTML static components
+│       │   ├── conf.py                      <- Sphinx build configuration file
+│       │   └── index.rst                    <- API documentation homepage source file
+│       ├── api.zip                      <- API HTML documentation bulid
+│       ├── Makefile                     <- API documentation build makefile
+│       └── README.md                    <- Readme file
 ├── pyproject.toml               <- Project build definitions
+├── Makefile                     <- Project build makefile
 ├── LICENSE                      <- AGPL-3.0 license
 ├── README.md                    <- [THIS FILE]
 ├── .gitattributes               <- Git Attributes source
