@@ -1,4 +1,4 @@
-# Project version setting SCRIPT
+# PARUS project version setting SCRIPT
 
 import os
 import argparse
@@ -21,6 +21,7 @@ parser.add_argument('version', type=version_type, metavar="projVer", help="[%(ty
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
+print("Setting project version number...")
 ver_str, ver_prt = args.version
 cwd = os.path.dirname(__file__)
 
@@ -61,3 +62,4 @@ doc_conf = os.path.realpath(os.path.join(cwd, "../../doc/API/source/conf.py"))
 update_version(proj_def, doc=False)
 update_version(pkg_init, doc=False)
 update_version(doc_conf, doc=True)
+print("    -> DONE!")
