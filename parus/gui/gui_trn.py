@@ -1191,7 +1191,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         chk_path = os.path.isfile(stat_path)
         chk_type = stat_path.endswith('.cjh')
         if chk_path and chk_type:
-            self._sta_proc.set_arguments([stat_path])
+            self._sta_proc.set_arguments([stat_path, '-k', '-a', 'QtAgg'] if cs_dark() else [stat_path, '-a', 'QtAgg'])
             self.genStaButton.setEnabled(True)
         else:
             self._sta_proc.reset_arguments()
@@ -1364,9 +1364,9 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.tstViewButton.setEnabled(False)
             self._tst_view.reset_arguments()
         else:
-            file = os.path.join(self.tst_dir, self.tst_typ)
+            file = str(os.path.join(self.tst_dir, self.tst_typ))
             if os.path.isfile(file):
-                self._tst_view.set_arguments([file])
+                self._tst_view.set_arguments([file, '-k', '-a', 'QtAgg'] if cs_dark() else [file, '-a', 'QtAgg'])
                 self.tstViewButton.setEnabled(True)
             else:
                 self.statBar.showMessage("Invalid test results file")

@@ -7,19 +7,23 @@ import matplotlib.pyplot as plt
 
 __package__ = 'parus.scripts'
 from ..fio import cjsh_read
-mpl.use('TkAgg')  # Use TkAgg backend
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
-parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.6")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.7")
 parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
+parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
+parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
 # Read file
 gen_feat = cjsh_read(args.file)
+# Set plot environment
+mpl.use(args.agg)
+plt.style.use('dark_background') if args.dark else plt.style.use('default')
 # Initialize figure
 fig, axs = plt.subplots(2, 3, num="Simulated Neural Signal Generation Overview")
 fig.suptitle("Simulated Neural Signal Generation Overview [%d @ %1.1fkHz * %d]" %
@@ -139,7 +143,7 @@ ax.set_xlabel("Total Number of Signals: %d" % arc_n)
 # Annotate plotted chart
 arc_annot = {}  # INIT VAR
 kw = dict(arrowprops=dict(arrowstyle="->", connectionstyle=""), zorder=0, va="center",
-          bbox=dict(boxstyle="round,pad=0.3", fc="w", ec="k", lw=0.72))
+          bbox=dict(boxstyle="round,pad=0.3", fc='k' if args.dark else 'w', ec='w' if args.dark else 'k', lw=0.72))
 arc_ratio = np.divide(gen_feat['prop']['arc_cnt'], sum(gen_feat['prop']['arc_cnt'])) * 100
 for i, p in enumerate(arc_wedges):
     txt = "%s\n $\\bf{%.2f\\%%}$ (%d)" % (gen_feat['file']['sig'][i], arc_ratio[i], gen_feat['prop']['arc_cnt'][i])
@@ -225,8 +229,22 @@ def hover(event):
             fig.canvas.draw_idle()
 
 
-# Show plot
+# Connect to event
 fig.canvas.mpl_connect('motion_notify_event', hover)
+# Try to maximize window
 mng = plt.get_current_fig_manager()
-mng.window.state('zoomed')
+try:
+    if args.agg.lower() == 'tkagg':
+        mng.window.state('zoomed')
+    elif args.agg.lower() == 'qtagg':
+        mng.window.showMaximized()
+    elif args.agg.lower() == 'wxagg':
+        mng.frame.Maximize(True)
+    elif 'gtk' in args.agg.lower():
+        mng.window.maximize()
+    else:
+        mng.full_screen_toggle()
+except:
+    pass
+# Show plot
 plt.show()

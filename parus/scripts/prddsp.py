@@ -4,6 +4,7 @@ import os
 import argparse
 import copy
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 __package__ = 'parus.scripts'
@@ -12,8 +13,10 @@ from ..fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.1")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.2")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
+parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
+parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
 # Plot elements control
 pe_pgp = parser.add_argument_group("Plot elements control arguments")
 pe_pgp.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
@@ -38,6 +41,11 @@ ax_pgp.add_argument('-sb', '--sub', dest='sub', default=False, action='store_tru
 # Parse inputs
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
+
+
+# Set plot environment
+mpl.use(args.agg)
+plt.style.use('dark_background') if args.dark else plt.style.use('default')
 
 
 # Signal normalization function

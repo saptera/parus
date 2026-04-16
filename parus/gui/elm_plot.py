@@ -1145,7 +1145,7 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.ax[1].set_xlabel("Time (s)", fontsize=14, fontweight='bold')
         self.ax[1].tick_params(axis='x', which='major', labelsize=12)
         # Set Y axis features
-        self.ax[0].set_ylabel("Amplitude (mV)", fontsize=16, fontweight='bold')
+        self.ax[0].set_ylabel("Amplitude", fontsize=16, fontweight='bold')
         self.ax[0].tick_params(axis='y', which='major', labelsize=10)
         self.ax[1].tick_params(axis='y', which='major', direction='inout', length=12, labelsize=14)
         # Set legends

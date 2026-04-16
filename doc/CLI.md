@@ -108,11 +108,19 @@ Visualize statistics of generated datasets.
   py gensta.py reportFile
   ```
 
-### Arguments
+### Positional Argument
 
 | Argument      | Type | Description                    |
 |---------------|------|--------------------------------|
 | `reportFile`  | str  | Path to generation report file |
+
+
+### Extra Settings
+
+| Option         | Type | Default | Description                     |
+|----------------|------|---------|---------------------------------|
+| `-k`, `--dark` | flag | False   | Use dark color scheme for plots |
+| `-a`, `--agg`  | str  | 'TkAgg' | Set `matplotlib` backend        |
 
 ---
 
@@ -207,7 +215,7 @@ Display model predictions versus input signals.
   py prddsp.py resultPath [options]
   ```
 
-### Arguments
+### Positional Argument
 
 | Argument     | Type | Description                |
 |--------------|------|----------------------------|
@@ -243,6 +251,13 @@ Display model predictions versus input signals.
 | `-lm`, `--lims` | flag  | False   | Global Y-axis limits |
 | `-sb`, `--sub`  | flag  | False   | Enable subplot mode  |
 
+### Extra Settings
+
+| Option         | Type | Default | Description                     |
+|----------------|------|---------|---------------------------------|
+| `-k`, `--dark` | flag | False   | Use dark color scheme for plots |
+| `-a`, `--agg`  | str  | 'TkAgg' | Set `matplotlib` backend        |
+
 ---
 
 ## 5. `ParusDatInf` - Model Inference
@@ -267,13 +282,13 @@ Run inference using a trained model.
 
 Apply a trained model to raw signal data.
 
-### Positional Arguments
+### Positional Argument
 
 | Argument | Type | Description                      |
 |----------|------|----------------------------------|
 | `ckpt`   | str  | Path to trained model checkpoint |
 
-### Data Input
+### Data Inputs
 
 | Option         | Type | Default | Description          |
 |----------------|------|---------|----------------------|
