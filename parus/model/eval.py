@@ -133,10 +133,12 @@ def validation(model, datagen, criterion, device, hint='text', image=None):
         criterion (torch.nn.Module): Loss function
         device (torch.device): Device for model training
         hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+
             - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
             - 'disp': Show image with [matplotlib]
             - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
             - 'none': No hinting (fallback for invalid method input)
+
         image (str | None): Image save path for [hint = 'save']
 
     Returns:
@@ -177,6 +179,7 @@ def testing(model, datagen, channel, device, th=-1):
 
     Returns:
         dict: {3D (Index, Channel, Sample)}Test dataset results
+
             - 'inp': (np.ndarray): {3D-float32} Input signal
             - 'prd': (dict): Model prediction results
                 - 'spk' (np.ndarray): {3D-float32} Predicted spike signal
@@ -184,6 +187,7 @@ def testing(model, datagen, channel, device, th=-1):
             - 'lbl': (np.ndarray): Signal label
                 - 'spk' (np.ndarray): {3D-float32} Reference spike signal
                 - 'pos' (np.ndarray): {3D-int8} Reference spike position
+
     """
     bs = datagen.batch_size
     shape = (datagen.dataset.n_sample, channel, datagen.dataset.seq_len)
@@ -224,8 +228,10 @@ def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5
 
     Returns:
         tuple[float, dict[str, int]]:
+
             - ota (float): On-target accuracy (%) of binary detection, with allowance defined by [allowed_distance]
             - sas (dict[str, int]): Four factors for sensitivity and specificity (actual raw values)
+
     """
     # On-target accuracy #
     # Get basic info

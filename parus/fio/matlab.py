@@ -24,10 +24,12 @@ def mat_meta_read(file):
 
     Returns:
         dict[str, float | str | bool | str]: MAT file header
+
             - version (float): MAT file version
             - platform (str): MATLAB platform
             - hdf (bool): MAT file HDF standard flag
             - date (str): MAT file creation time (locale format)
+
     """
     # Read MAT file header
     header = ''  # INIT VAR

@@ -232,11 +232,13 @@ def gen_sim_dat(has_spk=True, grp_pas=None):
 
     Returns:
         tuple[np.ndarray, dict[str, np.ndarray, str, list[np.ndarray]], np.ndarray]: Generated signal and label
-            sig (np.ndarray): {1D} Simulated signal data
-            lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
+
+            - sig (np.ndarray): {1D} Simulated signal data
+            - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
                 - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
                 - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
-            pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
+            - pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
+
     """
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
@@ -311,8 +313,10 @@ def save_gen_h5(h5_fp, name, gen_typ, sig, lbl, pos):
         gen_typ (str): Generation type
         sig (np.ndarray): {1D} Simulated signal data
         lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
+
             - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
             - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
+
         pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
     """
     # Initialize group

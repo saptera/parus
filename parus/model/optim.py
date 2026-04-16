@@ -56,6 +56,7 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
         vld_data (torch.utils.data.DataLoader): Validation dataset loader
         work_dir (str): Working directory to save model training artifacts
         train_hparams (dict): Training hyperparameters
+
             - start_epoch (int): Initial epoch number
             - total_epoch (int): Total number of epoches for training
             - batch_size (int): Training batch size
@@ -65,12 +66,15 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
             - learning_rate_warmup (int): Warmup steps for applying dynamic learning rate
             - model_param_clip (float): Clipping value to avoid exploding gradient
             - loss_function (str): {mse, l1, bce} Loss function name
+
         device (torch.device): Device for model training
         hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+
             - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
             - 'disp': Show image with [matplotlib]
             - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
             - 'none': No hinting (fallback for invalid method input)
+
     """
     # Set loss function
     criterion = _loss_function_options[train_hparams['loss_function']]

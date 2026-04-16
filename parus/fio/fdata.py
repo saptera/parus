@@ -45,7 +45,7 @@ def pklz_read(file):
     """ Read compressed pickled data from a file.
 
     Args:
-        file (str): File contained compressed pickled data (*.*)
+        file (str): File contained compressed pickled data (`*.pkl` | `*.pkz` | `*.pklz`)
 
     Returns:
         Imported data
@@ -60,7 +60,7 @@ def pklz_write(file, data, level=-1):
     """ Write compressed pickled data to a file.
 
     Args:
-        file (str): File to write data (*.*)
+        file (str): File to write data (`*.pkl` | `*.pkz` | `*.pklz`)
         data: Any type of picklable data
         level (int): {-1 ~ 9} Compress level of input data (default: -1)
 
@@ -81,7 +81,7 @@ def cjsh_read(file):
     """ Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
 
     Args:
-        file (str): File contained compressed JSON data (*.*)
+        file (str): File contained compressed JSON data (`*.cjh` | `*.cjsh`)
 
     Returns:
         Imported data
@@ -105,7 +105,7 @@ def cjsh_write(file, data, level=-1):
     """ Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
 
     Args:
-        file (str): Output file name
+        file (str): Output file name (`*.cjh` | `*.cjsh`)
         data: Any type of data that is JSON serializable
         level (int): {-1 ~ 9} Compress level of input data (default: -1)
 
@@ -179,7 +179,7 @@ def arc_read(arc_file):
     """ Read archival neural signal data file.
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (*.arc)
+        arc_file (str): File contained archival neuronal signal data (`*.arc`)
 
     Returns:
         dict: Archival neuronal signal sample, defined above
@@ -210,7 +210,7 @@ def arc_write(arc_file, arc_data):
     """ Write archival neural signal data file.
 
     Args:
-        arc_file (str): File to write archival neuronal signal data (*.arc)
+        arc_file (str): File to write archival neuronal signal data (`*.arc`)
         arc_data (dict): Archival neuronal signal, defined above
 
     Returns:
@@ -241,7 +241,7 @@ def arc_plot(arc_file, save=None, close_on_save=True):
     """ Plot archival neural signal data.
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (*.arc)
+        arc_file (str): File contained archival neuronal signal data (`*.arc`)
         save (str | bool | None): Figure save path, True = use the same path as [arc_file] (default: None)
         close_on_save (bool): Define if the figure should be closed after saving (default: True)
 
@@ -330,7 +330,7 @@ def noi_read(noi_file):
     """ Read recording noise sample file.
 
     Args:
-        noi_file (str): File contained archival neuronal signal data (*.noi)
+        noi_file (str): File contained archival neuronal signal data (`*.noi`)
 
     Returns:
         dict: Neuronal recording noise sample, defined above
@@ -361,7 +361,7 @@ def noi_write(noi_file, noi_data):
     """ Write recording noise sample file.
 
     Args:
-        noi_file (str): File to write recording noise sample data (*.noi)
+        noi_file (str): File to write recording noise sample data (`*.noi`)
         noi_data (dict): Neuronal recording noise sample, defined above
 
     Returns:
@@ -427,12 +427,14 @@ def sim_data_read(sim_fp, idx, ex=False):
 
     Returns:
         Generated signal and label
+
             - sig (np.ndarray): {1D-scalar} Simulated signal data
             - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
                 - 'noise' (np.ndarray): {1D-scalar} Noise ground truth of [sig]
                 - 'signal' (list[np.ndarray]): {1D-scalar} Grouped noise-free signal of [sig]
             - pos (np.ndarray): {1D-0|1} Simulated signal data spike position (one-hot)
             - typ (str): Sample generation type ('sim': standard, 'nrm': extra standard, 'spc': extra special)
+
     """
     grp = 'exeg' if ex else 'sims'
     pos_ref = sim_fp.get("%s/%d" % (grp, idx), None)

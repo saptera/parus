@@ -46,9 +46,7 @@ class IntanRHXmTCP(metaclass=SingletonIO):
     def set_command_buffer_size(self, size):
         """ Set buffer size for reading TCP command socket.
 
-        Increase if many return commands are expected.
-        --------
-        1024 bytes are sufficient for single command.
+        Increase if many return commands are expected. 1024 bytes are sufficient for single command.
 
         Args:
             size (int): Maximum number of bytes expected for 1 read
@@ -59,11 +57,11 @@ class IntanRHXmTCP(metaclass=SingletonIO):
         """ Set buffer size for reading TCP waveform socket.
 
         Increase if channels, filter bands, or acquisition time increase.
-        --------
         TCP lag expected in both starting and stopping acquisition, the exact number of data blocks may vary.
-        --------
+
         For 1 second of recoding, the size N can be computed with the following equation
         N = (FramePerBlock * WaveformBytesPerFrame + SizeOfMagicNumber) * NumBlock
+
             - FramePerBlock = 128 (hard-coded)
             - WaveformBytesPerFrame = SizeOfTimestamp + SizeOfSample
                 - SizeOfTimestamp = 4 (int32)

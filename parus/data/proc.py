@@ -50,6 +50,7 @@ def norm_lst_gen(peak, side, level=2):
         peak (float): Peak (centre) value of output
         side (int): Number of samples around the peak
         level (int): {1 | 2 | 3}: Level of three-sigma rule within the [size]. (default: 2)
+
             - 1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
             - 2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
             - 3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
@@ -105,8 +106,9 @@ def spk_merge(spk_data):
 
 def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
     """ Random slice and extract neuronal signal data for training models.
-            This function only return NumPy-int8[0|1] (one-hot) type labels
-            Samples from this function are simple random slices of raw signal
+
+    This function only return NumPy-int8[0|1] (one-hot) type labels.
+    Samples from this function are simple random slices of raw signal.
 
     Args:
         sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
@@ -140,8 +142,9 @@ def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
 
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
     """ Slice and extract neuronal signal data for training models.
-            This function only return NumPy-int8[0|1] (one-hot) type labels
-            Samples from this function will always contain spikes
+
+    This function only return NumPy-int8[0|1] (one-hot) type labels.
+    Samples from this function will always contain spikes.
 
     Args:
         sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
@@ -186,15 +189,19 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
         size (int): Data point length of sample (default: 50)
         pos (int | None): Location of spike (default: None = centre of sample)
         method (str): {'min' | 'max' | 'none'}: Local extremum search method. (default: 'none')
+
             - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
             - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
             - 'none': keep original label from [sig_data], ignoring [rng_srch]
+
         rng_srch (int): Range to search local extremum (default: 10)
 
     Returns:
         tuple[np.ndarray, int]: Averaged signal sample
+
             - mean: {1D-float64} Neuronal signal samples
             - pos: {int} Index of spike
+
     """
     pos = int(size / 2) if pos is None else pos
     # Verify inputs
@@ -236,15 +243,19 @@ def pred_mae(data, th=35):
 
     Args:
         data (dict): Denoised signal output from model, structure as below:
+
             - 'inp': (np.ndarray): Input signal
             - 'prd': (np.ndarray): Predicted signal
             - 'lbl': (np.ndarray): Signal label
+
         th (int | float): Quality threshold (default: 10)
 
     Returns:
         tuple[float, bool]: Mean absolute error (MAE) result of prediction
+
             - score: {float} Evaluation score
             - q: {bool} Quality check result
+
     """
     score = np.mean(np.abs(np.subtract(data['lbl'], data['prd']))).item()
     q = score < th
@@ -253,17 +264,21 @@ def pred_mae(data, th=35):
 
 def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
     """ Assign a value list around the signal.
-            This function only accept NumPy-int8[0|1] (one-hot) type labels
-            This function will return NumPy-float64 type labels
+
+    This function only accept NumPy-int8[0|1] (one-hot) type labels.
+    This function will return NumPy-float64 type labels.
+
     Args:
         sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
                                           {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8[0|1])}
         rng_asgn (int): Range to assign values
         val_lst (list | np.ndarray): List of value to be assigned
         method (str): {'min' | 'max' | 'none'}: Local extremum search method (default: 'min')
+
             - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
             - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
             - 'none': keep original label from [sig_data], ignoring [rng_srch]
+
         rng_srch (int): Range to search local extremum (default: 10)
 
     Returns:

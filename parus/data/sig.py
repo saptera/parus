@@ -176,8 +176,10 @@ def noise_white(size, mode=0, amp=1.0, seed=None):
     Args:
         size (int): Number of samples to be generated
         mode (int): {0 | 1} White noise random distribution type. (default: 0 = UNIFORM)
+
             - 0 = UNIFORM distribution
             - 1 = GAUSSIAN distribution
+
         amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
         seed (int | None): Random seed used to initialize the pseudo-random number generator
 
@@ -213,8 +215,10 @@ def noise_freq_decr(size, mode=0, amp=1.0, seed=None):
     Args:
         size (int): Number of samples to be generated
         mode (int): {0 | 1} White noise random distribution type (default: 0 = PINK)
+
             - 0 = PINK noise generation
             - 1 = BROWN (RED) noise generation
+
         amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
         seed (int | None): Random seed used to initialize the pseudo-random number generator
 
@@ -256,8 +260,10 @@ def noise_freq_incr(size, mode=0, amp=1.0, seed=None):
     Args:
         size (int): Number of samples to be generated
         mode (int): {0 | 1} White noise random distribution type (default: 0 = BLUE)
+
             - 0 = BLUE (AZURE) noise generation
             - 1 = VIOLET (PURPLE) noise generation
+
         amp (float): Amplitude of noise (default: 1.0 -> [-0.5 0.5))
         seed (int | None): Random seed used to initialize the pseudo-random number generator
 
@@ -487,8 +493,10 @@ def loc_ext_1d(arr, allow_plateau=True):
 
     Returns:
         dict[str, np.ndarray]: Detected local extrema
+
             - max (np.ndarray): Local maxima
             - min (np.ndarray): Local minima
+
     """
     if allow_plateau:
         dif = np.ediff1d(arr, to_begin=1)  # Padding 1 to the beginning, forcing keep first value
@@ -505,13 +513,15 @@ def loc_ext_1d(arr, allow_plateau=True):
 
 def sig_peak_zsc(signal, lag, th, influence=0.0):
     """ Robust signal peak detection using z-scores.
-        Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
+
+    Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
     Args:
         signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
         lag (int): The length of data will be smoothed, larger lags should be included for more stationary data
         th (int | float): Threshold of standard deviations from the moving mean above to classify as peak
         influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
+
             - 0: Signals have no influence on the threshold, implicitly assume signal is stationary
             - 1: Signals have full influence of normal data points
 
@@ -559,7 +569,8 @@ def sig_peak_fwd(signal, th, neg=True):
 
 def peak_extremum(signal, peak, th, neg=True, smp=None):
     """ Find the extremum point of peak detections.
-            - This function should be used in pipeline with [sig_peak_zsc]
+
+    - This function should be used in pipeline with [sig_peak_zsc]
 
     Args:
         signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
@@ -589,7 +600,8 @@ def peak_extremum(signal, peak, th, neg=True, smp=None):
 
 def peak_reloc_ex(signal, peak, th=None, neg=True, smp=10):
     """ Find the extremum point near the peak location.
-            - This function should be used in for aligning manual labelled peaks
+
+    - This function should be used in for aligning manual labelled peaks
 
     Args:
         signal (list[int | float] | np.ndarray): {1D-Scalar} Input signal
@@ -945,17 +957,20 @@ def tpt_kde_frq(spk, bw=None, **kwargs):
     Args:
         spk (list[int | float] or np.ndarray): {1D} Spike event data by timestamp
         bw (int | float | str | function | None): The method used to calculate the estimator bandwidth (default: None)
-            - (int | float): Value will be used directly as bandwidth factor
-            - {'scott'}: Auto compute Scott's factor
-            - {'silverman'}: Auto compute Silverman's factor
-            - (function): Callable take a gaussian_kde instance as only parameter and return a scalar
-            - {None}: Using 'scott'
 
-   Keyword Args:
-       smp (list[int | float] or np.ndarray): {1D} Resample data by timestamp, ignore [org] [end] [num] if defined
-       org (int | float | None): Beginning of timestamps, use first value of [spk] if undefined
-       end (int | float | None): End of timestamps, use last value of [spk] if undefined
-       num (int): Number of samples to compute, 1000 if undefined
+            - (int | float): Value will be used directly as bandwidth factor
+            - 'scott': Auto compute Scott's factor
+            - 'silverman': Auto compute Silverman's factor
+            - (func): Callable take a gaussian_kde instance as only parameter and return a scalar
+            - None: Using 'scott'
+
+        **kwargs: See below
+
+    Keyword Args:
+        smp (list[int | float] or np.ndarray): {1D} Resample data by timestamp, ignore [org] [end] [num] if defined
+        org (int | float | None): Beginning of timestamps, use first value of [spk] if undefined
+        end (int | float | None): End of timestamps, use last value of [spk] if undefined
+        num (int): Number of samples to compute, 1000 if undefined
 
     Returns:
         np.ndarray: Firing rate estimations

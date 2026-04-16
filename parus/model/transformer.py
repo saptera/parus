@@ -51,9 +51,11 @@ class SparseContextLoader(nn.Module):
             ant_samp (int): Anterior element length
             n_samp (int): Total number of samples per patch
             sel_meth (str): Flanking elements indices sampling method (default: 'stp')
+
                 - 'stp': Constant gap sampling
                 - 'lin': Linear increased gap sampling
                 - 'geo': Geometrical increased gap sampling
+
             gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for sampling (default: 1)
         """
         self.emb_dim = emb_dim
@@ -73,9 +75,11 @@ class SparseContextLoader(nn.Module):
 
         Args:
             meth (str): Flanking elements indices sampling method (default: 'stp')
+
                 - 'stp': Constant gap sampling
                 - 'lin': Linear increased gap sampling
                 - 'geo': Geometrical increased gap sampling
+
             gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for sampling (default: 1)
 
         Returns:

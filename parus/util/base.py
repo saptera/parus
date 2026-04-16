@@ -69,8 +69,10 @@ def search_files(base_dir, fpre=str(), fsuf=str()):
 
     Returns:
         tuple[list[list[str]], list[str]]: File absolute path and their leaf folders, the order of elements are matched
-            flst (list[list[str]]): A list of lists (leaf-folders) with absolute path of files meets search conditions
-            dlst (list[str]): A list of all leaf folder names contains files found
+
+            - flst (list[list[str]]): A list of lists (leaf-folders) with absolute path of files meets search conditions
+            - dlst (list[str]): A list of all leaf folder names contains files found
+
     """
     # Get files and their leaf-folder path
     flst = []  # INIT VAR

@@ -69,14 +69,14 @@ def intan_typ_amp_read(amp_file, n):
         n (int): Number of channels at defined file
 
     Returns:
-        list[np.ndarray]: {1D-float, n} List of NumPy 1D array containing amplifier data (microVolts / mV)
+        list[np.ndarray]: {1D-float, n} List of NumPy 1D array containing amplifier data (microVolts / μV)
     """
     fp = open(amp_file, 'rb')
     dat = np.fromfile(fp, dtype=np.int16)  # Data type in binary file: INT16
     fp.close()
     mat = np.reshape(dat, (n, dat.size // n), order='F')  # Reshape matrix with column-major order
     del dat
-    amp_data = [np.round((s * 0.195), 3).astype('float32') for s in mat]  # Conversion factor to mV: 0.195
+    amp_data = [np.round((s * 0.195), 3).astype('float32') for s in mat]  # Conversion factor to μV: 0.195
     return amp_data
 
 
@@ -163,12 +163,12 @@ def intan_ch_amp_read(amp_file):
         amp_file (str): IntanTech RHD2000 "One File Per Channel" formatted amplifier file
 
     Returns:
-        np.ndarray: {1D-float} NumPy 1D array containing amplifier data (microVolts / mV)
+        np.ndarray: {1D-float} NumPy 1D array containing amplifier data (microVolts / μV)
     """
     fp = open(amp_file, 'rb')
     dat = np.fromfile(fp, dtype=np.int16)  # Data type in binary file: INT16
     fp.close()
-    amp_data = np.round((dat * 0.195), 3).astype('float32')  # Conversion factor to mV: 0.195, round to avoid artifact
+    amp_data = np.round((dat * 0.195), 3).astype('float32')  # Conversion factor to μV: 0.195, round to avoid artifact
     return amp_data
 
 
@@ -250,7 +250,7 @@ def intan_port_amp_read(amp_path, port, n):
         n (int): Number of channels at defined port
 
     Returns:
-        list[np.ndarray]: {1D-float, n} List of NumPy 1D array containing amplifier data (microVolts / mV)
+        list[np.ndarray]: {1D-float, n} List of NumPy 1D array containing amplifier data (microVolts / μV)
     """
     # Get all existing files
     prefix = 'amp-' + port.capitalize()

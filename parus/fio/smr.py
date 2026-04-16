@@ -329,7 +329,7 @@ def smr_load(file):
     """ Load data from CED Spike2 SMR file.
 
     Args:
-        file (str): CED Spike2 SMR file path
+        file (str): CED Spike2 SMR file path (`*.smr`)
 
     Returns:
         dict: Loaded data

@@ -60,8 +60,10 @@ def _get_wfm_smp(sig, pos, asp, psp):
 
     Returns:
         tuple[np.ndarray, np.ndarray]: {2D-float, 1D-int} Waveform samples and associated location
+
             - smp (np.ndarray): {2D-float (Num, Val)} Waveform snippets, 1D = sample number | 2D = sample value
             - loc (np.ndarray): {1D-int} Aligned sample associated location in original signal
+
     """
     # Check inputs
     asp = 0 if asp < 0 else asp
@@ -106,8 +108,10 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, w=True, **kwargs):
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+
     """
     # Get keyword arguments
     beta = kwargs.get('beta', 0.5)
@@ -167,8 +171,10 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2, **kwargs):
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+
     """
     # Get keyword arguments
     beta = kwargs.get('beta', 0.5)
@@ -233,8 +239,10 @@ def cls_crscor_blk(sig, pos, asp, psp, k=0.8):
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+
     """
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
@@ -279,8 +287,10 @@ def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
+
             - res (list[np.ndarray]): {1D-int} Indices of grouped signals
             - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
+
     """
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)

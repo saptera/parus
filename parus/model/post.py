@@ -16,13 +16,15 @@ Function list:
 
 def peak_zsc_torch(prd, lag, threshold, influence=0.0):
     """ Robust signal peak detection using z-scores, PyTorch version.
-        Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
+
+    Inspired from J.P.G. van Brakel [https://stackoverflow.com/a/22640362/6029703]
 
     Args:
         prd (torch.Tensor): {3D-float, (n-ch, n-feat, n-samp)} Input prediction results
         lag (int): The length of data will be smoothed, larger lags should be included for more stationary data
         threshold (int | float): Threshold of standard deviations from the moving mean above to classify as peak
         influence (float): {0 ~ 1} The influence of signals on the algorithm's detection threshold (default: 0.0)
+
             - 0: Signals have no influence on the threshold, implicitly assume signal is stationary
             - 1: Signals have full influence of normal data points
 

@@ -131,6 +131,7 @@ def load_all_datasets(dataset_dir, seq_len, batch_size, data_hparams):
         seq_len (int): Model sequence length
         batch_size (int): Model batch size
         data_hparams (dict[str, int]): Dataset hyperparameters
+
             - n_trn_samples (int): Training set sample number
             - n_vld_samples (int): Validation set sample number
             - n_tst_samples (int): Testing set sample number

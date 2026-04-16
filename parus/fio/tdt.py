@@ -36,21 +36,23 @@ def tdt_tsq_read(tsq_file):
     """ Import Tucker-Davis Technologies data storage event headers.
 
     Args:
-        tsq_file (str): Tucker-Davis Technologies event header file (*.tsq)
+        tsq_file (str): Tucker-Davis Technologies event header file (`*.tsq`)
 
     Returns:
         dict[str, np.ndarray]: Recording event headers
+
             - size (int32): The length of this record
             - type (int32): Event type
             - name (str): Store ID, 4 characters string
             - channel (uint16): Channel number
             - sortcode (int32): Type for spike-sorting
             - timestamp (int32): Data timestamps
-            File storage position, only ONE valid at a time:
+            - File storage position, only ONE valid at a time:
                 - fp_loc (int64): File pointer location in TEV where A/D samples reside
                 - strobe (float64): Data transfer strobe control
             - format (int32): Data format ID
             - frequency (float32): Sampling frequency
+
     """
     # Read data
     raw = np.fromfile(tsq_file, dtype=__tsq_dt)
@@ -64,18 +66,20 @@ def tdt_tev_read(tev_file, tsq, name=None):
     """ Import Tucker-Davis Technologies data storage raw voltage traces.
 
     Args:
-        tev_file (str): Tucker-Davis Technologies raw voltage trace file (*.tev)
+        tev_file (str): Tucker-Davis Technologies raw voltage trace file (`*.tev`)
         tsq (dict[str, np.ndarray]): Tucker-Davis Technologies data storage event header info
         name (str | list[str] | None): Store ID(s) to read, set None to read all (default: None)
 
     Returns:
         dict[str, dict[int, dict]]: Recording raw voltage traces
+
             - store_id (dict[str, dict]): All channel data with defined store ID
                 - channel (dict[int, dict]): Single channel data with defined store ID
                     - signal (np.ndarray): {2D} Raw voltage trace, row synced with [timestamp], col stored waveform
                     - timestamp (np.ndarray): {1D} Timestamp of key positions
                     - sortcode (np.ndarray): {1D} Raw trace sorting info
                     - frequency (float): Sampling frequency of the trace
+
     """
     # Check input type
     if name is None:
@@ -124,8 +128,10 @@ def tdt_chs_arng(ch_dat):
 
     Returns:
         dict[str, np.ndarray]: Arranged channel recording
+
             - signal (np.ndarray): {1D} Channel voltage trace
             - timestamp (np.ndarray): {1D} Channel timestamps
+
     """
     # Flatten signal
     signal = ch_dat['signal'].flatten(order='C')

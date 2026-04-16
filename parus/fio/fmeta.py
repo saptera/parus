@@ -22,7 +22,7 @@ def conv_lin_prb(prb_file):
     """ Convert linear probe definition file to standard probe data structure.
 
     Args:
-        prb_file (str): Probe definition file (*.prb)
+        prb_file (str): Probe definition file (`*.prb`)
 
     Returns:
         list[dict] | None: Probe definition information, structure as follows:

@@ -3,7 +3,7 @@
    :align: center
 
 PARUS API Documentation
-===================
+=======================
 
 Welcome to the documentation for **parus**.
 
