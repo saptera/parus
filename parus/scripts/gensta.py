@@ -11,7 +11,7 @@ from ..fio import cjsh_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
-parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.7")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.8")
 parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
 parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
 parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
@@ -23,6 +23,15 @@ args = parser.parse_args()
 gen_feat = cjsh_read(args.file)
 # Set plot environment
 mpl.use(args.agg)
+bked = args.agg.lower()
+try:
+    if bked == 'qtagg':
+        from matplotlib.backends.qt_compat import QtCore, QtWidgets
+        app = QtWidgets.QApplication([])
+        app.setStyle('fusion')
+        app.styleHints().setColorScheme(QtCore.Qt.ColorScheme.Dark if args.dark else QtCore.Qt.ColorScheme.Light)
+except:
+    pass
 plt.style.use('dark_background') if args.dark else plt.style.use('default')
 # Initialize figure
 fig, axs = plt.subplots(2, 3, num="Simulated Neural Signal Generation Overview")
@@ -234,13 +243,13 @@ fig.canvas.mpl_connect('motion_notify_event', hover)
 # Try to maximize window
 mng = plt.get_current_fig_manager()
 try:
-    if args.agg.lower() == 'tkagg':
+    if bked == 'tkagg':
         mng.window.state('zoomed')
-    elif args.agg.lower() == 'qtagg':
+    elif bked == 'qtagg':
         mng.window.showMaximized()
-    elif args.agg.lower() == 'wxagg':
+    elif bked == 'wxagg':
         mng.frame.Maximize(True)
-    elif 'gtk' in args.agg.lower():
+    elif 'gtk' in bked:
         mng.window.maximize()
     else:
         mng.full_screen_toggle()

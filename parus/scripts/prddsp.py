@@ -13,7 +13,7 @@ from ..fio import pklz_read
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.2")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.3")
 parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
 parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
 parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
@@ -45,6 +45,14 @@ args = parser.parse_args()
 
 # Set plot environment
 mpl.use(args.agg)
+try:
+    if args.agg.lower() == 'qtagg':
+        from matplotlib.backends.qt_compat import QtCore, QtWidgets
+        app = QtWidgets.QApplication([])
+        app.setStyle('fusion')
+        app.styleHints().setColorScheme(QtCore.Qt.ColorScheme.Dark if args.dark else QtCore.Qt.ColorScheme.Light)
+except:
+    pass
 plt.style.use('dark_background') if args.dark else plt.style.use('default')
 
 
