@@ -13,12 +13,12 @@ else
     PYTHON := python3
 endif
 
-.PHONY: help clean semver build rebuild gendoc release
+.PHONY: help clean semver build gendoc clrdoc release solopack
 
 
 help:
 	@echo PARUS project build automation
-	@echo Valid targets ['clean', 'semver', 'build', 'rebuild', 'gendoc', 'release']
+	@echo Valid targets ['clean', 'semver', 'build', 'gendoc', 'clrdoc', 'release', 'solopack']
 
 clean:
 ifeq ($(OS),Windows_NT)
@@ -29,15 +29,19 @@ else
 endif
 
 semver:
-	@$(PYTHON) automation/environment/set_version.py $(VERSION)
+	@$(PYTHON) "automation/environment/set_version.py" $(VERSION)
 
 build:
 	@$(PYTHON) -m build
 
-rebuild: clean build
-
 gendoc:
 	@$(MAKE) -C "doc/API" rebuild publish
+
+clrdoc:
 	@$(MAKE) -C "doc/API" clean
 
-release: semver clean build gendoc
+# Package release sequence
+release: semver build gendoc
+
+# Clean and single version project packing
+solopack: clean semver build gendoc clrdoc
