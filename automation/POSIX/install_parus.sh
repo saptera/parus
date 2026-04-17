@@ -70,17 +70,17 @@ if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
       trn)
         name="PARUS Train"
         script="$scp_dir/parus_trn.sh"
-        icon="$pkg_dir/parus/gui/assets/icon_trn.ico"
+        icon="$pkg_dir/parus/gui/assets/icon_trn.svg"
         ;;
       dat)
         name="PARUS Data"
         script="$scp_dir/parus_dat.sh"
-        icon="$pkg_dir/parus/gui/assets/icon_dat.ico"
+        icon="$pkg_dir/parus/gui/assets/icon_dat.svg"
         ;;
       rt)
         name="PARUS Real-Time"
         script="$scp_dir/parus_rt.sh"
-        icon="$pkg_dir/parus/rt/assets/icon_rt.ico"
+        icon="$pkg_dir/parus/rt/assets/icon_rt.svg"
         ;;
     esac
 
