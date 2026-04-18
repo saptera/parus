@@ -20,7 +20,7 @@ The **PARUS** system can be installed using PyPI or Automation Script
   3. Run the installation script: `install_parus.*`
   4. Follow the on-screen prompts to complete the installation
 
-### System requirements
+### System Requirements
 
 Basic software
 
@@ -47,9 +47,9 @@ Hardware for minimum performance
 - [PySide6](https://www.qt.io/qt-for-python) (≥ 6.8) `pip install "PySide6>=6.8"` *(GUI fundamentals)*
 - [PyQtGraph](https://www.pyqtgraph.org) `pip install pyqtgraph` *(Data visualization for real-time GUI)*
 
-## Package structure
+## Package Structure
 
-### Repository structure
+### Repository Structure
 
 ```
 PARUS repository
@@ -95,7 +95,7 @@ PARUS repository
 └── .gitignore                   <- Git Ignore source
 ```
 
-### Source code structure
+### Source Code Structure
 
 ```
 PARUS package (alphabetical order)
@@ -153,16 +153,20 @@ PARUS package (alphabetical order)
 └── [EOP]
 ```
 
-## Available interfaces
+## Available Interfaces
 
 - [CLI](doc/CLI.md)
 - [GUI](doc/GUI.md)
 - [Real-time](doc/REALTIME.md)
 - [API](doc/API)
 
+## Data Formats
+
+Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
+
 ## Acknowledgements
 
-### Pickle compatible HDF5 file
+### Pickle Compatible HDF5 File
 
 Thanks to Daan van Vugt et al. for the open-source project [h5pickle](https://github.com/DaanVanVugt/h5pickle).
 
@@ -170,14 +174,14 @@ To enable pickle compatible HDF5 files for Python `multiprocessing` on platforms
 we adapted code from `h5pickle` in the `fio.hdf` module.  
 This ensures efficient file I/O while maintaining compatibility with `h5py`.
 
-### CED Spike2 SMR file
+### CED Spike2 SMR File
 
 Thanks to Neural Ensemble for the open-source package [Neo](https://neuralensemble.org/).
 
 The SMR file import function is based on concepts from the Neo package 
 and has been substantially adapted to enable implementation using pure NumPy and native I/O functionality.
 
-### Peak detection using z-score
+### Peak Detection Using Z-score
 
 Z-score based peak detection functions, inspired by a 
 [Stack Overflow answer](https://stackoverflow.com/a/22640362/6029703) by J.P.G. van Brakel, 

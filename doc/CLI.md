@@ -3,7 +3,8 @@
 This document describes the command-line tools available in the PARUS pipeline 
 for simulated neural signal generation, model training, evaluation, and inference.
 
-CLI scripts are located at `parus/scripts/`
+CLI scripts are located at `parus/scripts/`  
+The absolute paths for CLI scripts can be retried with `from parus.scripts import *`
 
 All scripts support following flags:
 
@@ -27,6 +28,12 @@ All scripts support following flags:
 Generate simulated neural signal datasets for model training.
 
 ### Usage
+
+Absolute path to the script:
+
+```python
+from parus.scripts import gen_sim
+```
 
 - Unix / Linux / macOS
 
@@ -96,6 +103,12 @@ Visualize statistics of generated datasets.
 
 ### Usage
 
+Absolute path to the script:
+
+```python
+from parus.scripts import gen_sta
+```
+
 - Unix / Linux / macOS
 
   ```bash
@@ -129,6 +142,12 @@ Visualize statistics of generated datasets.
 Train a neural signal separation model.
 
 ### Usage
+
+Absolute path to the script:
+
+```python
+from parus.scripts import mod_trn
+```
 
 - Unix / Linux / macOS
 
@@ -203,6 +222,12 @@ Display model predictions versus input signals.
 
 ### Usage
 
+Absolute path to the script:
+
+```python
+from parus.scripts import prd_dsp
+```
+
 - Unix / Linux / macOS
 
   ```bash
@@ -265,6 +290,12 @@ Display model predictions versus input signals.
 Run inference using a trained model.
 
 ### Usage
+
+Absolute path to the script:
+
+```python
+from parus.scripts import mod_inf
+```
 
 - Unix / Linux / macOS
 

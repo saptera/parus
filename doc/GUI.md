@@ -480,9 +480,3 @@ Delete                  Remove or restore active cell
 ```
 H                       Show help information
 ```
-
----
-
----
-
-After all above steps, PARUS standard procedure finishes.
