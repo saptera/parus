@@ -115,7 +115,9 @@ else:
     sft_dat = [gen_feat['prop']['bsl_cnt'][k] for k in gen_feat['prop']['bsl_cnt']]
     sft_explode = [0.1] * len(sft_lbl)
 # Plot data
-ax.pie(sft_dat, labels=sft_lbl, explode=sft_explode, autopct='%1.1f%%', shadow=True, startangle=90, counterclock=False)
+_, _, pct = ax.pie(sft_dat, labels=sft_lbl, explode=sft_explode,
+                   autopct='%1.1f%%', shadow=True, startangle=90, counterclock=False)
+[p.set_color('k') for p in pct]
 
 
 # Plotting occurrence ratio of signal groups with Pie Chart
@@ -132,8 +134,9 @@ else:
     grp_dat = [sum(gen_feat['prop']['grp_cnt'][k]) for k in gen_feat['prop']['grp_cnt']]
     grp_explode = [0.1] * len(grp_lbl)
 # Plot data
-ax.pie(grp_dat, labels=grp_lbl, explode=grp_explode,
-       autopct='%1.1f%%', wedgeprops=dict(width=0.75), startangle=90, counterclock=False)
+_, _, pct = ax.pie(grp_dat, labels=grp_lbl, explode=grp_explode,
+                   autopct='%1.1f%%', wedgeprops=dict(width=0.75), startangle=90, counterclock=False)
+[p.set_color('k') for p in pct]
 
 
 # Plotting occurrence ratio of sample signals with Pie Chart
