@@ -4,7 +4,11 @@ This document describes the command-line tools available in the PARUS pipeline
 for simulated neural signal generation, model training, evaluation, and inference.
 
 CLI scripts are located at `parus/scripts/`  
-The absolute paths for CLI scripts can be retried with `from parus.scripts import *`
+The absolute paths for CLI scripts can be retrieved (as `str`) with:
+
+```python
+from parus.scripts import *
+```
 
 All scripts support following flags:
 

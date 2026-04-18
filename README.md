@@ -90,7 +90,7 @@ PARUS repository
 ├── pyproject.toml               <- Project build definitions
 ├── Makefile                     <- Project build makefile
 ├── LICENSE                      <- AGPL-3.0 license
-├── README.md                    <- [THIS FILE]
+├── README.md                    <- [THIS FILE] Main documentation
 ├── .gitattributes               <- Git Attributes source
 └── .gitignore                   <- Git Ignore source
 ```
@@ -155,10 +155,10 @@ PARUS package (alphabetical order)
 
 ## Available Interfaces
 
+- [API](doc/API)
 - [CLI](doc/CLI.md)
 - [GUI](doc/GUI.md)
 - [Real-time](doc/REALTIME.md)
-- [API](doc/API)
 
 ## Data Formats
 
