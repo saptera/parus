@@ -76,17 +76,18 @@ PARUS repository
 ├── doc                          <- Package documentation
 │   ├── assets/                      <- Documentation non-text resources
 │   ├── FORMAT.md                    <- Data file format documentation
+│   ├── CONVERSION.md                <- Data file conversion guides
+│   ├── API                          <- Application programming interface documentation
+│   │   ├── source                       <- Sphinx documentation source directory
+│   │   │   ├── _static/                     <- Documentation HTML static components
+│   │   │   ├── conf.py                      <- Sphinx build configuration file
+│   │   │   └── index.rst                    <- API documentation homepage source file
+│   │   ├── api.zip                      <- API HTML documentation bulid
+│   │   ├── Makefile                     <- API documentation build makefile
+│   │   └── README.md                    <- Readme file
 │   ├── CLI.md                       <- Commandline interface documentation
 │   ├── GUI.md                       <- Graphical user interface documentation
-│   ├── REALTIME.md                  <- Real-time sub-system documentation
-│   └── API                          <- Application programming interface documentation
-│       ├── source                       <- Sphinx documentation source directory
-│       │   ├── _static/                     <- Documentation HTML static components
-│       │   ├── conf.py                      <- Sphinx build configuration file
-│       │   └── index.rst                    <- API documentation homepage source file
-│       ├── api.zip                      <- API HTML documentation bulid
-│       ├── Makefile                     <- API documentation build makefile
-│       └── README.md                    <- Readme file
+│   └── REALTIME.md                  <- Real-time sub-system documentation
 ├── pyproject.toml               <- Project build definitions
 ├── Makefile                     <- Project build makefile
 ├── LICENSE                      <- AGPL-3.0 license
@@ -149,9 +150,16 @@ PARUS package (alphabetical order)
 │── util                  <- [parus.util] Utility function sub-package
 │   ├── base.py               <- Basic utilities function module
 │   ├── cli.py                <- Commandline interface module
-│   └── disp.py               <- Display helper function module
+│   ├── disp.py               <- Display helper function module
+│   └── helper.py             <- User data IO and conversion helper function module
 └── [EOP]
 ```
+
+## Data Formats
+
+Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
+
+Refer to [CONVERSION](doc/CONVERSION.md) for detailed walkthrough of adapting raw data for the PARUS system.
 
 ## Available Interfaces
 
@@ -159,12 +167,6 @@ PARUS package (alphabetical order)
 - [Command Line Interface (CLI)](doc/CLI.md)
 - [Graphical User Interface (GUI)](doc/GUI.md)
 - [Real-time Data Processing System (RT)](doc/REALTIME.md)
-
-## Data Formats
-
-Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
-
-Refer to [CONVERSION](doc/CONVERSION.md) for detailed walkthrough of adapting raw data for the PARUS system.
 
 ## Acknowledgements
 

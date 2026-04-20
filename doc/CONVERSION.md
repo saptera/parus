@@ -143,9 +143,9 @@ from parus.util import timestamp_to_onehot
 loc = timestamp_to_onehot(tmp, frq, raw.shape[1])
 ```
 
-* `tmp`: Spike timestamps
-* `frq`: Sampling frequency
-* `raw.shape[1]`: Total number of samples
+- `tmp`: Spike timestamps
+- `frq`: Sampling frequency
+- `raw.shape[1]`: Total number of samples
 
 Once converted, the data can be inserted into the HDF5 file:
 
@@ -175,4 +175,6 @@ Refer to the [GUI - Create Archived Signal](GUI.md#1-create-archive-signal) sect
 
 ### 4. Create Simulated Datasets
 
-Refer to the [GUI - Dataset Generation](GUI.md#2-dataset-generation) section for detailed instructions.
+Refer to the [CLI - ParusGenSim](CLI.md#1-parusgensim---simulated-dataset-generation) section for CLI instructions.
+
+Refer to the [GUI - Dataset Generation](GUI.md#2-dataset-generation) section for GUI instructions.
