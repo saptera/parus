@@ -4,3 +4,4 @@ __package__ = 'parus.util'
 __name__ = 'parus.util'
 from .base import *
 from .disp import *
+from .helper import *

@@ -155,14 +155,16 @@ PARUS package (alphabetical order)
 
 ## Available Interfaces
 
-- [API](doc/API)
-- [CLI](doc/CLI.md)
-- [GUI](doc/GUI.md)
-- [Real-time](doc/REALTIME.md)
+- [Application Programming Interface (API)](doc/API)
+- [Command Line Interface (CLI)](doc/CLI.md)
+- [Graphical User Interface (GUI)](doc/GUI.md)
+- [Real-time Data Processing System (RT)](doc/REALTIME.md)
 
 ## Data Formats
 
 Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
+
+Refer to [CONVERSION](doc/CONVERSION.md) for detailed walkthrough of adapting raw data for the PARUS system.
 
 ## Acknowledgements
 
