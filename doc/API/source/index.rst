@@ -92,12 +92,13 @@ Getting Started
 
       .. tab-set::
 
-         .. tab-item:: Linux / macOS
+         .. tab-item:: Unix / Linux / macOS
 
             .. code-block:: bash
 
                cd automation/POSIX
-               ./install_parus.sh
+               chmod -x install_parus.sh
+               bash install_parus.sh
 
          .. tab-item:: Windows
 

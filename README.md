@@ -39,7 +39,7 @@ The **PARUS** system can be installed using **PyPI**, **form source** or with **
 
   > **Note:** `pip` cannot detect your local [CUDA](https://developer.nvidia.com/cuda) runtime, 
   > so the CPU-only build of [PyTorch](https://pytorch.org/get-started/locally/) is pulled in by default. 
-  > For GPU acceleration, install a CUDA-matched ``torch`` wheel **before** running the command above, 
+  > For GPU acceleration, install a CUDA-matched ``torch`` wheel ***before*** running the command above, 
   > or reinstall afterwards.
 
 - Install from the source
@@ -50,7 +50,7 @@ The **PARUS** system can be installed using **PyPI**, **form source** or with **
   pip install -e .
   ```
 
-  > **Note:** For the same issue of `pip` address above, consider to pre-install or reinstall optimum build of 
+  > **Note:** For the same issue of `pip` addressed above, consider to pre-install or reinstall optimum build of 
   > [PyTorch](https://pytorch.org/get-started/locally/) for this option.
 
 - Install via Automation Script
@@ -61,7 +61,7 @@ The **PARUS** system can be installed using **PyPI**, **form source** or with **
   4. Run the installation script: `install_parus.*`
   5. Follow the on-screen prompts to complete the installation
 
-  > **Note:** Install a matching [CUDA](https://developer.nvidia.com/cuda) runtime before running the script. 
+  > **Note:** Install a matching [CUDA](https://developer.nvidia.com/cuda) runtime ***before*** running the script. 
   > So the script can detect CUDA version and install optimum [PyTorch](https://pytorch.org/get-started/locally/) build.
 
 ### Dependencies
