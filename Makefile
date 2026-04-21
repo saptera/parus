@@ -1,6 +1,6 @@
 # PARUS project main Makefile
 # Build requires:    Python-3 with `setuptools` `wheel` `build`
-# Autodoc requires:  Python-3 with `sphinx` `sphinx-autodoc-typehints` `furo`
+# Autodoc requires:  Python-3 with `sphinx` `sphinx-autodoc-typehints` `sphinx-design` `pydata-sphinx-theme`
 
 
 # Semantic version number, allowed value `X.Y.Z` or `X.Y.ZrcN`

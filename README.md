@@ -11,14 +11,9 @@
 
 ## Installation
 
-The **PARUS** system can be installed using PyPI or Automation Script
-
-- Install via PyPI
-- Install via Automation Script
-  1. Navigate to `[repository_root]/automation`
-  2. Locate the folder corresponding to the operating system
-  3. Run the installation script: `install_parus.*`
-  4. Follow the on-screen prompts to complete the installation
+**PARUS** is designed as a modular, cross-platform system supporting Unix, Linux, Windows, and macOS environments. 
+Refer to the [system requirements](#system-requirements) and [installation methods](#installation-methods) 
+for prerequisites and deployment procedures.
 
 ### System Requirements
 
@@ -28,13 +23,46 @@ Basic software
 - [CUDA](https://developer.nvidia.com/cuda) ≥ `12.6`
 - Python `venv` for isolation *(recommend)*
 
-Hardware for minimum performance
+Hardware for optimum performance
 
 - **CPU**: base speed ≥ `3.5 GHz`, cores ≥ `4`
 - **Memory**: speed ≥ `2400 MHz`, capacity ≥ `16 GiB`
 - **GPU**: `CUDA` compatible, VRAM ≥ `8 GiB`
-- **Monitor**: resolution ≥ `1920 x 1080`, scaling = `100%` *(recommend)*
-- **SSDs**
+- **Monitor**: resolution ≥ `1920 x 1080`, scaling = `100%` *(recommended for small screen with high-resolution)*
+- **SSDs** *(recommended for large file and real-time subsystem)*
+
+### Installation Methods
+
+The **PARUS** system can be installed using **PyPI**, **form source** or with **automation script**.
+
+- Install via PyPI
+
+  > **Note:** `pip` cannot detect your local [CUDA](https://developer.nvidia.com/cuda) runtime, 
+  > so the CPU-only build of [PyTorch](https://pytorch.org/get-started/locally/) is pulled in by default. 
+  > For GPU acceleration, install a CUDA-matched ``torch`` wheel **before** running the command above, 
+  > or reinstall afterwards.
+
+- Install from the source
+
+  ```bash
+  git clone https://github.com/saptera/parus.git
+  cd parus
+  pip install -e .
+  ```
+
+  > **Note:** For the same issue of `pip` address above, consider to pre-install or reinstall optimum build of 
+  > [PyTorch](https://pytorch.org/get-started/locally/) for this option.
+
+- Install via Automation Script
+
+  1. Download the source as a ZIP from (*Code* → *Download ZIP*) and extract it
+  2. Navigate to `[repository_root]/automation`
+  3. Locate the folder corresponding to the operating system
+  4. Run the installation script: `install_parus.*`
+  5. Follow the on-screen prompts to complete the installation
+
+  > **Note:** Install a matching [CUDA](https://developer.nvidia.com/cuda) runtime before running the script. 
+  > So the script can detect CUDA version and install optimum [PyTorch](https://pytorch.org/get-started/locally/) build.
 
 ### Dependencies
 
