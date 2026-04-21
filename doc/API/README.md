@@ -1,29 +1,46 @@
 # PARUS Application Programming Interface (API)
 
-The API reference for **Parus** is automatically generated from docstrings using 
-[**Sphinx**](https://www.sphinx-doc.org/) with the [**Furo**](https://github.com/pradyunsg/furo) theme.
+The API reference for **Parus** is automatically generated from Google-style docstrings using 
+[**Sphinx**](https://www.sphinx-doc.org/) with the
+[**PyData Sphinx Theme**](https://pydata-sphinx-theme.readthedocs.io/).
 
-Users can download the `api.zip` file from the current directory for offline access. 
-This archive is updated with each release to reflect the latest documentation.
+Users can download the `api.zip` archive from this directory for offline access.
+The archive is refreshed with each release to reflect the latest documentation.
 
-After unzipping the archive, the generated documentation can be found at:
+After unzipping, open:
 
 ```
-[current folder]/api/index.html
+[unzipped folder]/index.html
 ```
 
 ---
 
-A `Makefile` is also provided to allow users to generate the documentation locally. To rebuild the API reference, run:
+## Building Locally
+
+A `Makefile` is provided so the documentation can be regenerated on demand.
+The build works on **Windows** (via `MinGW-make`) and **Unix-like systems**.
+
+Required Python packages (install into your environment):
 
 ```
-make rebuild
+pip install sphinx sphinx-autodoc-typehints sphinx-design pydata-sphinx-theme
 ```
 
-This command works on both **Windows** (via `MinGW-make`) and **Unix-like systems**.
+Common targets:
 
-After the build process is complete, the generated documentation can be found at:
+| Target          | Purpose                                                            |
+|-----------------|--------------------------------------------------------------------|
+| `make generate` | Regenerate the `source/_api` stubs from the `parus` package        |
+| `make html`     | Build the HTML documentation into `build/html`                     |
+| `make strict`   | Same as `html`, but treats all warnings as errors (CI mode)        |
+| `make rebuild`  | `clean` + `generate` + `html` -> the typical full refresh          |
+| `make clean`    | Remove the generated `_api` stubs and the entire `build` directory |
+| `make publish`  | Package `build/html` into `api.zip` for distribution               |
+
+After a successful build, the entry page is at:
 
 ```
-[current folder]/build/html/index.html
+build/html/index.html
 ```
+
+Open with any web browser.

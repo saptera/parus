@@ -19,5 +19,6 @@
 
 # Documentations
 *.md     text eol=lf
-*.rst    test eol=lf
+*.rst    text eol=lf
+*.css    text eol=lf
 *.zip    -text filter=lfs diff=lfs merge=lfs

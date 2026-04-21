@@ -1,0 +1,30 @@
+/* ===========================================
+     PARUS API documentation theme overrides
+   =========================================== */
+
+
+/* Center and constrain the landing-page banner */
+.parus-banner {
+    display: block;
+    margin: 0 auto 1.5rem auto;
+    width: 100%;
+    height: auto;
+}
+
+/* Tighten sphinx-design grid card titles a touch */
+.sd-card .sd-card-title {
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+/* Make the autodoc signatures wrap nicely on narrow screens */
+dl.py > dt {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Slightly reduce the visual weight of the "Parameters / Returns" headings. */
+dl.field-list > dt {
+    font-weight: 600;
+    opacity: 0.9;
+}
