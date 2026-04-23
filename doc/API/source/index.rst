@@ -59,7 +59,7 @@ Getting Started
 
       .. code-block:: bash
 
-         pip install parus
+         pip install parus-major
 
       .. warning::
 

@@ -106,7 +106,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "PyPI",
-            "url": "https://pypi.org/project/parus/",
+            "url": "https://pypi.org/project/parus-major/",
             "icon": "fa-brands fa-python"
         }
     ],

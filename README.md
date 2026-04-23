@@ -35,14 +35,18 @@ Hardware for optimum performance
 
 The **PARUS** system can be installed using **PyPI**, **form source** or with **automation script**.
 
-- Install via PyPI
+- Install via PyPI ***(stable release)***
+
+  ```bash
+  pip install parus-major
+  ```
 
   > **Note:** `pip` cannot detect your local [CUDA](https://developer.nvidia.com/cuda) runtime, 
   > so the CPU-only build of [PyTorch](https://pytorch.org/get-started/locally/) is pulled in by default. 
   > For GPU acceleration, install a CUDA-matched ``torch`` wheel ***before*** running the command above, 
   > or reinstall afterwards.
 
-- Install from the source
+- Install from source
 
   ```bash
   git clone https://github.com/saptera/parus.git
@@ -53,7 +57,7 @@ The **PARUS** system can be installed using **PyPI**, **form source** or with **
   > **Note:** For the same issue of `pip` addressed above, consider to pre-install or reinstall optimum build of 
   > [PyTorch](https://pytorch.org/get-started/locally/) for this option.
 
-- Install via Automation Script
+- Install with automation scripts ***(recommended for end users)***
 
   1. Download the source as a ZIP from (*Code* → *Download ZIP*) and extract it
   2. Navigate to `[repository_root]/automation`
@@ -74,6 +78,19 @@ The **PARUS** system can be installed using **PyPI**, **form source** or with **
 - [plotext](https://github.com/piccolomo/plotext) `pip install plotext` *(Data visualization for model training CLI)*
 - [PySide6](https://www.qt.io/qt-for-python) (≥ 6.8) `pip install "PySide6>=6.8"` *(GUI fundamentals)*
 - [PyQtGraph](https://www.pyqtgraph.org) `pip install pyqtgraph` *(Data visualization for real-time GUI)*
+
+## Data Formats
+
+Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
+
+Refer to [CONVERSION](doc/CONVERSION.md) for detailed walkthrough of adapting raw data for the PARUS system.
+
+## Available Interfaces
+
+- [Application Programming Interface (API)](doc/API)
+- [Command Line Interface (CLI)](doc/CLI.md)
+- [Graphical User Interface (GUI)](doc/GUI.md)
+- [Real-time Data Processing System (RT)](doc/REALTIME.md)
 
 ## Package Structure
 
@@ -182,19 +199,6 @@ PARUS package (alphabetical order)
 │   └── helper.py             <- User data IO and conversion helper function module
 └── [EOP]
 ```
-
-## Data Formats
-
-Refer to [FORMAT](doc/FORMAT.md) for detailed documentation of all file formats used or defined in the PARUS system.
-
-Refer to [CONVERSION](doc/CONVERSION.md) for detailed walkthrough of adapting raw data for the PARUS system.
-
-## Available Interfaces
-
-- [Application Programming Interface (API)](doc/API)
-- [Command Line Interface (CLI)](doc/CLI.md)
-- [Graphical User Interface (GUI)](doc/GUI.md)
-- [Real-time Data Processing System (RT)](doc/REALTIME.md)
 
 ## Acknowledgements
 
