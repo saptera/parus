@@ -21,7 +21,7 @@ Function list:
   load_hparams(hparams_file=None, debug=False): Load model hyperparameters JSON file, use default if file unavailable.
   load_all_datasets(dataset_dir, seq_len, batch_size, data_hparams): Get all dataset loaders from defined folder.
   save_model(save_dir, model, optimizer, epoch, description=None): Save current model with optimizer info.
-  load_model(ckpt_path, model): Load model checkpoint from file.
+  load_model(ckpt_path, model, remap=None): Load model checkpoint from file.
   write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')): Write model training log file.
   write_train_history(fp, ep, stp, lr, tls, vls, t): Write model training history file in JSON format.
 Protected constants:
@@ -194,14 +194,15 @@ def save_model(save_dir, model, optimizer, epoch, description=None):
     torch.save(ckpt, ckpt_path)
 
 
-def load_model(ckpt_path, model):
+def load_model(ckpt_path, model, remap=None):
     """ Load model checkpoint from file.
 
     Args:
         ckpt_path (str): Model saved checkpoint path
         model (torch.nn.Module): Current model
+        remap (str | dict[str, str] | torch.device | None): Remap storage locations (default: None = no remap)
     """
-    ckpt = torch.load(ckpt_path)
+    ckpt = torch.load(ckpt_path, map_location=remap, weights_only=True)
     model.load_state_dict(ckpt['model_state_dict'])
     return model
 

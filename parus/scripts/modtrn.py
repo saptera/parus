@@ -151,7 +151,7 @@ if __name__ == '__main__':
     print("    -> Done!")
     print("Inferencing test data with optimum model...")
     # Run testing for optimum model
-    model = load_model(os.path.join(work_dir, "optimum.ckpt"), model)  # Override with optimum checkpoint
+    model = load_model(os.path.join(work_dir, "optimum.ckpt"), model, remap=device)  # Override with optimum checkpoint
     model.eval()
     with torch.no_grad():
         pklz_dct = testing(model, tst_datagen, hparams['model']['output_channels'], device, th=args.pk_th)

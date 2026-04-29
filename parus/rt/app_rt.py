@@ -298,7 +298,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
                                             dim_feedforward=model_hparams['d_feedforward'],
                                             output_channels=model_hparams['output_channels'])
             self.model = nn.DataParallel(self.model)
-            self.model = load_model(ckpt, self.model)
+            self.model = load_model(ckpt, self.model, remap=self.device)
             self.model.to(self.device)
             # Initial output setting
             self.set_output_waveform()

@@ -113,7 +113,7 @@ if __name__ == '__main__':
                                dim_feedforward=model_hparams['d_feedforward'],
                                output_channels=model_hparams['output_channels'])
     model = nn.DataParallel(model)    
-    model = load_model(args.ckpt, model)
+    model = load_model(args.ckpt, model, remap=device)
     model.to(device)
     print("        -> Model [%s] successfully built" % model_hparams['model_name'])
     print("Model is ready for inference")

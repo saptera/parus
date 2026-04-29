@@ -65,7 +65,7 @@ class SparseContextLoader(nn.Module):
         self.spc_num = max(self.ant, self.emb_dim - self.ant)
         idx = self.get_idx(sel_meth, gap)
         # Get sampling features
-        self.pw = ((0, 0), (0, 0), (-idx[-1], idx[0]))
+        self.pw = (-idx[-1].item(), idx[0].item())
         self.tgt = np.add.outer(idx, range(-idx[-1], n_samp - idx[-1]))
         # Super
         super().__init__()
@@ -105,12 +105,10 @@ class SparseContextLoader(nn.Module):
         return idx[::-1]  # Flip for transformer context loading order
 
     def forward(self, x):
-        bs, ctx, _ = x.shape
-        x_np = x.cpu().numpy()
-        x_pad = np.pad(x_np, pad_width=self.pw, mode='constant', constant_values=0.0)
+        x_pad = nn.functional.pad(x, pad=self.pw, mode='constant', value=0.0)
         x_context = x_pad[:, :, self.tgt]
         # TODO: Dimension reserved future contexts, currently removed for efficiency
-        return torch.from_numpy(x_context[:, 0, :, :]).cuda()
+        return x_context[:, 0, :, :]
 
 
 class EncoderTransformer(nn.Module):
