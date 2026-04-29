@@ -1,4 +1,9 @@
-# Display helper function module
+# -*- coding: utf-8 -*-
+
+"""Display helper function module
+
+Lightweight plotting and analysis utilities used during model training and evaluation.
+"""
 
 import numpy as np
 import scipy.optimize as spopt
@@ -11,21 +16,33 @@ __name__ = 'parus.util.disp'
 
 __all__ = ['plt_mod_cli', 'plt_mod_img', 'fit_exp_loss']
 """
-Function list:
-  plt_mod_cli(prd, sig, lbl, size=(256, 32)): Plot current model performance with ground truth on terminal.
-  plt_mod_img(prd, sig, lbl, img=None): Plot current model performance with ground truth to image file.
-  fit_exp_loss(trn_loss, vld_loss): Estimate future loss with exponential model.
+Public function list:
+
+- plt_mod_cli(prd, sig, lbl, size) : Plot model prediction against signal and label on the terminal
+- plt_mod_img(prd, sig, lbl, img)  : Plot model prediction against signal and label on a figure
+- fit_exp_loss(trn_loss, vld_loss) : Estimate future training and validation loss using an exponential model
 """
 
 
 def plt_mod_cli(prd, sig, lbl, size=(256, 32)):
-    """ Plot current model performance with ground truth on terminal.
+    """Plot model prediction against the input signal and ground-truth label on the terminal.
+
+    Renders the three traces with ``plotext`` in a colored terminal grid. Useful for monitoring training progress
+    in a CLI environment without an attached display.
 
     Args:
-        prd (np.ndarray): {1D} Model prediction
-        sig (np.ndarray): {1D} Raw data input to model
-        lbl (np.ndarray): {1D} Noise-free signal ground truth
-        size (tuple[int, int] | list[int, int] | None): Plot size, width * height (default: 256 * 32)
+        prd (np.ndarray): {1D} Model prediction sequence
+        sig (np.ndarray): {1D} Raw input signal fed to the model
+        lbl (np.ndarray): {1D} Noise-free ground-truth label
+        size (tuple[int, int] | list[int] | None): Plot size as ``(width, height)`` in characters; pass
+            :data:`None` to let ``plotext`` auto-size to the terminal (default: ``(256, 32)``)
+
+    Warns:
+        RuntimeWarning: Emitted when ``size`` contains non-positive values; auto-sizing is used as a fallback
+
+    Note:
+        The shared ``plotext`` canvas is cleared after rendering, so subsequent calls start from a fresh
+        figure and do not accumulate traces.
     """
     # Set theme
     ptx.theme('dark')
@@ -54,16 +71,21 @@ def plt_mod_cli(prd, sig, lbl, size=(256, 32)):
 
 
 def plt_mod_img(prd, sig, lbl, img=None):
-    """ Plot current model performance with ground truth to image file.
+    """Plot model prediction against the input signal and ground-truth label using ``matplotlib``.
+
+    When ``img`` is provided, the figure is saved to disk and ``(None, None)`` is returned. When ``img`` is
+    :data:`None`, the unsaved figure and axes are returned for further customization by the caller.
 
     Args:
-        prd (np.ndarray): {1D} Model prediction
-        sig (np.ndarray): {1D} Raw data input to model
-        lbl (np.ndarray): {1D} Noise-free signal ground truth
-        img (str | None): Output image file (default: None = return figure, no save)
+        prd (np.ndarray): {1D} Model prediction sequence
+        sig (np.ndarray): {1D} Raw input signal fed to the model
+        lbl (np.ndarray): {1D} Noise-free ground-truth label
+        img (str | None): Output PNG file path; pass :data:`None` to skip saving and return the figure
+            handles (default: ``None``)
 
     Returns:
-        tuple[plt.Figure, plt.Axes] | tuple[None, None]: Plotted figure
+        tuple[plt.Figure, plt.Axes] | tuple[None, None]: Figure and axes objects when ``img`` is
+            :data:`None`, otherwise ``(None, None)``
     """
     # Set figure
     fig, ax = plt.subplots(1, 1, dpi=150)
@@ -90,15 +112,27 @@ def plt_mod_img(prd, sig, lbl, img=None):
 
 
 def fit_exp_loss(trn_loss, vld_loss):
-    """ Estimate future loss with exponential model.
+    """Estimate future training and validation loss using an exponential decay model.
+
+    Fits ``y = a * exp(b * x) + c`` independently to the training and validation loss histories, prints the next ten
+    projected values, and reports the adjusted R-squared of each fit. At least four samples per history are required;
+    insufficient histories are skipped with a notice.
 
     Args:
-        trn_loss (list[int | float] | np.ndarray): Current list of training loss
-        vld_loss (list[int | float] | np.ndarray): Current list of validation loss
+        trn_loss (list[int | float] | np.ndarray): Training loss history (one value per epoch)
+        vld_loss (list[int | float] | np.ndarray): Validation loss history (one value per epoch)
     """
 
     def fit_exp(x, y):
-        """ Exponential model fitting function """
+        """Fit ``y = a * exp(b * x) + c`` to data using Nelder-Mead least-squares.
+
+        Args:
+            x (np.ndarray): {1D} Independent variable
+            y (np.ndarray): {1D} Dependent variable
+
+        Returns:
+            tuple[np.ndarray, float]: Fitted parameter vector ``(a, b, c)`` and adjusted R-squared
+        """
         # Model fitting
         expdef = lambda prm, n: prm[0] * np.exp(prm[1] * n) + prm[2]
         sumsqr = lambda prm: np.sum(np.square(expdef(prm, x) - y))
@@ -110,7 +144,12 @@ def fit_exp_loss(trn_loss, vld_loss):
         return model, rsqt
 
     def loss_esti(loss, typ):
-        """ Future loss estimation function """
+        """Print extrapolated loss values for the next ten epochs along with the fit quality.
+
+        Args:
+            loss (list[int | float] | np.ndarray): Loss history to extrapolate
+            typ (str): Label used in the printed header (e.g. ``"TRAIN"`` or ``"VALID"``)
+        """
         src_x = np.asarray(range(1, len(loss) + 1), dtype=float)
         src_y = np.asarray(loss, dtype=float)
         est_p, est_r = fit_exp(src_x, src_y)

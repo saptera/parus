@@ -1,4 +1,10 @@
-# Hierarchical Data Format (HDF) file IO module
+# -*- coding: utf-8 -*-
+
+"""Hierarchical Data Format (HDF) file IO module
+
+Helpers for reading HDF5 datasets and pickle-compatible wrappers around the ``h5py`` high-level objects so
+that file/group/dataset handles can survive ``multiprocessing`` ``spawn`` start.
+"""
 
 import h5py as h5
 
@@ -7,29 +13,38 @@ __name__ = 'parus.fio.hdf'
 
 __all__ = ['h5_load_dat', 'h5_load_ref', 'H5PklDataset', 'H5PklGroup', 'H5PklFile']
 """
-Function list:
-  # Standard HDF5 file IOs
-    h5_load_dat(pnt): Load HDF5 data.
-    h5_load_ref(ref, pnt): Load HDF5 data by reference.
-  # Pickle compatible HDF5 object
-    _hpo_cache {dict}: Dictionary to record pickle compatible HDF5 file objects.
-    _H5PklObj: Overriding [h5py] high level object, and serve as a base class for Group and Dataset.
-    H5PklDataset: Pickle serialization compatible HDF5 dataset object.
-    H5PklGroup: Pickle serialization compatible HDF5 group object.
-    H5PklFile: Pickle serialization compatible HDF5 file object.
+Public function list:
+
+- h5_load_dat(pnt)        : Recursively load every dataset reachable from a file/group/dataset pointer
+- h5_load_ref(ref, pnt)   : Resolve an HDF5 reference and load the referenced data
+
+Public class list:
+
+- H5PklDataset            : Pickle-serialisation-compatible HDF5 dataset object
+- H5PklGroup              : Pickle-serialisation-compatible HDF5 group object
+- H5PklFile               : Pickle-serialisation-compatible HDF5 file object
+
+Private members:
+
+- _hpo_record (dict)      : Cache of pickle-compatible HDF5 file objects, keyed by argument hash
+- _H5PklObj               : Common pickling mixin used by :class:`H5PklDataset` and :class:`H5PklGroup`
 """
 
 
 # Standard HDF5 file IOs --------------------------------------------------------------------------------------------- #
 
 def h5_load_dat(pnt):
-    """ Load HDF5 data.
+    """Recursively load every dataset reachable from an HDF5 file, group, or dataset pointer.
+
+    A dataset is materialised via ``[()]``, while a file or group is walked breadth-first and returned as a nested
+    :class:`dict` mirroring the on-disk hierarchy.
 
     Args:
-        pnt (h5.File | h5.Group | h5.Dataset): HDF5 file/group/dataset pointer
+        pnt (h5.File | h5.Group | h5.Dataset): HDF5 file, group, or dataset handle
 
     Returns:
-        Loaded data
+        Loaded data; an :class:`numpy.ndarray` (or scalar) when ``pnt`` is a dataset, otherwise a nested
+            dictionary mirroring the group structure
     """
     # Read single dataset
     if isinstance(pnt, h5.Dataset):
@@ -46,14 +61,19 @@ def h5_load_dat(pnt):
 
 
 def h5_load_ref(ref, pnt):
-    """ Load HDF5 data by reference.
+    """Resolve an HDF5 reference and load the referenced data.
+
+    A region reference is dereferenced directly against ``pnt`` to obtain the selected slice, while an object reference
+    is dereferenced and then handed to :func:`h5_load_dat` for recursive loading.
 
     Args:
-        ref (h5.Reference | h5.RegionReference): HDF5 object reference
-        pnt (h5.File | h5.Dataset): HDF5 file/dataset pointer
+        ref (h5.Reference | h5.RegionReference): HDF5 object or region reference to dereference
+        pnt (h5.File | h5.Dataset): File handle that contains the referenced object, or the dataset that
+            holds the reference's region selection
 
     Returns:
-        Loaded data
+        Loaded data; an :class:`numpy.ndarray` slice for a region reference, otherwise the result of
+            :func:`h5_load_dat` on the dereferenced target
     """
     if isinstance(ref, h5.RegionReference):
         return pnt[ref]
@@ -68,36 +88,57 @@ _hpo_record = {}  # Dictionary to record pickle compatible HDF file objects
 
 
 class _H5PklObj(h5.HLObject):
-    """ Overriding [h5py] high level object, and serve as a base class for Group and Dataset.
-        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """Private mixin that adds pickle support to ``h5py`` high-level objects.
+
+    Adapted from the `h5pickle <https://github.com/DaanVanVugt/h5pickle>`_ package by Daan van Vugt et al.
+    Used as a base class by :class:`H5PklDataset` and :class:`H5PklGroup`.
     """
+
     def __getstate__(self):
-        """ Save the current name and a reference to the root file object. """
+        """Capture the object's HDF5 path together with a reference to its root file."""
         return {'name': self.name, 'file': self.file_info}
 
     def __setstate__(self, state):
-        """ Reopened reference by pickle. Create steal identity of created object. """
+        """Reopen the object via its parent file and adopt the resulting identity.
+
+        Args:
+            state (dict): Pickled state produced by :meth:`__getstate__`
+        """
         self.__init__(state['file'][state['name']].id)
         self.file_info = state['file']
 
     def __getnewargs__(self):
-        """ Bypass the error raised by Pickle protocols >=2 as unable to pickle object. """
+        """Return an empty tuple so ``pickle`` protocols ``>=2`` skip ``__new__`` reconstruction."""
         return ()
 
 
 class H5PklDataset(_H5PklObj, h5.Dataset):
-    """ Pickle serialization compatible HDF5 dataset object.
-        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """Pickle-serialisation-compatible HDF5 dataset object.
+
+    Combines ``_H5PklObj`` and :class:`h5py.Dataset` so dataset handles can be transferred across process boundaries.
+    Adapted from the `h5pickle <https://github.com/DaanVanVugt/h5pickle>`_ package by Daan van Vugt et al.
     """
     pass
 
 
 class H5PklGroup(_H5PklObj, h5.Group):
-    """ Pickle serialization compatible HDF5 group object.
-        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """Pickle-serialisation-compatible HDF5 group object.
+
+    Combines ``_H5PklObj`` and :class:`h5py.Group` so group handles can be transferred across process boundaries.
+    Indexing returns wrapped pickle-compatible children rather than raw ``h5py`` objects. Adapted from the
+    `h5pickle <https://github.com/DaanVanVugt/h5pickle>`_ package by Daan van Vugt et al.
     """
+
     def __getitem__(self, name):
-        """ Overriding standard [h5py] objects. """
+        """Return a pickle-compatible wrapper around the child object referenced by ``name``.
+
+        Args:
+            name (str): Name of the child dataset or group to retrieve
+
+        Returns:
+            H5PklDataset | H5PklGroup | H5PklFile | object: Pickle-compatible wrapper for HDF5 children, or
+                the underlying ``h5py`` object when no wrapper applies
+        """
         obj = h5.Group.__getitem__(self, name)
         if isinstance(obj, h5.Dataset):
             ret_obj = H5PklDataset(obj.id)
@@ -114,11 +155,41 @@ class H5PklGroup(_H5PklObj, h5.Group):
 
 
 class H5PklFile(h5.File):
-    """ Pickle serialization compatible HDF5 file object.
-        Modified from [h5pickle] package by Daan van Vugt et al. [https://github.com/DaanVanVugt/h5pickle].
+    """Pickle-serialisation-compatible HDF5 file object.
+
+    Caches every successfully opened file by its constructor arguments so that subsequent calls return the existing
+    handle rather than reopening the file. Indexing returns pickle-compatible wrappers in the same way as
+    :class:`H5PklGroup`. Adapted from the `h5pickle <https://github.com/DaanVanVugt/h5pickle>`_ package by Daan van
+    Vugt et al.
+
+    Note:
+        The handle is cached in ``_hpo_record``. Pass ``skip_record=True`` to bypass the cache when an independent
+        handle is required (for example when reopening the same file in a different mode).
     """
+
+    def __init__(self, *args, **kwargs):
+        """Document the constructor arguments forwarded by ``__new__``.
+
+        Args:
+            *args: Positional arguments forwarded to :class:`h5py.File`
+            **kwargs: Keyword arguments forwarded to :class:`h5py.File`; the additional flag
+                ``skip_record`` (bool) bypasses the open-file cache when set to :data:`True`
+
+        Note:
+            The actual file initialisation happens in ``__new__``; this no-op overrides the inherited
+            :class:`h5py.File` constructor so it does not run a second time after ``__new__``.
+        """
+        pass
+
     def __new__(cls, *args, **kwargs):
-        """ Create a new HDF5 file object, or recreate with stored arguments if object no longer valid. """
+        """Return a cached file object when available, otherwise create a new one.
+
+        The constructor arguments are hashed and stored on the returned instance so the file can be reopened
+        transparently after unpickling.
+
+        Returns:
+            H5PklFile: The cached or newly constructed file handle
+        """
         # Prepare arguments
         skip_record = kwargs.pop('skip_record', False)
         arg_hash = hash((args, tuple(sorted(kwargs.items()))))
@@ -143,7 +214,15 @@ class H5PklFile(h5.File):
         return self
 
     def __getitem__(self, name):
-        """ Overriding standard [h5py] objects. """
+        """Return a pickle-compatible wrapper around the top-level child referenced by ``name``.
+
+        Args:
+            name (str): Name of the child dataset or group to retrieve
+
+        Returns:
+            H5PklDataset | H5PklGroup | H5PklFile | object: Pickle-compatible wrapper for HDF5 children, or
+                the underlying ``h5py`` object when no wrapper applies
+        """
         obj = h5.Group.__getitem__(self, name)
         if isinstance(obj, h5.Dataset):
             ret_obj = H5PklDataset(obj.id)
@@ -159,14 +238,18 @@ class H5PklFile(h5.File):
             return obj
 
     def __getstate__(self):
-        """ Bypass the error raised by Pickle protocols 0, 1 as unable to pickle object. """
+        """No-op state capture so ``pickle`` protocols ``0`` and ``1`` succeed without raising."""
         pass
 
     def __getnewargs_ex__(self):
-        """ Pickle protocols >=2, dictate values passed to the [__new__]. """
+        """Return the original ``args`` and ``kwargs`` so ``pickle`` protocols ``>=2`` rebuild via ``__new__``.
+
+        Returns:
+            tuple[tuple, dict]: The positional and keyword arguments stored at construction time
+        """
         return self.init_args, self.init_kwargs
 
     def close(self):
-        """ Override the close function to remove the file also from the cache. """
+        """Close the underlying file and remove the corresponding entry from the open-file cache."""
         h5.File.close(self)
         _hpo_record.pop(self.arg_hash, None)

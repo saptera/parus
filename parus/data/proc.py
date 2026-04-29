@@ -1,4 +1,9 @@
-# Basic data process module
+# -*- coding: utf-8 -*-
+
+"""Basic data process module
+
+Sampling, distribution generation, and label-driven signal extraction helpers used by the data pipelines.
+"""
 
 import copy
 import numpy as np
@@ -13,29 +18,30 @@ __all__ = [
     'chk_settle'
 ]
 """
-Function list:
-  arr_rand_samp(arr, n_samp): Random sampling of unique samples from a NumPy array.
-  norm_lst_gen(peak, side, level=2): Generate a list obeying normal distribution.
-  laplace_lst_gen(peak, side, scale=1): Generate a list obeying laplace distribution.
-  spk_merge(spk_data): Merge and sort channel arranged spike data for data sampling. 
-  neuron_rnd_samp(sig, time, lbl, num=1000, size=150): Random slice and extract neuronal signal for training models.
-  neuron_sig_samp(sig, time, lbl, num=1000, size=150): Slice and extract neuronal signal data for training models.
-  neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10): Extract neuronal signal for archiving.
-  pred_mae(data, th=35): Get evaluation score of predicted signal, by computing MAE.
-  nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10): Assign a value list around the signal.
-  chk_settle(sig, win=10): Locate the first point where the signal settles to baseline. (SUPERVISION NEEDED)
+Public function list:
+
+- arr_rand_samp(arr, n_samp)                             : Draw a random subset from a NumPy array without replacement
+- norm_lst_gen(peak, side, level)                        : Generate a list of values following a normal distribution
+- laplace_lst_gen(peak, side, scale)                     : Generate a list of values following a Laplace distribution
+- spk_merge(spk_data)                                    : Merge and sort channel-arranged spike timing data
+- neuron_rnd_samp(sig, time, lbl, num, size)             : Random slice neural signal samples for training
+- neuron_sig_samp(sig, time, lbl, num, size)             : Slice neural signal samples around labelled spikes
+- neuron_sig_mean(sig, time, lbl, size, pos, ...)        : Extract the averaged neural signal around labelled spikes
+- pred_mae(data, th)                                     : Score a predicted signal using mean absolute error
+- nsd_asgnv(sig_data, rng_asgn, val_lst, method, ...)    : Assign a value list around the labelled signal positions
+- chk_settle(sig, win)                                   : Locate the first sample where the signal settles to baseline
 """
 
 
 def arr_rand_samp(arr, n_samp):
-    """ Random sampling of unique samples from a NumPy array.
+    """Draw a random subset of ``n_samp`` elements from a NumPy array without replacement.
 
     Args:
-        arr (np.ndarray): Input array
-        n_samp (int): Number of samples
+        arr (np.ndarray): Input array of any shape; the returned subset preserves dtype and is flattened
+        n_samp (int): Number of elements to sample (must be ``<= arr.size``)
 
     Returns:
-        np.ndarray: {1D} Samples from original array
+        np.ndarray: {1D} Sampled subset of ``arr``
     """
     mask = np.array([True] * n_samp + [False] * (arr.size - n_samp))
     np.random.shuffle(mask)
@@ -44,19 +50,23 @@ def arr_rand_samp(arr, n_samp):
 
 
 def norm_lst_gen(peak, side, level=2):
-    """ Generate a list obeying normal distribution.
+    """Generate a list of values following a normal distribution centred at zero.
+
+    The normal probability density is sampled at integer offsets in ``[-side, side]`` and rescaled so that
+    the centre value equals ``peak``. The ``level`` argument selects the three-sigma rule that ``[-side, side]``
+    should cover.
 
     Args:
-        peak (float): Peak (centre) value of output
-        side (int): Number of samples around the peak
-        level (int): {1 | 2 | 3}: Level of three-sigma rule within the [size]. (default: 2)
+        peak (float): Peak (centre) value of the output list
+        side (int): Number of integer samples on each side of the peak; the output length is ``2 * side + 1``
+        level (int): Three-sigma coverage of ``[-side, side]``; one of ``{1, 2, 3}`` (default: ``2``)
 
-            - 1: [size] = 1-sigma, output list covering P(-[size], size) = 68.27%
-            - 2: [size] = 2-sigma, output list covering P(-[size], size) = 95.45%
-            - 3: [size] = 3-sigma, output list covering P(-[size], size) = 99.73%
+            - ``1``: ``side`` = 1-sigma, output covers P(-side, side) ≈ 68.27%
+            - ``2``: ``side`` = 2-sigma, output covers P(-side, side) ≈ 95.45%
+            - ``3``: ``side`` = 3-sigma, output covers P(-side, side) ≈ 99.73%
 
     Returns:
-        list[float]: Output list of generated value
+        list[float]: Generated values, length ``2 * side + 1``
     """
     lvl_dic = {1: 1, 2: 2, 3: 3}
     nd = norm(loc=0, scale=side / lvl_dic[level])  # Normal distribution sigma range
@@ -68,15 +78,18 @@ def norm_lst_gen(peak, side, level=2):
 
 
 def laplace_lst_gen(peak, side, scale=1):
-    """ Generate a list obeying laplace distribution.
+    """Generate a list of values following a Laplace distribution centred at zero.
+
+    The Laplace probability density is sampled at integer offsets in ``[-side, side]`` and rescaled so that
+    the centre value equals ``peak``.
 
     Args:
-        peak (float): Peak (centre) value of output
-        side (int): Number of samples around the peak
-        scale (int | float): : Diversity of generated samples (default: 1)
+        peak (float): Peak (centre) value of the output list
+        side (int): Number of integer samples on each side of the peak; the output length is ``2 * side + 1``
+        scale (int | float): Diversity of generated samples; larger values produce wider distributions (default: ``1``)
 
     Returns:
-        list[float]: Output list of generated value.
+        list[float]: Generated values, length ``2 * side + 1``
     """
     ld = laplace(loc=0, scale=scale)  # Laplace distribution with scale
     fac = peak / ld.pdf(0)  # Peak stretch factor
@@ -87,14 +100,18 @@ def laplace_lst_gen(peak, side, scale=1):
 
 
 def spk_merge(spk_data):
-    """ Merge and sort channel arranged spike data for data sampling.
+    """Merge and sort channel-arranged spike timing data into a per-channel timestamp array.
+
+    Each channel's per-cell timestamp arrays are concatenated and sorted in ascending order, producing a
+    single timestamp vector per channel suitable for downstream signal extraction.
 
     Args:
-        spk_data (dict[int, dict[int, np.ndarray]]): Channel type spike timing data, data structure as follows:
-                                                     {prob_ch: {cell_id: spk_time}}
+        spk_data (dict[int, dict[int, np.ndarray]]): Channel-keyed spike timing data with layout
+            ``{probe_channel: {cell_id: spike_times}}``
 
     Returns:
-        dict[int, np.ndarray]: Merged and sorted spike timing data, data structure as: {prob_ch: merged_spk_time}
+        dict[int, np.ndarray]: Mapping from probe channel to merged-and-sorted spike timestamps; channels
+            with no spikes map to :data:`None`
     """
     out_data = {}  # INIT VAR
     for i in spk_data:
@@ -105,21 +122,24 @@ def spk_merge(spk_data):
 
 
 def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
-    """ Random slice and extract neuronal signal data for training models.
+    """Random-slice neural signal samples for model training.
 
-    This function only return NumPy-int8[0|1] (one-hot) type labels.
-    Samples from this function are simple random slices of raw signal.
+    Each output sample is a fixed-size window starting at a uniformly random index within ``sig``, paired
+    with the matching slice of a one-hot spike label vector built from ``lbl``.
 
     Args:
-        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
-        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
-        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
-        num (int): Number of samples to extract (default: 1000)
-        size (int): Data point length of each sample (default: 150)
+        sig (np.ndarray): {1D-scalar} Single-channel neural signal data
+        time (np.ndarray): {1D-scalar} Recording time vector aligned with ``sig`` (must be sorted and the same
+            length as ``sig``)
+        lbl (np.ndarray): {1D-scalar} Spike timestamp labels in seconds
+        num (int): Number of samples to extract (default: ``1000``)
+        size (int): Length of each sample in data points (default: ``150``)
 
     Returns:
-        list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:
-                                     list[{'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}]
+        list[dict[str, np.ndarray]]: Sampled signal segments, each entry has
+
+            - sig (np.ndarray): {1D-float64} Signal slice of length ``size``
+            - lbl (np.ndarray): {1D-int8} One-hot spike position label of length ``size``
     """
     # Get label marker from time array
     tmk = np.zeros(time.shape, dtype=np.int8)
@@ -141,21 +161,25 @@ def neuron_rnd_samp(sig, time, lbl, num=1000, size=150):
 
 
 def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
-    """ Slice and extract neuronal signal data for training models.
+    """Slice neural signal samples around labelled spikes for model training.
 
-    This function only return NumPy-int8[0|1] (one-hot) type labels.
-    Samples from this function will always contain spikes.
+    Unlike :func:`neuron_rnd_samp`, every output sample is guaranteed to contain at least one labelled spike:
+    sample windows are anchored to randomly drawn spike indices and offset within the window by a random
+    fraction of ``size``.
 
     Args:
-        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
-        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
-        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
-        num (int): Number of samples to extract (default: 1000)
-        size (int): Data point length of each sample (default: 150)
+        sig (np.ndarray): {1D-scalar} Single-channel neural signal data
+        time (np.ndarray): {1D-scalar} Recording time vector aligned with ``sig`` (must be sorted and the same
+            length as ``sig``)
+        lbl (np.ndarray): {1D-scalar} Spike timestamp labels in seconds
+        num (int): Number of samples to extract (default: ``1000``)
+        size (int): Length of each sample in data points (default: ``150``)
 
     Returns:
-        list[dict[str, np.ndarray]]: Neuronal signal samples, structure as follows:
-                                     list[{'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8)}]
+        list[dict[str, np.ndarray]]: Sampled signal segments, each entry has
+
+            - sig (np.ndarray): {1D-float64} Signal slice of length ``size``
+            - lbl (np.ndarray): {1D-int8} One-hot spike position label of length ``size``
     """
     # Get label marker from time array
     tmk = np.zeros(time.shape, dtype=np.int8)
@@ -180,28 +204,37 @@ def neuron_sig_samp(sig, time, lbl, num=1000, size=150):
 
 
 def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=10):
-    """ Extract neuronal signal for archiving.
+    """Extract the averaged neural signal around labelled spikes for archiving.
+
+    Each labelled spike contributes one fixed-size window centred at ``pos``. When ``method`` is set to
+    ``'min'`` or ``'max'``, the spike index is first relocated to the local extremum within
+    ``[-rng_srch, rng_srch]`` of the labelled timestamp before extracting the window.
 
     Args:
-        sig (np.ndarray): {1D-scalar} Single channel neuronal signal data
-        time (np.ndarray): {1D-scalar} Recording time data, must be sorted and the same size as [sig]
-        lbl (np.ndarray): {1D-scalar} Labelled timestamp of neuron spikes
-        size (int): Data point length of sample (default: 50)
-        pos (int | None): Location of spike (default: None = centre of sample)
-        method (str): {'min' | 'max' | 'none'}: Local extremum search method. (default: 'none')
+        sig (np.ndarray): {1D-scalar} Single-channel neural signal data
+        time (np.ndarray): {1D-scalar} Recording time vector aligned with ``sig`` (must be sorted and the same
+            length as ``sig``)
+        lbl (np.ndarray): {1D-scalar} Spike timestamp labels in seconds
+        size (int): Length of each per-spike window in data points (default: ``50``)
+        pos (int | None): Index of the spike within the window; pass :data:`None` to use the window centre
+            (default: ``None``)
+        method (str): Local extremum relocation mode; one of ``{'min', 'max', 'none'}`` (default: ``'none'``)
 
-            - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
-            - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
-            - 'none': keep original label from [sig_data], ignoring [rng_srch]
+            - ``'min'``: relocate to the signal minimum within ``[-rng_srch, rng_srch]``
+            - ``'max'``: relocate to the signal maximum within ``[-rng_srch, rng_srch]``
+            - ``'none'``: keep the original labelled index (``rng_srch`` is ignored)
 
-        rng_srch (int): Range to search local extremum (default: 10)
+        rng_srch (int): Range to search for the local extremum (default: ``10``)
 
     Returns:
         tuple[np.ndarray, int]: Averaged signal sample
 
-            - mean: {1D-float64} Neuronal signal samples
-            - pos: {int} Index of spike
+            - mean (np.ndarray): {1D-float64} Averaged signal across all labelled spikes
+            - pos (int): Index of the spike within the returned window
 
+    Raises:
+        ValueError: If ``pos`` is not a positive integer strictly less than ``size``, or if ``method`` is
+            outside ``{'min', 'max', 'none'}``
     """
     pos = int(size / 2) if pos is None else pos
     # Verify inputs
@@ -239,23 +272,23 @@ def neuron_sig_mean(sig, time, lbl, size=50, pos=None, method='none', rng_srch=1
 
 
 def pred_mae(data, th=35):
-    """ Get evaluation score of predicted signal, by computing mean absolute error (MAE).
+    """Score a predicted signal against its ground-truth label using mean absolute error (MAE).
 
     Args:
-        data (dict): Denoised signal output from model, structure as below:
+        data (dict): Denoised signal output from a model with the following entries
 
-            - 'inp': (np.ndarray): Input signal
-            - 'prd': (np.ndarray): Predicted signal
-            - 'lbl': (np.ndarray): Signal label
+            - inp (np.ndarray): Input signal
+            - prd (np.ndarray): Predicted signal
+            - lbl (np.ndarray): Ground-truth label
 
-        th (int | float): Quality threshold (default: 10)
+        th (int | float): Quality threshold; scores strictly less than ``th`` pass the quality check
+            (default: ``35``)
 
     Returns:
-        tuple[float, bool]: Mean absolute error (MAE) result of prediction
+        tuple[float, bool]: Mean absolute error result of the prediction
 
-            - score: {float} Evaluation score
-            - q: {bool} Quality check result
-
+            - score (float): MAE between ``data['lbl']`` and ``data['prd']``
+            - q (bool): :data:`True` when ``score < th``, :data:`False` otherwise
     """
     score = np.mean(np.abs(np.subtract(data['lbl'], data['prd']))).item()
     q = score < th
@@ -263,27 +296,30 @@ def pred_mae(data, th=35):
 
 
 def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
-    """ Assign a value list around the signal.
+    """Assign a value list around the labelled positions of a one-hot signal sample.
 
-    This function only accept NumPy-int8[0|1] (one-hot) type labels.
-    This function will return NumPy-float64 type labels.
+    For each labelled spike, the function optionally relocates the position to a local extremum and writes
+    the values from ``val_lst`` over the ``2 * rng_asgn + 1`` surrounding indices.
 
     Args:
-        sig_data (dict[str, np.ndarray]): Labelled neuronal signal sample, structure as follows:
-                                          {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8[0|1])}
-        rng_asgn (int): Range to assign values
-        val_lst (list | np.ndarray): List of value to be assigned
-        method (str): {'min' | 'max' | 'none'}: Local extremum search method (default: 'min')
+        sig_data (dict[str, np.ndarray]): Labelled neural signal sample with layout
+            ``{'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-int8[0|1])}``
+        rng_asgn (int): One-sided range of indices to assign values to; the assignment span is ``2 * rng_asgn + 1``
+        val_lst (list | np.ndarray): Values to assign across the span; must have length ``2 * rng_asgn + 1``
+        method (str): Local extremum relocation mode; one of ``{'min', 'max', 'none'}`` (default: ``'min'``)
 
-            - 'min':  detect minimum of signal within [-rng_srch, rng_srch]
-            - 'max':  detect maximum of signal within [-rng_srch, rng_srch]
-            - 'none': keep original label from [sig_data], ignoring [rng_srch]
+            - ``'min'``: relocate to the signal minimum within ``[-rng_srch, rng_srch]``
+            - ``'max'``: relocate to the signal maximum within ``[-rng_srch, rng_srch]``
+            - ``'none'``: keep the original labelled index (``rng_srch`` is ignored)
 
-        rng_srch (int): Range to search local extremum (default: 10)
+        rng_srch (int): Range to search for the local extremum (default: ``10``)
 
     Returns:
-        dict[str, np.ndarray]: Value assigned labelled neuronal signal sample, structure as follows:
-                               {'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-float64)}
+        dict[str, np.ndarray]: Value-assigned labelled signal sample with layout
+            ``{'sig': np.ndarray(1D-float64), 'lbl': np.ndarray(1D-float64)}``
+
+    Raises:
+        ValueError: If ``len(val_lst) != 2 * rng_asgn + 1`` or ``method`` is outside ``{'min', 'max', 'none'}``
     """
     sig_data_out = copy.deepcopy(sig_data)  # Make copy, avoid unexpected changes
     # Verify inputs
@@ -322,16 +358,22 @@ def nsd_asgnv(sig_data, rng_asgn, val_lst, method='min', rng_srch=10):
 
 
 def chk_settle(sig, win=10):
-    """ Locate the first point where the signal settles to baseline.
+    """Locate the first sample where the signal settles to baseline.
 
-    This function is largely depends on the window size, cannot be used without supervision.
+    Walks a sliding window of length ``win`` along ``sig`` and combines the windowed mean (with a linear
+    distance penalty) and standard deviation, normalised by the global statistics of ``sig``. The minimum of
+    the combined score marks the settle point.
 
     Args:
         sig (list[int | float] | np.ndarray): Input signal
-        win (int): Sliding window size
+        win (int): Sliding window size in samples (default: ``10``)
 
     Returns:
-        int: Settle point
+        int: Sample index of the estimated settle point
+
+    Note:
+        The result is sensitive to ``win`` and therefore not safe to use without supervision; pick ``win``
+        with the expected baseline timescale in mind and inspect the output before relying on it.
     """
     # Compute sliding window initial values
     step = len(sig) - win

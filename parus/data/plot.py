@@ -1,4 +1,9 @@
-# Data plotting module
+# -*- coding: utf-8 -*-
+
+"""Data plotting module
+
+Helpers for plotting and data visualization.
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,25 +15,30 @@ __name__ = 'parus.data.plot'
 
 __all__ = ['swarm_cord', 'stat_plvl', 'spk_correlogram', 'plot_prb']
 """
-Function list:
-  swarm_cord(data, bins=None, width=1): Compute the coordinates for swarm plot.
-  stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None): Stats significance bars.
-  spk_correlogram(px, py=None, t=0.05, s=0.001): Compute spike train correlogram.
-  plot_prb(prb, ax): Plot neural recoding probe.
+Public function list:
+
+- swarm_cord(data, bins, centre, width)                                  : Compute the coordinates for a swarm plot
+- stat_plvl(ax, p, lt, rb, pos, brk, ast_lim, ver, lineprops, textprops) : Draw statistical-significance bars on an axis
+- spk_correlogram(px, py, t, s)                                          : Compute a spike-train auto/cross correlogram
+- plot_prb(prb, ax)                                                      : Draw a recording probe geometry on an axis
 """
 
 
 def swarm_cord(data, bins=None, centre=0, width=1):
-    """ Compute the coordinates for swarm plot.
+    """Compute the perpendicular coordinates for a swarm-plot layout of a 1D dataset.
+
+    The values of ``data`` are first binned along the perpendicular axis, then within each bin the
+    perpendicular positions are alternated around the centre to spread overlapping points out.
 
     Args:
-        data (tuple | list | np.ndarray): Input data
-        bins (int | None): Number of equal-width bins in the data range (default: None -> 6 bins)
-        centre (int | float): Centre of the swarm (default: 0)
-        width (int | float): Width of the swarm (default: 1)
+        data (tuple | list | np.ndarray): Input 1D dataset
+        bins (int | None): Number of equal-width bins along the data axis; pass :data:`None` to use
+            ``ceil(size / 6)`` (default: ``None``)
+        centre (int | float): Centre coordinate of the swarm (default: ``0``)
+        width (int | float): Total width of the swarm (default: ``1``)
 
     Returns:
-        np.ndarray: Computed data swarm coordinates
+        np.ndarray: Per-point perpendicular coordinates aligned with ``data``
     """
     # Adapt inputs
     data = data.copy() if isinstance(data, np.ndarray) else np.asarray(data)
@@ -70,26 +80,40 @@ def swarm_cord(data, bins=None, centre=0, width=1):
 
 
 def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None, textprops=None):
-    """ Plot statistical significance bars.
+    """Draw statistical-significance bars and asterisk annotations on a Matplotlib axis.
+
+    For each ``(lt, rb, pos)`` triple, a U-shaped bar is drawn with annotation text derived from the matching
+    ``p`` value. Numeric ``p`` values produce ``'*' * ceil(log10(0.05 / p))`` (capped at ``ast_lim``) or
+    ``'n.s.'`` when not significant; non-numeric values are stringified directly.
 
     Args:
-        ax (plt.Axes): Matplotlib axis to plot on
-        p (float | tuple[float] | list[float] | np.ndarray): Statistical probability value
-        lt (int | float | tuple[int | float] | list[int | float] | np.ndarray): Left or top coordinates of the bar
-        rb (int | float | tuple[int | float] | list[int | float] | np.ndarray): Right or bottom coordinates of the bar
-        pos (int | float | tuple[int | float] | list[int | float] | np.ndarray): Starting coordinates of the bar
-        brk (int | float | tuple[int | float] | list[int | float] | np.ndarray): Height of the bar (default: 0.5)
-        ast_lim (int | None): Maximum asterisks to generate, set None for unlimited (default: 3)
-        vert (bool): Vertical bar flag, set False for horizontal bar (default: True)
-        lineprops (dict | None): Dictionary of bar feature kwargs (default: None)
-        textprops (dict | None): Dictionary of text feature kwargs (default: None)
+        ax (plt.Axes): Matplotlib axes to draw on
+        p (float | tuple[float] | list[float] | np.ndarray): Statistical p-value(s) for each bar
+        lt (int | float | tuple | list | np.ndarray): Left-or-top coordinate(s) of each bar
+        rb (int | float | tuple | list | np.ndarray): Right-or-bottom coordinate(s) of each bar
+        pos (int | float | tuple | list | np.ndarray): Starting coordinate(s) of each bar (along the ``brk`` direction)
+        brk (int | float | tuple | list | np.ndarray): Bar height(s) (default: ``0.5``)
+        ast_lim (int | None): Maximum number of asterisks per bar; pass :data:`None` to remove the cap (default: ``3``)
+        vert (bool): When :data:`True`, the bar grows along the y-axis; when :data:`False`, along the x-axis
+            (default: ``True``)
+        lineprops (dict | None): Extra keyword arguments for :meth:`matplotlib.axes.Axes.plot` (default: ``None``)
+        textprops (dict | None): Extra keyword arguments for :meth:`matplotlib.axes.Axes.text`; alignment
+            keys (``ha``, ``va``, ``rotation``) are overridden by the function (default: ``None``)
 
     Returns:
-        tuple[list[plt.Line2D], list[plt.Text]]: Reference of plotted bars and texts
+        tuple[list[plt.Line2D], list[plt.Text]]: Plotted bar artist(s) and annotation text artist(s)
     """
 
     def __get_txt(v):
-        """ Compute the annotation string by the given p-value. """
+        """Compute the annotation string from a single p-value.
+
+        Args:
+            v (float | Any): p-value or arbitrary annotation source
+
+        Returns:
+            str: Asterisk string for significant numeric ``v``, ``'n.s.'`` for non-significant numeric ``v``,
+                or ``str(v)`` for non-numeric values
+        """
         # Compute number of asterisks for numeric p-value
         if isinstance(v, (float, np.floating)):
             lvl = np.ceil(np.log10(0.05 / v)).astype(int) if v > 0 else 0
@@ -145,16 +169,20 @@ def stat_plvl(ax, p, lt, rb, pos, brk=0.5, ast_lim=3, vert=True, lineprops=None,
 
 
 def spk_correlogram(px, py=None, t=0.05, s=0.001):
-    """ Compute spike train correlogram.
+    """Compute the auto- or cross-correlogram of one or two spike trains.
+
+    Builds the inter-spike interval matrix between ``py`` (or ``px`` for the autocorrelogram) and ``px``, drops the
+    diagonal in the autocorrelogram case, then bins the differences into a histogram on ``[-t, t]`` with step ``s``.
 
     Args:
-        px (list[int | float] | np.ndarray): First spike train as trigger
-        py (list[int | float] | np.ndarray | None): Spike train being triggered (default: None = autocorrelogram)
-        t (int | float): Single side time range to set bins in second, actual window will double (default: 50ms)
-        s (int | float): Time range to sample step in second (default: 1ms)
+        px (list[int | float] | np.ndarray): First spike train (used as the trigger train)
+        py (list[int | float] | np.ndarray | None): Second spike train; pass :data:`None` to compute the
+            autocorrelogram of ``px`` (default: ``None``)
+        t (int | float): One-sided time range in seconds; the actual window spans ``[-t, t]`` (default: ``0.05``)
+        s (int | float): Bin step in seconds (default: ``0.001``)
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: Spike counts and bin values
+        tuple[np.ndarray, np.ndarray]: Histogram counts and bin edges as returned by :func:`numpy.histogram`
     """
     # Autocorrelogram
     if py is None:
@@ -173,14 +201,22 @@ def spk_correlogram(px, py=None, t=0.05, s=0.001):
 
 
 def plot_prb(prb, ax):
-    """ Plot neural recoding probe.
+    """Draw a recording probe geometry on a Matplotlib axis.
+
+    Renders the contact pads as rounded rectangles, the shanks as filled polygons, and adds annotations for
+    shank labels, channel IDs, and inter-shank distances. The shank shape style is selected by
+    ``prb['info']['sty']`` from ``{'left', 'right', 'edge'}`` (anything else falls back to a straight shank).
 
     Args:
-        prb (dict): Probe information
-        ax (plt.Axes): Matplotlib axis to plot on
+        prb (dict): Probe geometry dictionary with the following entries
+
+            - info (dict): At least ``sty``, ``typ`` and ``mfr`` keys for styling and annotations
+            - site (list[dict]): One entry per recording site with ``id``, ``shk``, ``geo`` and ``pad`` keys
+
+        ax (plt.Axes): Matplotlib axes to draw on
 
     Returns:
-        plt.Axes: Reference copy of input axis
+        plt.Axes: The same axis ``ax`` with the probe drawn (returned for chaining convenience)
     """
     # Plotting channel sites
     pos = {}  # INIT VAR

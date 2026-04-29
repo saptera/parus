@@ -1,4 +1,9 @@
-# PARUS customized data file IO module
+# -*- coding: utf-8 -*-
+
+"""Customized data file IO module
+
+Readers, writers, and helpers for PARUS-defined data files.
+"""
 
 import os
 import warnings
@@ -19,36 +24,43 @@ __all__ = [
     'sim_args_read', 'sim_data_read'
 ]
 """
-Function list:
-  # Basic file IO functions:
-    pklz_read(file): Read compressed pickled data from a file.
-    pklz_write(file, data, level=-1): Write compressed pickled data to a file.
-    cjsh_read(file): Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
-    cjsh_write(file, data, level=-1): Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
-  # Neural data file IO functions:
-    -> ARC data structure definition
-      arc_read(arc_file): Read archival neural signal data file.
-      arc_write(arc_file, arc_data): Write archival neural signal data file.
-      arc_plot(arc_file, save=False): Plot archival neural signal data.
-    -> NOI data structure definition
-      noi_read(noi_file): Read recording noise sample file.
-      noi_write(noi_file, noi_data): Write recording noise sample file.
-  # Simulated data reading functions:
-   sim_args_read(sim_fp): Read simulated signal generation parameters.
-   sim_data_read(sim_fp, idx, ex=False): Read simulated signal data.
+Public function list:
+
+- Generic compressed-payload IO:
+
+    - pklz_read(file)                          : Read compressed pickled data from a file
+    - pklz_write(file, data, level)            : Write compressed pickled data to a file
+    - cjsh_read(file)                          : Read a compressed JSON with secure hash (CJSH) file
+    - cjsh_write(file, data, level)            : Write a compressed JSON with secure hash (CJSH) file
+
+- Neural data file IO:
+
+    - arc_read(arc_file)                       : Read an archival neural signal data file (`*.arc`)
+    - arc_write(arc_file, arc_data)            : Write an archival neural signal data file (`*.arc`)
+    - arc_plot(arc_file, save, close_on_save)  : Plot an archival neural signal sample
+    - noi_read(noi_file)                       : Read a recording noise sample file (`*.noi`)
+    - noi_write(noi_file, noi_data)            : Write a recording noise sample file (`*.noi`)
+
+- Simulated data IO:
+
+    - sim_args_read(sim_fp)                    : Read simulated signal generation parameters
+    - sim_data_read(sim_fp, idx, ex)           : Read a single simulated signal sample
 """
 
 
 # Basic file IO functions -------------------------------------------------------------------------------------------- #
 
 def pklz_read(file):
-    """ Read compressed pickled data from a file.
+    """Read compressed-pickled data from a file.
+
+    The on-disk format is the output of :func:`pklz_write`: a zlib-compressed pickle stream wrapped inside
+    an outer pickle stream.
 
     Args:
-        file (str): File contained compressed pickled data (`*.pkl` | `*.pkz` | `*.pklz`)
+        file (str): Path to the compressed-pickle file (``*.pkl`` | ``*.pkz`` | ``*.pklz``)
 
     Returns:
-        Imported data
+        Any: The decoded payload
     """
     with open(file, 'rb') as infile:
         comp = pkl.load(infile)
@@ -57,15 +69,21 @@ def pklz_read(file):
 
 
 def pklz_write(file, data, level=-1):
-    """ Write compressed pickled data to a file.
+    """Write compressed-pickled data to a file.
+
+    The payload is pickled, zlib-compressed at level ``level``, and the resulting bytes are pickled again
+    into ``file`` so the wrapper stays a single pickle object.
 
     Args:
-        file (str): File to write data (`*.pkl` | `*.pkz` | `*.pklz`)
-        data: Any type of picklable data
-        level (int): {-1 ~ 9} Compress level of input data (default: -1)
+        file (str): Path to the output file (``*.pkl`` | ``*.pkz`` | ``*.pklz``)
+        data (Any): Picklable payload
+        level (int): zlib compression level in ``[-1, 9]``; ``-1`` selects zlib's default (default: ``-1``)
 
     Returns:
-        bool: File creation status
+        bool: :data:`True` on success, :data:`False` when an :class:`OSError` is raised while writing
+
+    Warns:
+        Warning: Emitted with the original :class:`OSError` message when the file cannot be written
     """
     comp = zlib.compress(pkl.dumps(data, protocol=None), level=level)
     try:
@@ -78,13 +96,18 @@ def pklz_write(file, data, level=-1):
 
 
 def cjsh_read(file):
-    """ Compressed JSON with Secure Hash embedded (CJSH) file, reading function.
+    """Read a compressed JSON with secure hash (CJSH) file.
+
+    The on-disk format is a zlib-compressed outer JSON document of the form
+    ``{"arc": <base64(zlib(payload_json))>, "cks": <sha256(payload_json)>}``. After decompression, the SHA-256
+    checksum of the payload is recomputed and compared against the stored ``cks`` field.
 
     Args:
-        file (str): File contained compressed JSON data (`*.cjh` | `*.cjsh`)
+        file (str): Path to the CJSH file (``*.cjh`` | ``*.cjsh``)
 
     Returns:
-        Imported data
+        Any | None: The decoded payload, or :data:`None` when the recomputed SHA-256 does not match the
+            stored checksum
     """
     # Read data from the file
     with open(file, 'rb') as infile:
@@ -102,15 +125,22 @@ def cjsh_read(file):
 
 
 def cjsh_write(file, data, level=-1):
-    """ Compressed JSON with Secure Hash embedded (CJSH) file, writing function.
+    """Write data to a compressed JSON with secure hash (CJSH) file.
+
+    The payload is JSON-encoded, base64-wrapped after zlib compression, and stored together with its SHA-256 checksum
+    in an outer JSON document; the outer document is then zlib-compressed again before being written.
 
     Args:
-        file (str): Output file name (`*.cjh` | `*.cjsh`)
-        data: Any type of data that is JSON serializable
-        level (int): {-1 ~ 9} Compress level of input data (default: -1)
+        file (str): Path to the output file (``*.cjh`` | ``*.cjsh``)
+        data (Any): JSON-serialisable payload
+        level (int): zlib compression level for the inner payload in ``[-1, 9]``; ``-1`` selects zlib's
+            default (default: ``-1``)
 
     Returns:
-        bool: File creation status
+        bool: :data:`True` on success, :data:`False` when an :class:`OSError` is raised while writing
+
+    Warns:
+        Warning: Emitted with the original :class:`OSError` message when the file cannot be written
     """
     # Serialize input data to JSON format
     serialized = json.dumps(data, skipkeys=False, ensure_ascii=False, allow_nan=True).encode('utf-8')
@@ -131,58 +161,59 @@ def cjsh_write(file, data, level=-1):
 
 # Neural data file IO functions -------------------------------------------------------------------------------------- #
 
-""" ARC data structure definition:
-    arc_data (dict): archival neural signal: {
-        data (dict): signal data structure {
-            sig (list[float]): neural signal data
-            pos (int): index of spike location in [sig]
-            rng (list[int, int] | None): 2 indices to define refined signal range
-            freq (int | float): recording frequency of [sig]
-        }
-        meta (dict): metadata structure of the signal {
-            organism (dict): organism for the signal recording {
-                gn (str): generic name
-                se (str): specific epithet
-                st (str): strain,
-                mod (str | None): genetic modification, None for wildtype
-                note (Any): extra notes
-            }
-            region (list): recoding region(s) of the signal
-            neuron (dict): neural cell information {
-                typ (str): cell type
-                spk (str): spike type - 'ss' for simple spike, 'cs' for complex spike or 'fp' for field potential
-                note (Any): extra notes
-            }
-            system (dict): recording system information {
-                typ (str): system type - 'd' for digital or 'a' for analog
-                mfr (str): system manufacture
-                pn (str): manufacture part number or model
-                sn (str): manufacture serial number or batch number
-                soc (int | float | str): Socket in system for recording
-                note (Any): extra notes
-            }
-            probe (dict): recording probe information {
-                typ (str): probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
-                mfr (str): probe manufacture
-                pn (str): manufacture part number or model
-                sn (str): manufacture serial number or batch number
-                chn (int | float): recording site channel number
-                note (Any): extra notes
-            }
-            datetime (str[datetime.ISO-format]): recording date and time information
-        }
-    }
+"""ARC data structure definition:
+
+arc_data (dict)                       : Archival neural signal sample
+    data (dict)                           : Signal data
+        sig (list[float])                     : Neural signal samples
+        pos (int)                             : Index of the spike location within `sig`
+        rng (list[int, int] | None)           : Two indices defining the refined signal range
+        freq (int | float)                    : Recording sampling frequency of `sig`
+    meta (dict)                       : Metadata accompanying the signal
+        organism (dict)                   : Organism the signal was recorded from
+            gn (str)                          : Generic (genus) name
+            se (str)                          : Specific epithet
+            st (str)                          : Strain
+            mod (str | None)                  : Genetic modification, None for wildtype
+            note (Any)                        : Free-form notes
+        region (list)                     : Recording region(s) of the signal
+        neuron (dict)                     : Neural cell information
+            typ (str)                         : Cell type
+            spk (str)                         : Spike type - 'ss' simple spike, 'cs' complex spike, 'fp' field potential
+            note (Any)                        : Free-form notes
+        system (dict)                     : Recording system information
+            typ (str)                         : System type - 'd' digital or 'a' analog
+            mfr (str)                         : System manufacturer
+            pn (str)                          : Manufacturer part number or model
+            sn (str)                          : Manufacturer serial number or batch number
+            soc (int | float | str)           : Socket in the system used for recording
+            note (Any)                        : Free-form notes
+        probe (dict)                      : Recording probe information
+            typ (str)                         : Probe type - 'si' silicon, 'w' tungsten, 'gls' glass pipette, etc.
+            mfr (str)                         : Probe manufacturer
+            pn (str)                          : Manufacturer part number or model
+            sn (str)                          : Manufacturer serial number or batch number
+            chn (int | float)                 : Recording site channel number
+            note (Any)                        : Free-form notes
+        datetime (str)                    : Recording date and time in ISO-8601 format
 """
 
 
 def arc_read(arc_file):
-    """ Read archival neural signal data file.
+    """Read an archival neural signal data file.
+
+    The function delegates to :func:`cjsh_read` and validates that the decoded dictionary has the expected ARC layout
+    (a ``data`` and ``meta`` block, each with the required keys).
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (`*.arc`)
+        arc_file (str): Path to the archival neural signal file (``*.arc``)
 
     Returns:
-        dict: Archival neuronal signal sample, defined above
+        dict | None: The ARC dictionary on success, or :data:`None` when the payload is missing required
+            sections or has illegal keys (see the ARC schema in this module)
+
+    Warns:
+        Warning: Emitted when ``data`` or ``meta`` is missing, or when their key sets do not match the ARC schema
     """
     # Read file
     arc_data = cjsh_read(arc_file)
@@ -207,14 +238,20 @@ def arc_read(arc_file):
 
 
 def arc_write(arc_file, arc_data):
-    """ Write archival neural signal data file.
+    """Write an archival neural signal data file.
+
+    The ARC dictionary is validated against the expected layout and written via :func:`cjsh_write` at the maximum
+    compression level (``9``).
 
     Args:
-        arc_file (str): File to write archival neuronal signal data (`*.arc`)
-        arc_data (dict): Archival neuronal signal, defined above
+        arc_file (str): Path to the output archival neural signal file (``*.arc``)
+        arc_data (dict): ARC dictionary as defined by the ARC schema in this module
 
     Returns:
-        bool: File creation status
+        bool: :data:`True` when the file was written, :data:`False` when ``arc_data`` failed validation
+
+    Warns:
+        Warning: Emitted when ``data`` or ``meta`` is missing, or when their key sets do not match the ARC schema
     """
     # Verify signal data
     if 'data' in arc_data:
@@ -238,15 +275,22 @@ def arc_write(arc_file, arc_data):
 
 
 def arc_plot(arc_file, save=None, close_on_save=True):
-    """ Plot archival neural signal data.
+    """Plot the signal trace of an archival neural signal file.
+
+    The signal is rendered as a line plot with the spike peak marked, and the refined signal range (if provided)
+    drawn as two vertical reference lines.
 
     Args:
-        arc_file (str): File contained archival neuronal signal data (`*.arc`)
-        save (str | bool | None): Figure save path, True = use the same path as [arc_file] (default: None)
-        close_on_save (bool): Define if the figure should be closed after saving (default: True)
+        arc_file (str): Path to the archival neural signal file (``*.arc``)
+        save (str | bool | None): Output PNG path; pass :data:`True` to reuse ``arc_file`` (with the
+            extension swapped to ``.png``); pass :data:`None` or :data:`False` to skip saving
+            (default: ``None``)
+        close_on_save (bool): When :data:`True` and ``save`` is truthy, close the figure after saving and
+            return ``(None, None)`` instead of the live handles (default: ``True``)
 
     Returns:
-        tuple[plt.Figure | None, plt.Axes | None]: Plot figure and ax
+        tuple[plt.Figure | None, plt.Axes | None]: Figure and axes objects, or ``(None, None)`` when the
+            figure was saved and closed
     """
     # Import data
     data = arc_read(arc_file)['data']
@@ -285,55 +329,56 @@ def arc_plot(arc_file, save=None, close_on_save=True):
     return fig, ax
 
 
-""" NOI data structure definition:
-    noi_data (dict): recording noise signal: {
-        data (dict): neural recording noise data structure {
-            noi (list[float]): neural recording noise data
-            freq (int | float): recording frequency of [noi]
-        }
-        meta (dict): metadata structure of the noise {
-            organism (dict): organism for the signal recording {
-                gn (str): generic name
-                se (str): specific epithet
-                st (str): strain,
-                mod (str | None): genetic modification, None for wildtype
-                note (Any): extra notes
-            }
-            region (list): recoding region(s) of the signal
-            feature (dict): recorded features in the noise signal {
-                typ (list[str]): existing noise - 'fp' for field potential, 'ele' for elec-sti, 'opto' for opto-sti etc.
-                note (Any): extra notes
-            }
-            system (dict): recording system information {
-                typ (str): system type - 'd' for digital or 'a' for analog
-                mfr (str): system manufacture
-                pn (str): manufacture part number or model
-                sn (str): manufacture serial number or batch number
-                soc (int | float | str): Socket in system for recording
-                note (Any): extra notes
-            }
-            probe (dict): recording probe information {
-                typ (str): probe type - 'si' for silicon, 'w' for tungsten, 'gls' for glass pipette etc.
-                mfr (str): probe manufacture
-                pn (str): manufacture part number or model
-                sn (str): manufacture serial number or batch number
-                chn (int | float): recording site channel number
-                note (Any): extra notes
-            }
-            datetime (str[datetime.ISO-format]): recording date and time information
-        }
-    }
+"""NOI data structure definition:
+
+noi_data (dict)                 : Recording noise sample
+    data (dict)                     : Noise data
+        noi (list[float])               : Recording noise samples
+        freq (int | float)              : Recording sampling frequency of `noi`
+    meta (dict)                 : Metadata accompanying the noise sample
+        organism (dict)             : Organism the signal was recorded from
+            gn (str)                    : Generic (genus) name
+            se (str)                    : Specific epithet
+            st (str)                    : Strain
+            mod (str | None)            : Genetic modification, None for wildtype
+            note (Any)                  : Free-form notes
+        region (list)               : Recording region(s) of the signal
+        feature (dict)              : Recorded features in the noise signal
+            typ (list[str])             : Existing noise - 'fp' field potential, 'ele' elec-stim, 'opto' opto-stim, etc.
+            note (Any)                  : Free-form notes
+        system (dict)               : Recording system information
+            typ (str)                   : System type - 'd' digital or 'a' analog
+            mfr (str)                   : System manufacturer
+            pn (str)                    : Manufacturer part number or model
+            sn (str)                    : Manufacturer serial number or batch number
+            soc (int | float | str)     : Socket in the system used for recording
+            note (Any)                  : Free-form notes
+        probe (dict)                : Recording probe information
+            typ (str)                   : Probe type - 'si' silicon, 'w' tungsten, 'gls' glass pipette, etc.
+            mfr (str)                   : Probe manufacturer
+            pn (str)                    : Manufacturer part number or model
+            sn (str)                    : Manufacturer serial number or batch number
+            chn (int | float)           : Recording site channel number
+            note (Any)                  : Free-form notes
+        datetime (str)              : Recording date and time in ISO 8601 format
 """
 
 
 def noi_read(noi_file):
-    """ Read recording noise sample file.
+    """Read a recording noise sample file.
+
+    The function delegates to :func:`cjsh_read` and validates that the decoded dictionary has the expected NOI layout
+    (a ``data`` and ``meta`` block, each with the required keys).
 
     Args:
-        noi_file (str): File contained archival neuronal signal data (`*.noi`)
+        noi_file (str): Path to the recording noise sample file (``*.noi``)
 
     Returns:
-        dict: Neuronal recording noise sample, defined above
+        dict | None: The NOI dictionary on success, or :data:`None` when the payload is missing required
+            sections or has illegal keys (see the NOI schema in this module)
+
+    Warns:
+        Warning: Emitted when ``data`` or ``meta`` is missing, or when their key sets do not match the NOI schema
     """
     # Read file
     noi_data = cjsh_read(noi_file)
@@ -358,14 +403,20 @@ def noi_read(noi_file):
 
 
 def noi_write(noi_file, noi_data):
-    """ Write recording noise sample file.
+    """Write a recording noise sample file.
+
+    The NOI dictionary is validated against the expected layout and written via :func:`cjsh_write` at the maximum
+    compression level (``9``).
 
     Args:
-        noi_file (str): File to write recording noise sample data (`*.noi`)
-        noi_data (dict): Neuronal recording noise sample, defined above
+        noi_file (str): Path to the output recording noise sample file (``*.noi``)
+        noi_data (dict): NOI dictionary as defined by the NOI schema in this module
 
     Returns:
-        bool: File creation status
+        bool: :data:`True` when the file was written, :data:`False` when ``noi_data`` failed validation
+
+    Warns:
+        Warning: Emitted when ``data`` or ``meta`` is missing, or when their key sets do not match the NOI schema
     """
     # Verify noise data
     if 'data' in noi_data:
@@ -391,13 +442,17 @@ def noi_write(noi_file, noi_data):
 # Simulated data reading functions ----------------------------------------------------------------------------------- #
 
 def sim_args_read(sim_fp):
-    """ Read simulated signal generation parameters.
+    """Read the generation parameters of a simulated signal HDF5 file.
+
+    Walks the ``args`` group of ``sim_fp`` and converts the stored values back to native Python types: byte strings
+    are decoded as UTF-8 (with the literal sentinel ``"NULL"`` mapped to :data:`None`), arrays of byte strings are
+    decoded element-wise, and scalar arrays are unwrapped via :meth:`numpy.ndarray.item`.
 
     Args:
-        sim_fp (h5.File): Simulated signal data file
+        sim_fp (h5.File): Open simulated signal data file
 
     Returns:
-        dict: Parameter dictionary
+        dict[str, Any]: Generation parameter name to native value mapping
     """
     kl = list(sim_fp['args'].keys())
     arg = {k: None for k in kl}  # INIT VAR
@@ -418,23 +473,32 @@ def sim_args_read(sim_fp):
 
 
 def sim_data_read(sim_fp, idx, ex=False):
-    """ Read simulated signal data.
+    """Read a single simulated signal sample from a simulated signal HDF5 file.
+
+    Standard simulated samples live under the ``sims`` group; extra (validation/special) samples live under the
+    ``exeg`` group. The function returns :data:`None` and warns when ``idx`` does not exist.
 
     Args:
-        sim_fp (h5.File): Simulated signal data file
-        idx (int): Simulated data index
-        ex (bool): Read extra generated data sample flag (default = False: read standard simulated data)
+        sim_fp (h5.File): Open simulated signal data file
+        idx (int): Sample index to read
+        ex (bool): When :data:`True` read from the ``exeg`` group of extra samples; when :data:`False`
+            read from the ``sims`` group of standard samples (default: ``False``)
 
     Returns:
-        Generated signal and label
+        dict | None: Sample dictionary, or :data:`None` when ``idx`` is not present in the requested group
 
             - sig (np.ndarray): {1D-scalar} Simulated signal data
-            - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
-                - 'noise' (np.ndarray): {1D-scalar} Noise ground truth of [sig]
-                - 'signal' (list[np.ndarray]): {1D-scalar} Grouped noise-free signal of [sig]
-            - pos (np.ndarray): {1D-0|1} Simulated signal data spike position (one-hot)
-            - typ (str): Sample generation type ('sim': standard, 'nrm': extra standard, 'spc': extra special)
+            - lbl (dict[str, list[np.ndarray] | np.ndarray]): Ground truth of ``sig``
 
+                - signal (list[np.ndarray]): {1D-scalar} Grouped noise-free signal contributions
+                - noise (np.ndarray): {1D-scalar} Noise ground truth of ``sig``
+
+            - pos (np.ndarray): {1D-0|1} One-hot spike position label of ``sig``
+            - typ (str): Sample generation type (``'sim'`` standard, ``'nrm'`` extra standard, ``'spc'``
+              extra special)
+
+    Warns:
+        RuntimeWarning: Emitted when ``idx`` is not present in the requested group
     """
     grp = 'exeg' if ex else 'sims'
     pos_ref = sim_fp.get("%s/%d" % (grp, idx), None)

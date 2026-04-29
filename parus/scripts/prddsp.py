@@ -1,4 +1,10 @@
-# PARUS inference results visualization SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS inference results visualisation script
+
+Interactive viewer for model prediction outputs: navigates through samples or files, overlays input,
+spike-signal, and spike-position traces, and supports both dark/light themes and any Matplotlib backend.
+"""
 
 import os
 import argparse
@@ -12,32 +18,32 @@ from ..fio import pklz_read
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results versus its inputs")
-parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.3")
-parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results location")
-parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
+parser = argparse.ArgumentParser(prog="ParusPrdDsp", description="Display model prediction results against the inputs")
+parser.add_argument('-v', '--version', action='version', version="Parus - Display inference results: v3.4")
+parser.add_argument('path', type=str, metavar="resultPath", help="[%(type)s] Prediction results file or folder path")
+parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Use the dark colour scheme")
 parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
 # Plot elements control
 pe_pgp = parser.add_argument_group("Plot elements control arguments")
-pe_pgp.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide input data plot")
-pe_pgp.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide all spike plots")
+pe_pgp.add_argument('-i', '--inp', dest='inp', default=True, action='store_false', help="Hide the input trace")
+pe_pgp.add_argument('-s', '--spk', dest='spk', default=True, action='store_false', help="Hide every spike trace")
 pe_pgp.add_argument('-sr', '--spkrf', dest='spkrf', default=True, action='store_false', help="Hide spike reference")
 pe_pgp.add_argument('-sp', '--spkpd', dest='spkpd', default=True, action='store_false', help="Hide spike prediction")
-pe_pgp.add_argument('-p', '--pos', dest='pos', default=True, action='store_false', help="Hide all position plots")
+pe_pgp.add_argument('-p', '--pos', dest='pos', default=True, action='store_false', help="Hide every position trace")
 pe_pgp.add_argument('-pr', '--posrf', dest='posrf', default=True, action='store_false', help="Hide position reference")
 pe_pgp.add_argument('-pp', '--pospd', dest='pospd', default=True, action='store_false', help="Hide position prediction")
 # Data feature setting
 df_pgp = parser.add_argument_group("Data feature setting arguments")
-df_pgp.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Enable data normalization")
-df_pgp.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Enable continuous sampling")
-df_pgp.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample overlapping length")
+df_pgp.add_argument('-n', '--norm', dest='norm', default=False, action='store_true', help="Normalise traces to [-1, 1]")
+df_pgp.add_argument('-c', '--cont', dest='cont', default=False, action='store_true', help="Render samples continuously")
+df_pgp.add_argument('-o', '--ovlp', dest='ovlp', type=int, default=0, metavar="[int]", help="Sample overlap in points")
 df_pgp.add_argument('-f', '--freq', dest='freq', type=float, default=None, metavar="[float]", help="Sampling frequency")
 # Plot axes settings
 ax_pgp = parser.add_argument_group("Plot axes setting arguments")
-ax_pgp.add_argument('-yx', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis max value")
-ax_pgp.add_argument('-yi', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis min value")
+ax_pgp.add_argument('-yx', '--ymax', dest='ymax', type=float, default=None, metavar="[float]", help="Y-axis maximum")
+ax_pgp.add_argument('-yi', '--ymin', dest='ymin', type=float, default=None, metavar="[float]", help="Y-axis minimum")
 ax_pgp.add_argument('-lm', '--lims', dest='lims', default=False, action='store_true', help="Enable global y-axis limit")
-ax_pgp.add_argument('-sb', '--sub', dest='sub', default=False, action='store_true', help="Enable subplot mode")
+ax_pgp.add_argument('-sb', '--sub', dest='sub', default=False, action='store_true', help="Subplot input/spike/position")
 # Parse inputs
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
@@ -357,11 +363,13 @@ for c in range(ncol):
             axes[ax_i, c].legend(loc='upper right')
         if ref_flag:
             axes[ax_l, c].hlines(1, 0, 100, color=u'#2ca02c', label="Spike Reference")
-            axes[ax_l, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^', label="Position Reference")
+            axes[ax_l, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#006400', marker='^',
+                                  label="Position Reference")
             axes[ax_l, c].legend(loc='upper right')
         if prd_flag:
             axes[ax_p, c].hlines(1, 0, 100, color=u'#1f77b4', label="Spike Prediction")
-            axes[ax_p, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o', label="Position Prediction")
+            axes[ax_p, c].scatter(range(0, 101, 10), [-1] * 11, color=u'#191970', marker='o',
+                                  label="Position Prediction")
             axes[ax_p, c].legend(loc='upper right')
     else:
         axes[0, c].hlines(2, 0, 100, color=u'#ff7f0e', label="Input")

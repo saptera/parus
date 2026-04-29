@@ -1,4 +1,10 @@
-# PARUS simulated signal statistics visualization SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS simulated signal statistics visualisation script
+
+Reads a CJSH report produced by :mod:`parus.scripts.gensim` and renders an interactive overview of the generation
+distributions: signal/noise multipliers, baseline-shift modes, group occurrence ratios, and per-file sample counts.
+"""
 
 import argparse
 import numpy as np
@@ -10,10 +16,10 @@ from ..fio import cjsh_read
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualize simulated signals generation status")
-parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.8")
-parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Generation report file path")
-parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Set plot dark color scheme")
+parser = argparse.ArgumentParser(prog="ParusGenStat", description="Visualise simulated signal generation statistics")
+parser.add_argument('-v', '--version', action='version', version="Parus - Visualize simulated signals generation: v1.9")
+parser.add_argument('file', type=str, metavar="reportFile", help="[%(type)s] Path to the generation report file")
+parser.add_argument('-k', '--dark', dest='dark', default=False, action='store_true', help="Use the dark colour scheme")
 parser.add_argument('-a', '--agg', dest='agg', type=str, default='TkAgg', metavar="[str]", help="Matplotlib backend")
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #

@@ -1,4 +1,11 @@
-# PARUS simulated signal generation SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS simulated signal generation script
+
+Compose simulated neural recordings by combining archival signal samples (``*.arc``) with recording-noise
+samples (``*.noi``) under a configurable randomisation budget, then write the result, the per-sample labels,
+and a generation report to disk for model training.
+"""
 
 import os
 import argparse
@@ -15,63 +22,60 @@ from ..data import bsl_sft_lin, bsl_sft_sin
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
 parser = argparse.ArgumentParser(prog="ParusGenSim", description="Generate simulated neural signals",
-                                 epilog="Generated simulated neural signal data use for model training ONLY")
-parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.2")
+                                 epilog="Simulated dataset generator for PARUS model training")
+parser.add_argument('-v', '--version', action='version', version="Parus - Generate simulated neural signals: v5.3")
 # Sample source definition (positional)
 parser.add_argument('arc_dir', type=str, metavar="signalFolder",
-                    help="[%(type)s] Directory containing archived signal data (*.arc)")
+                    help="[%(type)s] Directory containing archival signal samples (*.arc)")
 parser.add_argument('noi_dir', type=str, metavar="noiseFolder",
-                    help="[%(type)s] Directory containing sample noise data (*.noi)")
+                    help="[%(type)s] Directory containing recording-noise samples (*.noi)")
 # Outputs parameters (positional)
 parser.add_argument('out_dir', type=str, metavar="outputFolder",
-                    help="[%(type)s] Output directory of simulated data (*.sim)")
+                    help="[%(type)s] Output directory for the simulated dataset (*.sim)")
 parser.add_argument('num_sim', type=int, metavar="sampleNumber",
-                    help="[%(type)s] Number of simulated data to be generated")
+                    help="[%(type)s] Number of simulated samples to generate")
 # Simulated data generation properties (optional)
 prp_pgp = parser.add_argument_group("Generation property arguments")
 prp_pgp.add_argument('-l', '--length', dest='tot_len', type=int, default=300, metavar="[int]",
-                    help="Total length of final signal sample (default: %(default)s)")
+                    help="Per-sample length in data points (default: %(default)s)")
 prp_pgp.add_argument('-f', '--freq', dest='freq', type=int or float, default=20000, metavar="[int or float]",
-                    help="Sampling frequency (Hz) of the system (default: %(default)s)")
+                    help="System sampling frequency in Hz (default: %(default)s)")
 prp_pgp.add_argument('-ig', '--mingap', dest='min_gap', type=int, default=20, metavar="[int]",
-                    help="Minimum index gap of signal events (default: %(default)s)")
+                    help="Minimum index gap between signal events (default: %(default)s)")
 prp_pgp.add_argument('-xg', '--maxgap', dest='max_gap', type=int, default=80, metavar="[int]",
-                    help="Maximum index gap of signal events (default: %(default)s)")
+                    help="Maximum index gap between signal events (default: %(default)s)")
 prp_pgp.add_argument('-gp', '--group', dest='sig_grp', type=str, choices=['typ', 'spk'], default=None,
                     metavar="{typ, spk}",
-                    help="Grouping method: 'typ' = cell type, 'spk' = spike type (default: %(default)s = disabled)")
+                    help="Group signals by 'typ' (cell type) or 'spk' (spike type); default disables grouping")
 prp_pgp.add_argument('-gr', '--grpratio', dest='grp_rat', nargs='+', type=int or float, default=None,
                     metavar="[int or float]",
-                    help="Occurrence ratio of groups, the order is associated with the group names alphabetical order, "
-                         "and suggested to be the same length of group number (default: %(default)s = equally occurs)")
+                    help="Per-group occurrence ratios in alphabetical group order; default is equal weights")
 prp_pgp.add_argument('-no', '--noionly', dest='no_rat', type=float, default=0.0, metavar="[float]",
-                    help="Occurrence ratio of noise only data, 0.0<= value <1.0) (default: %(default)s)")
+                    help="Noise-only sample ratio in [0.0, 1.0) (default: %(default)s)")
 # Simulated data randomized weighing properties (optional)
 rnd_pgp = parser.add_argument_group("Data randomization arguments")
 rnd_pgp.add_argument('-sf', '--sigfac', dest='sig_fac', nargs=2, type=float, default=None, metavar="[float]",
-                    help="Signal amplitude multiplication factor [low] [high] (default: %(default)s = disabled)")
+                    help="Signal-amplitude multiplier range [low high]; default disables randomisation")
 rnd_pgp.add_argument('-nf', '--noifac', dest='noi_fac', nargs=2, type=float, default=None, metavar="[float]",
-                    help="Noise level multiplication factor [low] [high] (default: %(default)s = disabled)")
+                    help="Noise-level multiplier range [low high]; default disables randomisation")
 # Simulated baseline shifting (optional)
 bsl_pgp = parser.add_argument_group("Baseline augmentation arguments")
 bsl_pgp.add_argument('-bs', '--baseshift', dest='bsl_meth', nargs='+', type=str, choices=['cst', 'lin', 'sin', 'nos'],
                     default=None, metavar=("{cst, lin, sin, nos}", ""),
-                    help="Baseline random shifting method: 'cst' = constant, 'lin' = linear, 'sin' = sinusoid, "
-                         "'nos' = no-shift (default: %(default)s = disabled)")
+                    help="Baseline-shift methods (cst: constant, lin: linear, sin: sinusoid, nos: no-shift)")
 bsl_pgp.add_argument('-bp', '--basecomp', dest='bsl_comp', nargs='+', type=int or float, default=None,
                     metavar="[int or float]",
-                    help="Baseline shift composition ratio of each method, suggested to be the same order and length "
-                         "as methods inputs (default: %(default)s = equally occurs)")
+                    help="Per-method baseline-shift ratios; default is equal weights")
 bsl_pgp.add_argument('-ba', '--baseamps', dest='bsl_amps', nargs=2, type=float, default=None, metavar="[float]",
-                    help="Randomize baseline shift amplitude [low] [high] (default: %(default)s = disabled)")
+                    help="Baseline-shift amplitude range [low high]; default disables shift")
 bsl_pgp.add_argument('-bf', '--basefreq', dest='bsl_freq', nargs=2, type=float, default=None, metavar="[float]",
-                    help="Randomize baseline frequency (Hz) [low] [high], 'sin' only (default: %(default)s = disabled)")
+                    help="Baseline-shift frequency range in Hz [low high]; sinusoid mode only")
 # Extra example and set settings (optional)
 exa_pgp = parser.add_argument_group("Extra settings arguments")
 exa_pgp.add_argument('-eg', '--example', dest='num_eg', type=int, default=None, metavar="[int]",
-                    help="Number of extra examples to be generated (default: %(default)s = disabled)")
+                    help="Number of extra example samples to generate (default: disabled)")
 exa_pgp.add_argument('-tp', '--settyp', dest='set_typ', type=str, default=None, metavar="[str]",
-                    help="Generated dataset usage type (default: %(default)s) = not specified")
+                    help="Dataset usage tag prefixed to the output filename (default: unset)")
 
 # Parse inputs
 args = parser.parse_args()
@@ -193,18 +197,24 @@ gen_time = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
 # Define local functions --------------------------------------------------------------------------------------------- #
 
 def sig_asgn_lst(low, high, max_pos, sig_lst, grp_pas=None):
-    """ Get 2 lists for assigning signals to the final sample.
+    """Build the per-event signal-selection and signal-position lists for one simulated sample.
+
+    Walks the sample timeline placing one signal event per random gap drawn from ``[low, high)`` until the
+    cursor exceeds ``max_pos``; for each event a signal is drawn from ``sig_lst`` according to the group
+    probabilities ``grp_pas`` (when provided).
 
     Args:
-        low (int): Minimum index difference between 2 signal events
-        high (int): Maximum index difference between 2 signal events
-        max_pos (int): Total length of final signal sample (in index)
-        sig_lst (list[list[int]]): Signal sample indices arranged by group
-        grp_pas (list[float] | None): Probabilities associations of each group (default: None)
+        low (int): Minimum index gap between consecutive signal events
+        high (int): Maximum index gap between consecutive signal events
+        max_pos (int): Total length of the final sample in indices
+        sig_lst (list[list[int]]): Per-group signal-sample indices
+        grp_pas (list[float] | None): Per-group probability weights (default: ``None`` = a single ungrouped pool)
 
     Returns:
-        tuple[list[int], list[int]]: sel_lst (list[int]): Signal selection list
-                                     pos_lst (list[int]): Signal position list
+        tuple[list[int], list[int]]: Two parallel lists of length ``n_events``
+
+            - sel_lst (list[int]): Selected signal indices
+            - pos_lst (list[int]): Anchor positions inside the sample
     """
     sel_lst = []  # INIT VAR
     pos_lst = []  # INIT VAR
@@ -224,21 +234,22 @@ def sig_asgn_lst(low, high, max_pos, sig_lst, grp_pas=None):
 
 
 def gen_sim_dat(has_spk=True, grp_pas=None):
-    """ Generate single simulated signal with its label.
+    """Generate one simulated signal sample together with its noise/signal/position ground truth.
 
     Args:
-        has_spk (bool): Defines if the simulated data has neuronal spikes (default: True)
-        grp_pas (list[float] | None): Probabilities associations of each group (default: None)
+        has_spk (bool): :data:`True` = embed neuronal spikes | :data:`False` = noise-only sample (default: ``True``)
+        grp_pas (list[float] | None): Per-group probability weights (default: ``None`` = a single ungrouped pool)
 
     Returns:
-        tuple[np.ndarray, dict[str, np.ndarray, str, list[np.ndarray]], np.ndarray]: Generated signal and label
+        tuple[np.ndarray, dict, list[np.ndarray]]: Generated signal and labels
 
             - sig (np.ndarray): {1D} Simulated signal data
-            - lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
-                - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
-                - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
-            - pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
+            - lbl (dict): Ground truth of ``sig``
 
+                - ``'noise'`` (np.ndarray): {1D} Noise component
+                - ``'signal'`` (list[np.ndarray]): {1D} Per-group noise-free signal contributions
+
+            - pos (list[np.ndarray]): {1D-int8(0|1)} Per-group one-hot spike position label
     """
     # Initialize label output
     lbl = {'noise': None, 'signal': []}
@@ -305,19 +316,19 @@ def gen_sim_dat(has_spk=True, grp_pas=None):
 
 
 def save_gen_h5(h5_fp, name, gen_typ, sig, lbl, pos):
-    """ Save generated simulated signal with its label to a HDF5 group
+    """Persist one simulated sample (signal + noise/signal/position labels) into a child HDF5 group.
 
     Args:
-        h5_fp (h5.File): HDF5 reference
-        name (str): Data group name
-        gen_typ (str): Generation type
+        h5_fp (h5.File): Open HDF5 file or group to write into
+        name (str): Name of the new child group
+        gen_typ (str): Generation type tag stored as the group's ``type`` attribute
         sig (np.ndarray): {1D} Simulated signal data
-        lbl (dict[str, np.ndarray, str, list[np.ndarray]]): Ground truth of [sig]
+        lbl (dict): Ground truth of ``sig``
 
-            - 'noise' (np.ndarray): {1D} Noise ground truth of [sig]
-            - 'signal' (list[np.ndarray]): {1D} Grouped noise-free signal of [sig]
+            - ``'noise'`` (np.ndarray): {1D} Noise component
+            - ``'signal'`` (list[np.ndarray]): {1D} Per-group noise-free signal contributions
 
-        pos (np.ndarray): {1D, 0 | 1} Simulated signal data spike position (one-hot)
+        pos (list[np.ndarray]): {1D-int8(0|1)} Per-group one-hot spike position label
     """
     # Initialize group
     sdg = h5_fp.create_group(name)

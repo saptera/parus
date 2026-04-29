@@ -1,4 +1,10 @@
-# PARUS model data inference SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS model data inference script
+
+Run a pre-trained PARUS spike-detection model over one or more raw recording files and write the per-channel
+inference results back into each file.
+"""
 
 import os
 import time
@@ -13,35 +19,34 @@ from ..model import EncoderTransformer, InferenceDataset, Inference, load_hparam
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusDatInf", description="Parus data inference",
-                                 epilog="Inference raw recoding data with trained model")
-parser.add_argument('-v', '--version', action='version', version="Parus - Data inference: v2.0")
+parser = argparse.ArgumentParser(prog="ParusDatInf", description="PARUS data inference",
+                                 epilog="Run model inference on raw recording data")
+parser.add_argument('-v', '--version', action='version', version="Parus - Data inference: v2.1")
 # Model definition (positional)
-parser.add_argument('ckpt', type=str, help="[%(type)s] Absolute path to pre-trained model checkpoint")
+parser.add_argument('ckpt', type=str, help="[%(type)s] Path to the pre-trained model checkpoint")
 # File IO arguments (optional, but at least one file/directory should be defined)
 pg_io = parser.add_argument_group("Data IO arguments")
 pg_io.add_argument('-f', '--file', dest='file', nargs='+', type=str, default=argparse.SUPPRESS, metavar="[str]",
-                   help="List of files (*.h5) to inference")
+                   help="Recording files to process (*.hdf, *.h5, *.hdf5, *.he5)")
 pg_io.add_argument('-d', '--dirs', dest='dirs', nargs='+', type=str, default=argparse.SUPPRESS, metavar="[str]",
-                   help="List of directories containing signals (*.h5) to inference")
+                   help="Directories containing recording files to process")
 # Data process arguments (optional)
 pg_dt = parser.add_argument_group("Data process arguments")
 pg_dt.add_argument('-lp', '--overlap', dest='overlap', type=int, default=10, metavar="[int]",
-                   help="Overlapping size between each sample step (default: %(default)s)")
+                   help="Sample overlap between sliding windows (default: %(default)s)")
 pg_dt.add_argument('-tm', '--memory', dest='to_mem', default=False, action='store_true',
-                   help="Load whole file to memory, accelerate process at risk of RAM overflow (default: %(default)s)")
+                   help="Load each recording into RAM, faster with larger memory use (default: %(default)s)")
 pg_dt.add_argument('-bs', '--batch', dest='bat_sz', type=int, default=2048, metavar="[int]",
-                   help="Processing batch size, greater value will accelerate process at a cost of larger VRAM usage "
-                        "(default: %(default)s)")
+                   help="Inference batch size; larger = faster, more VRAM (default: %(default)s)")
 pg_dt.add_argument('-cp', '--compress', dest='cmp_lvl', type=int, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], default=4,
-                   metavar="[int(0-9)]", help="Output file compression level (default: %(default)s)")
+                   metavar="[int(0-9)]", help="Output gzip compression level (default: %(default)s)")
 # Parse inputs
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
 if __name__ == '__main__':
-    print("Parus model inference script initialized at %s" % time.strftime('%Y-%m-%d %H:%M:%S'))
+    print("PARUS model inference script initialized at %s" % time.strftime('%Y-%m-%d %H:%M:%S'))
 
     # Get IO items --------------------------------------------------------------------------------------------------- #
     print("Checking input files and directories:")
@@ -142,4 +147,4 @@ if __name__ == '__main__':
             print("        Data [%s] successfully processed (%d/%d)" % (src, i + 1, tot_len))
 
     print("Inference successful completed")
-    print("Parus data inference finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
+    print("PARUS data inference finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

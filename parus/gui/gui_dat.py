@@ -1,4 +1,9 @@
-# Data processing GUI module
+# -*- coding: utf-8 -*-
+
+"""Data processing GUI module
+
+Qt main windows for the PARUS data pipeline: model inference, spike sorting, and result inspection.
+"""
 
 import os
 import shutil
@@ -32,21 +37,29 @@ from .elm_plot import LoopedColormap, ClstFeatViewer, ResPltLoader
 
 __all__ = ['ParusInf', 'ParusSrt', 'WfmSel', 'PosAdd', 'ParusRes']
 """
-Class list:
-  ParusInf(parent=None): Parus data inference window.
-  ParusSrt(parent=None): Parus spike sorting window.
-  WfmSel(key, raw, parent=None): Result waveform channel selection window.
-  PosAdd(wfm_key, pos_key, parent=None): Result adding neuron management window.
-  ParusRes(file, parent=None): Parus inference results viewing and validation window.
+Public class list:
+
+- ParusInf(parent)                    : PARUS model inference window
+- ParusSrt(parent)                    : PARUS spike sorting window
+- WfmSel(key, raw, parent)            : Result-viewer waveform channel selection dialog
+- PosAdd(wfm_key, pos_key, parent)    : Result-viewer add-neuron management dialog
+- ParusRes(file, parent)              : PARUS inference results viewing and validation window
 """
 
 
 class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
+    """PARUS model inference window.
+
+    Drives the model inference pipeline over user-supplied recording files: loads dataset paths into a table,
+    validates inference parameters, launches the :mod:`parus.scripts.mod_inf` subprocess, and
+    streams its console output back into the GUI.
+    """
+
     def __init__(self, parent=None):
-        """ Parus data inference window.
+        """Initialise the inference window and wire its widgets.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusInf, self).__init__(parent)
@@ -110,14 +123,14 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.statBar.showMessage("System standby")
 
     def closeEvent(self, event):
-        """ Clean-ups upon close. """
+        """Terminate any running inference subprocess before letting Qt close the window."""
         self._proc.terminate()
 
     def ctrl_enable(self, enable=True):
-        """ Set enable status of controls.
+        """Enable or disable every input control (used to lock the form while a subprocess runs).
 
         Args:
-            enable (bool): Enable status of controls (default: True)
+            enable (bool): :data:`True` re-enables the controls, :data:`False` locks them (default: ``True``)
         """
         self.addFileButton.setEnabled(enable)
         self.addPathButton.setEnabled(enable)
@@ -136,7 +149,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
 
     # Process related functions -------------------------------------------------------------------------------------- #
     def set_proc_args(self):
-        """ Set arguments for model inference. """
+        """Recompute the inference subprocess arguments from the form state and toggle the run button."""
         # Get process path lists
         flst = [s.id for s in self._sel_file if s.isChecked()]
         dlst = [s.id for s in self._sel_dirs if s.isChecked()]
@@ -152,7 +165,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
             self.procButton.setEnabled(True)
 
     def __switch_proc_btn(self):
-        """ ParusModInf button connected function. """
+        """Restyle the run/stop button in response to the inference subprocess running state."""
         if self.__proc_run:
             self.procButton.setStyleSheet('QPushButton {color: red}')
         else:
@@ -162,14 +175,14 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
                 self.procButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
     def __proc_start(self):
-        """ ParusModInf process STARTED connected function. """
+        """Lock the form and update the status bar when the inference subprocess starts."""
         self.__proc_run = True
         self.__switch_proc_btn()
         self.ctrl_enable(False)
-        self.statBar.showMessage("Parus data inference started")
+        self.statBar.showMessage("PARUS data inference started")
 
     def __proc_finish(self):
-        """ ParusModInf process FINISHED connected function. """
+        """Unlock the form, persist the run parameters, and update the status bar after inference ends."""
         # Reset button
         self.__proc_run = False
         self.ctrl_enable(True)
@@ -184,7 +197,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
 
     # Control element related functions ------------------------------------------------------------------------------ #
     def __load_params(self):
-        """ Load GUI settings from previous execution. """
+        """Pre-fill the form from the last successful run's saved parameters (if any)."""
         par_json = os.path.join(pkg_data, '_inf_params.json')
         if os.path.isfile(par_json):
             # Load previous settings
@@ -198,7 +211,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
             self.clvlCombo.setCurrentIndex(pars['compression_level'])
 
     def __save_params(self):
-        """ Save GUI settings of current execution. """
+        """Persist the current form values so the next run can pre-fill the same configuration."""
         pars = {}  # INIT VAR
         # Read current controls
         pars['model_checkpoint'] = self.ckptLine.text()
@@ -211,7 +224,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
             json.dump(pars, fp, indent=2)
 
     def __set_data_file(self):
-        """ Add file(s) to file selection table. """
+        """Open a file picker, append the selection to the input table, and refresh the run arguments."""
         stat, self.lst_file, self._sel_file = table_loader(
             self.inputTable, self.lst_file, self._sel_file, mode='file', caption="Select Data File(s)",
             flt="Signal Files (*.hdf *.h5 *.hdf5 *.he5)", func=self.set_proc_args, parent=self)
@@ -220,7 +233,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.set_proc_args()
 
     def __set_data_path(self):
-        """ Add directory to file selection table. """
+        """Open a folder picker, append the selection to the input table, and refresh the run arguments."""
         stat, self.lst_dirs, self._sel_dirs = table_loader(
             self.inputTable, self.lst_dirs, self._sel_dirs, mode='path', caption="Select Data Folder",
             func=self.set_proc_args, parent=self)
@@ -229,14 +242,14 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.set_proc_args()
 
     def __set_selc(self, mode):
-        """ Selection quick access buttons attached function. """
+        """Apply a bulk selection mode (``'all'``, ``'non'``, ``'inv'``) to every input table row."""
         stat = selection_operator(self._sel_file + self._sel_dirs, mode)
         self.statBar.showMessage(stat)
         # Update process arguments
         self.set_proc_args()
 
     def __sel_mod_ckpt(self):
-        """ Select model trained weight file (*.ckpt). """
+        """Open a file picker for the model checkpoint and write the choice into the form."""
         mta = path_selector(self.ckptLine, mode='file', caption="Select Model Trained Weights",
                             flt="Checkpoint (*.ckpt)", parent=self)
         if mta is None:
@@ -249,7 +262,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.set_proc_args()
 
     def __set_mod_ckpt(self):
-        """ Set model trained weight file (*.ckpt). """
+        """Validate the manually edited model checkpoint ``*.ckpt`` path and refresh the run arguments."""
         mta = self.ckptLine.text()
         if os.path.isfile(mta):
             self.ckpt = [mta]
@@ -261,7 +274,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         self.set_proc_args()
 
     def __set_ovlp_len(self):
-        """ Set sample overlapping length. """
+        """Push the latest inter-window overlap length to the inference subprocess arguments."""
         ovlp = self.ovlpSpinbox.value()
         self.ovlp = ['-lp', str(ovlp)]
         # Update process arguments
@@ -269,14 +282,14 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         return self.ovlp
 
     def __set_to_mem(self):
-        """ Set to load whole file directly to system memory. """
+        """Toggle the ``--to-memory`` inference flag that loads each recording fully into RAM before processing."""
         self.tmem = ['-tm'] if self.tmemCheckbox.isChecked() else []
         # Update process arguments
         self.set_proc_args()
         return self.tmem
 
     def __set_bat_size(self):
-        """ Set model process batch size. """
+        """Push the latest model batch size to the inference subprocess arguments."""
         btsz = self.btszSpinbox.value()
         self.btsz = ['-bs', str(btsz)]
         # Update process arguments
@@ -284,7 +297,7 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
         return self.btsz
 
     def __set_comp_lvl(self):
-        """ Set output file data compression level. """
+        """Push the selected HDF5 compression level for the inference output to the subprocess arguments."""
         clvl = self.clvlCombo.currentIndex()
         self.clvl = ['-cp', str(clvl)]
         # Update process arguments
@@ -293,11 +306,18 @@ class ParusInf(QtWidgets.QMainWindow, Ui_ParusInfWindow):
 
 
 class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
+    """PARUS spike sorting window.
+
+    Loads model-inference outputs, runs the cosine-amplitude or Pearson-correlation clustering algorithms
+    from :mod:`parus.data.clst`, and exposes the resulting clusters in a :class:`ClstFeatViewer` for
+    interactive review and post-clustering merging.
+    """
+
     def __init__(self, parent=None):
-        """ Parus spike sorting window.
+        """Initialise the spike sorting window and wire its widgets.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusSrt, self).__init__(parent)
@@ -425,14 +445,14 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.sigTypButton.clicked.connect(self.__signal_switch)
 
     def timerEvent(self, event):
-        """ Timer event for canvas updating. """
+        """Forward the cached timestamp to the cluster-feature viewer once the debounce timer fires."""
         self.killTimer(self.__timer_val)
         self.__timer_val = -1
         if self._cfv is not None:
             self._cfv.chn_feat.set_time(self.__ch_t)
 
     def keyPressEvent(self, event):
-        """ Main window keyboard inputs. """
+        """Handle window-level shortcuts: ``Esc`` clears the cell selection and arrow keys scroll the signal."""
         # Cell selection escape key
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.spkCidTable.clearSelection()
@@ -459,7 +479,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             QtWidgets.QMainWindow.keyPressEvent(self, event)
 
     def closeEvent(self, event):
-        """ Close function. """
+        """Prompt before discarding unsaved sorting results, then close the embedded cluster-feature viewer."""
         if self.__has_res:
             reply = QtWidgets.QMessageBox.warning(
                 self, "Sorting Results", "Spike sorting have been processed\nDo you want to exit?",
@@ -473,10 +493,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self._cfv.close()
 
     def ctrl_enable(self, enable=True):
-        """ Set enable status of controls.
+        """Enable or disable every input control (used to lock the form while a subprocess runs).
 
         Args:
-            enable (bool): Enable status of controls (default: True)
+            enable (bool): :data:`True` re-enables the controls, :data:`False` locks them (default: ``True``)
         """
         self.addFileButton.setEnabled(enable)
         self.addPathButton.setEnabled(enable)
@@ -510,10 +530,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         save = False  # Single file save mode flag
 
         def __init__(self, parent):
-            """ Data process independent thread.
+            """Initialise the worker thread bound to a :class:`ParusSrt` window.
 
             Args:
-                parent (ParusSrt): Parus sorting window caller
+                parent (ParusSrt): Spike-sorting window that owns this worker
             """
             super(ParusSrt._DataProcThread, self).__init__(parent)
             self.parent = parent
@@ -531,7 +551,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 self.proc_multi()
 
         def proc_single(self):
-            """ Process spike sorting on active file. """
+            """Run the full spike-sorting pipeline on the currently activated file and cache the clusters in-memory."""
             # Validate file
             file = self.parent.inputTable.item(self.parent.inputTable.currentRow(), 2).text()
             if not os.path.isfile(file):
@@ -597,7 +617,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.success = True
 
         def proc_save(self):
-            """ Save result to single file. """
+            """Persist the cached spike-sorting results back to the activated file's ``pos`` HDF5 group."""
             fp = h5.File(self.parent._act_file, 'r+')
             if 'pos' in fp:
                 del fp['pos']
@@ -617,7 +637,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.success = True
 
         def proc_multi(self):
-            """ Process spike sorting and saving on all selected file. """
+            """Run spike sorting on every checked file and write the clusters straight to disk without caching."""
             # Load data
             for cb in self.parent._sel_file:
                 if cb.isChecked():
@@ -681,7 +701,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.success = True
 
     def __proc_actfile_spksrt(self):
-        """ Process single activated file. """
+        """Lock the form and dispatch the worker thread to sort the currently activated file."""
         self.__single = True
         self.__save = False
         self._proc_thread.single = True
@@ -690,7 +710,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self._proc_thread.start()
 
     def __proc_actfile_save(self):
-        """ Save single activated file. """
+        """Lock the form and dispatch the worker thread to save the cached results of the activated file."""
         self.__single = True
         self.__save = True
         self._proc_thread.single = True
@@ -699,7 +719,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self._proc_thread.start()
 
     def __proc_selfile(self):
-        """ Process all selected file. """
+        """Lock the form and dispatch the worker thread to sort every file currently checked in the input table."""
         self.__single = False
         self.__save = False
         self._proc_thread.single = False
@@ -708,7 +728,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self._proc_thread.start()
 
     def __proc_finalize(self):
-        """ Data process finalized connected function. """
+        """Re-enable the form, refresh the cluster viewer, and report the worker-thread outcome on the status bar."""
         self.ctrl_enable(True)
         if self.__save:
             if self._proc_thread.success:
@@ -759,7 +779,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                                                QtWidgets.QMessageBox.StandardButton.Yes)
 
     def update_spkcid_table(self):
-        """ Update single cell spike information table. """
+        """Rebuild the per-cell spike-statistics table for the active channel from the cached cluster results."""
         # Clear previous table
         self.spkCidTable.setRowCount(0)
         self._sel_cid = []  # RESET VAR
@@ -812,7 +832,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.spkCidTable.blockSignals(False)
 
     def update_avgcor_table(self):
-        """ Update averaged spike waveform correlation table. """
+        """Rebuild one tab per waveform with the pairwise cosine-amplitude correlation matrix of average waveforms."""
         self.avgCorTab.blockSignals(True)
         # Clear previous tab
         self.avgCorTab.clear()
@@ -855,11 +875,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.avgCorTab.blockSignals(False)
 
     def __sel_prb(self):
-        """ Select probe file button connected function. """
+        """Open a file picker for the probe geometry ``*.prb`` file and write the choice into the form."""
         path_selector(self.prbLine, mode='file', caption="Select Probe File", flt="Probe Geometry (*.prb)", parent=self)
 
     def __set_prb(self):
-        """ Set defined probe geometry file. """
+        """Validate the manually edited probe-geometry path, decode its JSON content, and toggle the preview button."""
         prb_file = self.prbLine.text()
         chk_path = os.path.isfile(prb_file)
         chk_type = prb_file.endswith('.prb')
@@ -886,19 +906,19 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.prbViewButton.setEnabled(False)
 
     def __view_prb(self):
-        """ View defined probe. """
+        """Open a Matplotlib window showing the loaded probe geometry."""
         name = os.path.splitext(os.path.basename(self.prbLine.text()))[0]
         fig, ax = plt.subplots(1, 1, num=name)
         plot_prb(self.prb, ax)
         fig.show()
 
     def __clst_sel(self):
-        """ Cluster selection list. """
+        """Sync the per-cluster ``keep`` flags from the table checkboxes back into :attr:`selc`."""
         for cb in self._sel_cid:
             self.selc[cb.id[1]][self._ch][cb.id[2]] = cb.isChecked()
 
     def __chk_merge(self):
-        """ Spike merge checkbox linked function, validate merge option. """
+        """Enable the merge button only when at least two clusters are checked, and warn on cross-waveform merges."""
         # Get list
         chk_lst = []
         for cb in self._mrg_cid:
@@ -912,7 +932,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                                           QtWidgets.QMessageBox.StandardButton.Yes)
 
     def __spk_merge(self):
-        """ Merge spikes. """
+        """Combine all checked clusters into the largest one and propagate the merge across multichannel groups."""
         # Get list
         new_clst = []
         len_lst = []
@@ -989,7 +1009,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self._cfv.update_cluster(self.clst)
 
     def __spk_corwfm(self):
-        """ Plot spike correlation waveforms. """
+        """Show correlograms and waveform overlays for up to two checked clusters in the spike-feature view."""
         # Get checked item
         for cb in self._cmp_cid:
             if cb.isChecked() and (cb not in self._cmp_lst):
@@ -1021,7 +1041,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self._cfv.spk_feat.plot_correlogram(px, py, tx, ty)
 
     def __set_cell_name(self, row, col):
-        """ Set name for detected cell. """
+        """Rename the selected cluster, deduplicate against existing names, and propagate to multichannel siblings."""
         # Check conflicts in defined name
         name = self.spkCidTable.item(row, col).text()
         w = self._sel_cid[row].id[1]
@@ -1050,7 +1070,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
     # File input table functions ------------------------------------------------------------------------------------- #
     def __set_data_file(self):
-        """ Add file(s) to file selection table. """
+        """Open a file picker, append the selection to the input table, and refresh the run arguments."""
         stat, self.lst_file, self._sel_file = table_loader(
             self.inputTable, self.lst_file, self._sel_file, mode='file', caption="Select Data File(s)",
             flt="Result Files (*.h5)", parent=self)
@@ -1060,7 +1080,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.actFileBox.addItems(item)
 
     def __set_data_path(self):
-        """ Add directory to file selection table. """
+        """Open a folder picker, append the selection to the input table, and refresh the run arguments."""
         stat, self.lst_file, self._sel_file = table_loader(
             self.inputTable, self.lst_file, self._sel_file, mode='path', caption="Select Data Folder",
             flt="Result Files (*.h5)", listdir=True, parent=self)
@@ -1070,12 +1090,12 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.actFileBox.addItems(item)
 
     def __set_selc(self, mode):
-        """ Selection quick access buttons attached function. """
+        """Apply a bulk selection mode (``'all'``, ``'non'``, ``'inv'``) to every input table row."""
         stat = selection_operator(self._sel_file, mode)
         self.statBar.showMessage(stat)
 
     def __set_highlight_row(self):
-        """ Set file input table highlight row. """
+        """Sync the input-table selection from the active-file combobox and refresh the spike-waveform combobox."""
         idx = self.actFileBox.currentIndex()
         if idx == 0:
             # Clear input table selection
@@ -1095,7 +1115,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.__load_spkwfm_box(clear=False)
 
     def __set_highlight_idx(self):
-        """ Set file input table highlight row. """
+        """Sync the active-file combobox from the input-table selection and refresh the spike-waveform combobox."""
         if self.inputTable.selectedItems():
             self.actFileBox.blockSignals(True)
             self.actFileBox.setCurrentIndex(self.inputTable.currentRow() + 1)
@@ -1114,10 +1134,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.actProcButton.setEnabled(False)
 
     def __load_spkwfm_box(self, clear=False):
-        """ Load active file information to [spkWfmBox].
+        """Reload the spike-waveform combobox from the active file's HDF5 metadata.
 
         Args:
-            clear (bool): Clear only flag
+            clear (bool): When :data:`True`, only clear the combobox without reloading (default: ``False``)
         """
         # Disable linked controls
         self.clsMethBox.setEnabled(False)
@@ -1160,10 +1180,10 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
     # Spike clustering arguments ------------------------------------------------------------------------------------- #
     def __set_arg_stat(self, stat=True):
-        """ Set clustering arguments defining status of current spike waveform.
+        """Update the colour and text of the clustering-argument status indicator.
 
         Args:
-            stat (bool): Status to set
+            stat (bool): :data:`True` when the arguments have been set, :data:`False` for defaults (default: ``True``)
         """
         if self.__arg_set == stat:
             return
@@ -1179,7 +1199,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
                 self.argStatus.setToolTip("Clustering arguments definition status\nCurrent: [Using Defaults]")
 
     def __set_spk_wfm(self):
-        """ Select spike waveform for setting arguments. """
+        """Pre-fill the clustering controls with the cached arguments of the selected spike waveform."""
         w = self.spkWfmBox.currentText()
         # Set arguments
         self.clsMethBox.blockSignals(True)
@@ -1207,21 +1227,21 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.__set_arg_stat(any([w in self.th, w in self.k, w in self.asp, w in self.psp, w in self.beta]))
 
     def __set_clst_meth(self):
-        """ Spike clustering method control connected function """
+        """Cache the clustering method for the active waveform and mark the argument set as customised."""
         w = self.spkWfmBox.currentText()
         self.meth[w] = self.clsMethBox.currentIndex()
         # Set indicator
         self.__set_arg_stat(True)
 
     def __set_det_th(self):
-        """ Set spike detection threshold. """
+        """Cache the spike-detection amplitude threshold for the active waveform and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.th[w] = self.detThSpinbox.value()
         # Set indicator
         self.__set_arg_stat(True)
 
     def __set_kval_sld(self):
-        """ Set k-value with slider. """
+        """Cache the slider-driven clustering k-value, mirror it to the spinbox, and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.k[w] = self.kValSlider.value() / 100
         # Link k-value spinbox
@@ -1232,7 +1252,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.__set_arg_stat(True)
 
     def __set_kval_spb(self):
-        """ Set k-value with spinbox. """
+        """Cache the spinbox-driven clustering k-value, mirror it to the slider, and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.k[w] = self.kValSpinbox.value()
         # Link k-value slider
@@ -1243,45 +1263,45 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.__set_arg_stat(True)
 
     def __set_ant_samp(self):
-        """ Set anterior sample number. """
+        """Cache the pre-peak (anterior) sample window for the active waveform and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.asp[w] = self.sampAntSpinbox.value()
         # Set indicator
         self.__set_arg_stat(True)
 
     def __set_pst_samp(self):
-        """ Set posterior sample number. """
+        """Cache the post-peak (posterior) sample window for the active waveform and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.psp[w] = self.sampPstSpinbox.value()
         # Set indicator
         self.__set_arg_stat(True)
 
     def __set_amp_beta(self):
-        """ Set amplitude beta factor . """
+        """Cache the cosine-amplitude beta factor for the active waveform and mark the argument set custom."""
         w = self.spkWfmBox.currentText()
         self.beta[w] = self.betaSpinbox.value()
         # Set indicator
         self.__set_arg_stat(True)
 
     def __set_max_dist(self):
-        """ Set maximum allowed distance for channels to record the same cell. """
+        """Cache the maximum inter-channel distance allowed when grouping clusters as the same multichannel cell."""
         self.max_cdt = self.chsThSpinbox.value()
 
     def __set_max_srng(self):
-        """ Set maximum allowed distance for channels to record the same cell. """
+        """Cache the temporal search range used when matching spikes across neighbouring channels."""
         self.max_spr = self.chkRngSpinbox.value()
 
     def __set_ovp_ratio(self):
-        """ Set maximum allowed distance for channels to record the same cell. """
+        """Cache the spike-overlap percentage threshold used to merge cross-channel detections of the same cell."""
         self.ovp_pct = self.chkRngSpinbox.value()
 
     def __set_min_cut(self):
-        """ Set minimum number of spike required as valid cell. """
+        """Cache the minimum spike count below which a cluster is not considered a valid cell."""
         self.min_cnt = self.minCutSpinbox.value()
 
     # Results visualization functions -------------------------------------------------------------------------------- #
     def __set_act_chn(self):
-        """ Set active channel. """
+        """Switch the cluster viewer and result tables to the newly selected channel."""
         self._ch = self.actChnBox.currentIndex()
         # Update plots
         self._cfv.set_channel(self._ch)
@@ -1293,7 +1313,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.signalScrollBar.blockSignals(False)
 
     def __set_act_cid(self):
-        """ Set active cells. """
+        """Forward the table-selected cluster indices to the feature viewer and switch to the matching waveform tab."""
         if self.spkCidTable.selectedItems():
             idx = list(set(index.row() for index in self.spkCidTable.selectedIndexes()))
             grp = set([self.__igrp[i][0] for i in idx])
@@ -1304,11 +1324,11 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self._cfv.set_act_clst(None)
 
     def __set_wfm_grp(self):
-        """ Set waveform group. """
+        """Forward the active correlation-tab index to the group-feature viewer."""
         self._cfv.grp_feat.set_spk_grp(self.avgCorTab.currentIndex())
 
     def __update_scroll_bar(self):
-        """ Scroll bar limits and step size updater. """
+        """Recompute the signal scrollbar's range and step size from the current recording duration."""
         if abs(self.t[-1] - 0.1) <= 0.005:
             self.signalScrollBar.setMaximum(0)
             self.signalScrollBar.setSingleStep(0)
@@ -1321,7 +1341,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
             self.signalScrollBar.setEnabled(True)
 
     def __signal_scroll(self):
-        """ Scroll bar motion trigger function. """
+        """Cache the new scrollbar timestamp and start a debounce timer that pushes it to the channel-feature plot."""
         self.__ch_t = self.signalScrollBar.value() / 1000
         # Execute timer
         if self.__timer_val != -1:
@@ -1329,7 +1349,7 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
         self.__timer_val = self.startTimer(10)
 
     def __signal_switch(self):
-        """ Waveform source switch function. """
+        """Toggle the channel-feature plot between the raw and the spike-waveform-derived signal."""
         if self._cfv is not None:
             text = self.sigTypButton.text()
             if text == 'Raw':
@@ -1341,15 +1361,20 @@ class ParusSrt(QtWidgets.QMainWindow, Ui_ParusSrtWindow):
 
 
 class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
+    """Result-viewer dialog for choosing which waveform channels to display.
+
+    Emits :attr:`sel_sig` with the user's selection so the parent result-viewer window can update the plot accordingly.
+    """
+
     sel_sig = QtCore.Signal(list)  # Channel selection signal
 
     def __init__(self, key, raw, parent=None):
-        """ Result waveform channel selection window.
+        """Build the channel-selection dialog and pre-populate it from the supplied keys.
 
         Args:
-            key (list[str]): Waveform channel name list
-            raw (list[bool]): Waveform raw type flag
-            parent: Parent window or widget
+            key (list[str]): Waveform channel names available for selection
+            raw (list[bool]): Per-channel raw-type flags (parallel with ``key``)
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(WfmSel, self).__init__(parent)
@@ -1379,11 +1404,11 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         self.window().setFixedHeight(self.layout().sizeHint().height())
 
     def emit_sig(self):
-        """ Force emit selection signal. """
+        """Re-emit the current channel selection (used to force-sync the parent window)."""
         self.__select_channel()
 
     def __select_channel(self):
-        """ Verify and send channel selection signal. """
+        """Validate the current selection and emit :attr:`sel_sig`; reverts to channel ``0`` when empty."""
         chk_wfm_lst = []  # INIT VAR
         # Get selection list by check box values
         for k in self.ch_btn:
@@ -1403,7 +1428,7 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
         self.sel_sig.emit(self.__sel_lst)
 
     def toggle_channel(self, idx):
-        """ Toggle selected channel. """
+        """Toggle the channel-selection checkbox at ``idx`` and re-emit the selection."""
         if idx < len(self.ch_btn):
             stat = self.ch_btn[idx].isChecked()
             self.ch_btn[idx].setChecked(not stat)
@@ -1414,15 +1439,21 @@ class WfmSel(QtWidgets.QMainWindow, Ui_WfmSelWindow):
 
 
 class PosAdd(QtWidgets.QMainWindow, Ui_PosAddWindow):
+    """Result-viewer dialog for adding a new neuron to the manual-labelling workflow.
+
+    Validates the requested name against the existing waveform/position keys and, on confirmation, emits
+    :attr:`key_sig` with the chosen waveform channel and the new neuron name.
+    """
+
     key_sig = QtCore.Signal(str, str)  # New neuron name signal
 
     def __init__(self, wfm_key, pos_key, parent=None):
-        """ Result adding neuron management window.
+        """Build the add-neuron dialog and pre-populate it from the existing keys.
 
         Args:
-            wfm_key (list[str]): Waveform channel name list
-            pos_key (list[str]): Position name list with associated waveform prefix
-            parent: Parent window or widget
+            wfm_key (list[str]): Existing waveform channel names
+            pos_key (list[str]): Existing position names (each prefixed with its waveform channel)
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(PosAdd, self).__init__(parent)
@@ -1445,7 +1476,7 @@ class PosAdd(QtWidgets.QMainWindow, Ui_PosAddWindow):
         self.cancelButton.clicked.connect(self.hide)
 
     def chk_cid_name(self):
-        """ Verify the legitimacy of input neuron name. """
+        """Validate the entered neuron name against the pattern and the existing keys, then update the badge."""
         wfm = self.wfmCombo.currentText()
         cid = self.cidLine.text()
         if bool(wfm) and bool(self.__pattern.match(cid)):
@@ -1467,27 +1498,34 @@ class PosAdd(QtWidgets.QMainWindow, Ui_PosAddWindow):
             self.__name = None
 
     def upd_pos_lst(self, pos_key):
-        """ Update position name list.
+        """Replace the cached position-name list used for duplicate detection.
 
         Args:
-            pos_key (list[str]): Position name list with associated waveform prefix
+            pos_key (list[str]): Existing position names (each prefixed with its waveform channel)
         """
         self.__pos_lst = pos_key.copy()
 
     def __add_send(self):
-        """ Send added neuron signal. """
+        """Append the new neuron to the cached list and emit :attr:`key_sig` with its parts."""
         self.__pos_lst.append(self.__name[0] + ' - ' + self.__name[1])
         self.key_sig.emit(self.__name[0], self.__name[1])
         self.hide()
 
 
 class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
+    """PARUS inference results viewing and validation window.
+
+    Hosts a :class:`ResPltLoader` canvas together with the spike-position correction tools so users can
+    review the model's output, manually add or remove peaks via :class:`WfmPosMarker`, and persist the
+    edits back to the result file.
+    """
+
     def __init__(self, file, parent=None):
-        """ Parus inference results viewing and validation window.
+        """Open the result file, build the canvas, and wire the editing widgets.
 
         Args:
-            file (str): Parus result HDF5 file
-            parent: Parent window or widget
+            file (str): Path to the PARUS result HDF5 file
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize main UI
         super(ParusRes, self).__init__(parent)
@@ -1569,7 +1607,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.actanoComboBox.keyPressEvent = self.__keybypass_actano
 
     class SaveResThread(QtCore.QThread):
-        """ Data process independent thread for file saving. """
+        """Background worker that writes the corrected spike-position results back to disk."""
         src = None  # Source file
         dst = None  # Destination file
         data = None
@@ -1598,13 +1636,13 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             fp.close()
 
     def timerEvent(self, event):
-        """ Timer event for canvas updating. """
+        """Redraw the result canvas once the debounce timer fires."""
         self.killTimer(self.__timer_val)
         self.__timer_val = -1
         self.__draw_canvas()
 
     def closeEvent(self, event):
-        """ Window closed cleaning and signaling. """
+        """Prompt before discarding unsaved manual corrections, then close the result canvas and helper dialogs."""
         if self.__safe_close:
             if self._result.check_correction():
                 reply = QtWidgets.QMessageBox.warning(
@@ -1621,7 +1659,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         event.accept()
 
     def keyPressEvent(self, event) -> bool:
-        """ Main window keyboard inputs. """
+        """Dispatch the result-window keyboard shortcuts: scroll, channel switch, waveform toggle, and cell editing."""
         # Plot navigation keys
         if (event.key() == QtCore.Qt.Key.Key_Left) or (event.key() == QtCore.Qt.Key.Key_A):
             if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
@@ -1725,7 +1763,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         return False
 
     def keyReleaseEvent(self, event):
-        """ Main window keyboard releasing action. """
+        """Apply the buffered ``Alt+digits`` channel selection once the ``Alt`` modifier is released."""
         if event.key() == QtCore.Qt.Key.Key_Alt:
             if self.__ch_ks:
                 ch_idx = int(self.__ch_ks)
@@ -1741,39 +1779,39 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             QtWidgets.QMainWindow.keyReleaseEvent(self, event)
 
     def __keybypass_xrange(self, event):
-        """ Override function for [xrangeSpinBox] keyPressEvent. """
+        """Route ``xrangeSpinBox`` key events through the main shortcut handler before the default spinbox behaviour."""
         if self.keyPressEvent(event):
             QtWidgets.QDoubleSpinBox.keyPressEvent(self.xrangeSpinBox, event)
 
     def __keybypass_ymin(self, event):
-        """ Override function for [yminSpinBox] keyPressEvent. """
+        """Route ``yminSpinBox`` key events through the main shortcut handler before the default spinbox behaviour."""
         if self.keyPressEvent(event):
             QtWidgets.QDoubleSpinBox.keyPressEvent(self.yminSpinBox, event)
 
     def __keybypass_ymax(self, event):
-        """ Override function for [ymaxSpinBox] keyPressEvent. """
+        """Route ``ymaxSpinBox`` key events through the main shortcut handler before the default spinbox behaviour."""
         if self.keyPressEvent(event):
             QtWidgets.QDoubleSpinBox.keyPressEvent(self.ymaxSpinBox, event)
 
     def __keybypass_actchn(self, event):
-        """ Override function for [actchnComboBox] keyPressEvent. """
+        """Route ``actchnComboBox`` key events through the main shortcut handler before default combobox handling."""
         if self.keyPressEvent(event):
             QtWidgets.QComboBox.keyPressEvent(self.actanoComboBox, event)
 
     def __keybypass_actano(self, event):
-        """ Override function for [actanoComboBox] keyPressEvent. """
+        """Route ``actanoComboBox`` key events through the main shortcut handler before default combobox handling."""
         if self.keyPressEvent(event):
             QtWidgets.QComboBox.keyPressEvent(self.actanoComboBox, event)
 
     def __draw_canvas(self):
-        """ Canvas updating function. """
+        """Push the latest pending time-window or amplitude-range update to the result canvas."""
         if self.__upd_time:
             self._result.set_time(self.__t_init, self.__t_stop)
         else:
             self._result.set_amp(self.yminSpinBox.value(), self.ymaxSpinBox.value())
 
     def __ctrl_mode_switch(self):
-        """ Switch between standard and advanced control mode. """
+        """Toggle between the standard spinbox controls and the Matplotlib navigation toolbar for advanced editing."""
         if self.toolbarBox.isChecked():
             # Disable standard controls
             self.xrangeSpinBox.setEnabled(False)
@@ -1798,7 +1836,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.ymaxSpinBox.setEnabled(True)
 
     def __update_scroll_bar(self):
-        """ Scroll bar limits and step size updater. """
+        """Recompute the result-window signal scrollbar's range and step size from the visible time window."""
         if abs(self.__t_all - self.xrangeSpinBox.value() / 1000) <= 0.005:
             self.signalScrollBar.setMaximum(0)
             self.signalScrollBar.setSingleStep(0)
@@ -1811,7 +1849,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.signalScrollBar.setEnabled(True)
 
     def __signal_scroll(self):
-        """ Scroll bar motion trigger function. """
+        """Cache the new scrollbar time bounds and start a debounce timer that pushes them to the result canvas."""
         self.__upd_time = True
         # Update time range
         self.__t_init = self.signalScrollBar.value() / 1000
@@ -1822,7 +1860,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.__timer_val = self.startTimer(5)
 
     def __update_plot_rng(self):
-        """ Plot time range update trigger function. """
+        """Recompute the visible time window from the X-range spinbox and resync the scrollbar through the timer."""
         self.__upd_time = True
         # Update time range
         self.__t_init = self._result.ax[0].get_xbound()[0]
@@ -1835,7 +1873,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.__timer_val = self.startTimer(500)
 
     def __update_plot_amp(self):
-        """ Plot signal amplitude update trigger function. """
+        """Schedule a debounced amplitude-range refresh of the result canvas."""
         self.__upd_time = False
         # Execute timer
         if self.__timer_val != -1:
@@ -1843,7 +1881,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.__timer_val = self.startTimer(50)
 
     def __set_act_chn(self):
-        """ Plot selected data channel. """
+        """Switch the plotted channel and rebuild the annotation combobox, amplitude limits, and active waveform."""
         # Reset active position
         self.actanoComboBox.setCurrentIndex(0)
         # Update plot
@@ -1865,7 +1903,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self._result.set_act_wfm(self.__act_wfm)
 
     def __set_act_pos(self):
-        """ Set active spike position to verify. """
+        """Activate the spike-position annotation chosen in the combobox so it can be inspected and edited."""
         key = self.actanoComboBox.currentText()
         if key:
             if key == 'NONE':
@@ -1876,7 +1914,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self._result.set_act_pos(self.__act_wfm, pos)
 
     def __act_pos_key_control(self, idx):
-        """ Set active spike position with function keys. """
+        """Jump the active-annotation combobox to ``idx`` (F1-F12 shortcuts), clamping to the available cell list."""
         tot = self.actanoComboBox.count()
         if tot > idx:
             self.actanoComboBox.setCurrentIndex(idx)
@@ -1887,10 +1925,10 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             self.actanoComboBox.setCurrentIndex(tot - 1)
 
     def __sel_wfm(self, sel):
-        """ Select waveform(s) to be visible.
+        """Apply a waveform-visibility selection from the channel dialog and resync the active position.
 
         Args:
-            sel (list[str]): Waveform name keys
+            sel (list[str]): Waveform keys that should remain visible
         """
         lnk_pos = self.lnkAnoBox.isChecked()
         pos_key = self._result.sel_wfm(sel, lnk_pos)
@@ -1914,37 +1952,38 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
                 self.actanoComboBox.setCurrentIndex(idx)
 
     def __call_add_win(self):
-        """ Activate cell adding window. """
+        """Show the add-neuron dialog after refreshing its name validation state."""
         self.__pos_add_win.chk_cid_name()
         self.__pos_add_win.show()
 
     def __add_pos(self, wfm, pos):
-        """  Add cell to the results.
+        """Add a new position row to the result canvas and the active-cell combobox.
 
         Args:
             wfm (str): Waveform channel name
-            pos (str): New neuron name
+            pos (str): New neuron (cell) name
         """
         self._result.add_pos(wfm, pos)
         self.actanoComboBox.addItem(wfm + ' - ' + pos)
         self.__pos_add_win.cidLine.clear()
 
     def __del_rcv_pos(self):
-        """ Remove or restore active cell. """
+        """Toggle the strikethrough marker on the active cell (clicking again restores it)."""
         key = self.actanoComboBox.currentText()
         if key and (key != 'NONE'):
             wfm, pos = key.split(' - ')
             self._result.del_rcv_pos(wfm, pos)
 
     def __toggle_lnk_ano(self):
-        """ Force re-emit waveform selection signal with linked annotation check box. """
+        """Re-apply the channel-selection dialog's signal after the link-annotation checkbox toggles."""
         self.__wfm_sel_win.emit_sig()
 
     def save_correction(self, new):
-        """ Save manual made corrections.
+        """Persist every pending manual correction to disk (overwrite source file or save as a new file).
 
         Args:
-            new (bool): Linked with [Save As], get file path with dialog
+            new (bool): When :data:`True`, prompt for a new destination via a save dialog ("Save As");
+                when :data:`False`, overwrite the source file after a confirmation prompt
         """
         if self._result.check_correction():
             # File dialog
@@ -1985,7 +2024,7 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
             QtWidgets.QMessageBox.warning(self, "Saving", "No changes made!\nFile not saved")
 
     def __save_finalize(self):
-        """ Save process finalize function. """
+        """Reopen the saved file, refresh the plot, and re-enable the save/discard buttons after the worker thread."""
         # Update GUI display
         self.file = self._save_proc.dst
         if self.file != self._save_proc.src:
@@ -2005,12 +2044,12 @@ class ParusRes(QtWidgets.QMainWindow, Ui_ParusResWindow):
         self.cxSaveButton.setEnabled(True)
 
     def __discard_exit(self):
-        """ Discard all changes and exit. """
+        """Bypass the unsaved-corrections prompt and close the window immediately."""
         self.__safe_close = False
         self.close()
 
     def help_window(self):
-        """ Keyboard control help info. """
+        """Show a message box listing every keyboard and mouse shortcut understood by the result-correction window."""
         QtWidgets.QMessageBox.information(
             self, "Keyboard and Mouse Inputs",
             "[Arrow Left], [A], [Arrow Right] & [D]:    Navigate signal\n        + [Control Modifier]:    Move slower\n"

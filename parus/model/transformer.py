@@ -1,4 +1,10 @@
-# Transformer model module
+# -*- coding: utf-8 -*-
+
+"""Transformer model module
+
+Encoder-only Transformer model used by PARUS for spike detection, together with its positional encoding
+and sparse-context input loader.
+"""
 
 import numpy as np
 import torch
@@ -10,21 +16,31 @@ __name__ = 'parus.model.transformer'
 
 __all__ = ['EncoderTransformer']
 """
-Class list:
-  PositionalEncoding(embedding_dim, dropout, max_len=300): Transformer positional encoding.
-  SparseContextLoader(emb_dim, ant_samp, n_samp, sel_meth='stp', gap=1): Signal data context loader.
-  EncoderTransformer(input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward, output_channels): Transformer.
+Public class list:
+
+- EncoderTransformer(input_dim, context_dim, d_model, ...) : Encoder-only Transformer for spike detection
+
+Internal classes:
+
+- PositionalEncoding(embedding_dim, dropout, max_len)      : Sinusoidal positional encoding for the encoder
+- SparseContextLoader(emb_dim, ant_samp, n_samp, ...)      : Sparse-context patch builder for the encoder input
 """
 
 
 class PositionalEncoding(nn.Module):
+    """Sinusoidal positional encoding used by :class:`EncoderTransformer`.
+
+    Implements the standard ``sin``/``cos`` positional encoding with a fixed maximum length and a learnable
+    dropout layer. The encoding is registered as a buffer so it survives ``state_dict`` round-trips.
+    """
+
     def __init__(self, embedding_dim, dropout, max_len=300):
-        """ Transformer positional encoding.
+        """Build the positional encoding buffer.
 
         Args:
-            embedding_dim (int): Embedding element length
-            dropout (float): Dropout rate
-            max_len (int): Sequence maximum length (default: 300)
+            embedding_dim (int): Length of the embedding dimension along which the sinusoids are interleaved
+            dropout (float): Dropout rate applied after the positional encoding is added to the input
+            max_len (int): Maximum sequence length supported by the encoding (default: ``300``)
         """
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
@@ -43,20 +59,29 @@ class PositionalEncoding(nn.Module):
 
 
 class SparseContextLoader(nn.Module):
+    """Build per-position context patches by sampling flanking elements at variable gaps.
+
+    For every position in the input sequence, the loader gathers ``emb_dim`` flanking samples at offsets
+    determined by ``sel_meth`` and ``gap``. The resulting patches form the context fed into the Transformer encoder.
+    """
+
     def __init__(self, emb_dim, ant_samp, n_samp, sel_meth='stp', gap=1):
-        """ Signal data context loader.
+        """Pre-build the flanking-sample index map and register the module.
 
         Args:
-            emb_dim (int): Embedding element length
-            ant_samp (int): Anterior element length
-            n_samp (int): Total number of samples per patch
-            sel_meth (str): Flanking elements indices sampling method (default: 'stp')
+            emb_dim (int): Embedding context length (number of flanking samples per position)
+            ant_samp (int): Number of flanking samples drawn from the anterior side of the position
+            n_samp (int): Total number of samples per input sequence (used to pre-build the index map)
+            sel_meth (str): Flanking-sample sampling method; one of ``{'stp', 'lin', 'geo'}`` (default: ``'stp'``)
 
-                - 'stp': Constant gap sampling
-                - 'lin': Linear increased gap sampling
-                - 'geo': Geometrical increased gap sampling
+                - ``'stp'``: constant gap ``gap``
+                - ``'lin'``: linearly increasing gap up to ``gap``
+                - ``'geo'``: geometrically increasing gap up to ``gap``
 
-            gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for sampling (default: 1)
+            gap (int | float): Constant gap (for ``'stp'``) or maximum gap (for ``'lin'``/``'geo'``) (default: ``1``)
+
+        Warns:
+            SyntaxWarning: Emitted when ``sel_meth`` is unrecognised; ``'stp'`` is used as a fallback
         """
         self.emb_dim = emb_dim
         self.ant = min(ant_samp, emb_dim - 1)  # Avoid index overflow
@@ -71,19 +96,19 @@ class SparseContextLoader(nn.Module):
         super().__init__()
 
     def get_idx(self, meth='stp', gap=1):
-        """ Return selected indices based on chosen method.
+        """Return the relative flanking-sample indices for the chosen sampling method.
 
         Args:
-            meth (str): Flanking elements indices sampling method (default: 'stp')
+            meth (str): Flanking-sample sampling method; one of ``{'stp', 'lin', 'geo'}`` (default: ``'stp'``)
 
-                - 'stp': Constant gap sampling
-                - 'lin': Linear increased gap sampling
-                - 'geo': Geometrical increased gap sampling
+                - ``'stp'``: constant gap ``gap``
+                - ``'lin'``: linearly increasing gap up to ``gap``
+                - ``'geo'``: geometrically increasing gap up to ``gap``
 
-            gap (int | float): Constant (for 'stp') or maximum (for 'lin' and 'geo') gap for sampling (default: 1)
+            gap (int | float): Constant gap (for ``'stp'``) or maximum gap (for ``'lin'``/``'geo'``) (default: ``1``)
 
         Returns:
-            np.ndarray: {1D-int} Relative index for the target position
+            np.ndarray: {1D-int} Relative offsets, ordered for Transformer context loading
         """
         # Get space based on method, minimum distance is forced to 1
         if meth == 'stp':
@@ -112,17 +137,25 @@ class SparseContextLoader(nn.Module):
 
 
 class EncoderTransformer(nn.Module):
+    """Encoder-only Transformer for spike detection.
+
+    Wraps a stack of standard :class:`~torch.nn.TransformerEncoderLayer` blocks behind a sparse-context
+    input loader (``SparseContextLoader``) and a sinusoidal positional encoding (``PositionalEncoding``).
+    The input is amplitude-normalised before the encoder and de-normalised on the way out so the model
+    handles arbitrary recording scales.
+    """
+
     def __init__(self, input_dim, context_dim, d_model, nhead, num_layers, dim_feedforward, output_channels):
-        """ Encoder-only transformer.
+        """Build the encoder stack, context loader, positional encoding, and linear heads.
 
         Args:
-            input_dim (int): Number of samples per input
-            context_dim (int): Embedding context element length
-            d_model (int): Number of expected features in the input
-            nhead (int): Number of heads in the multi-head-attention models
-            num_layers (int): Number of sub-encoder-layers in the encoder
-            dim_feedforward (int): Dimension of the feedforward network model
-            output_channels (int): Number of output features
+            input_dim (int): Number of samples per input sequence
+            context_dim (int): Embedding context length per position
+            d_model (int): Number of expected features in the input of each encoder layer
+            nhead (int): Number of attention heads in each encoder layer
+            num_layers (int): Number of encoder layers
+            dim_feedforward (int): Hidden dimension of the feed-forward network in each encoder layer
+            output_channels (int): Number of output channels produced by the final linear head
         """
         super(EncoderTransformer, self).__init__()
         self.input_linear = nn.Linear(context_dim, d_model)
@@ -132,11 +165,8 @@ class EncoderTransformer(nn.Module):
             self.transformer_encoder_layer, num_layers)
         # Output size is same as input size
         self.output_linear = nn.Linear(d_model, context_dim)
-        # self.context_loader = ContextLoader(
-        #     emb_dim=context_dim, ant_samp=context_dim // 2)
         self.context_loader = SparseContextLoader(
-            emb_dim=context_dim, ant_samp=context_dim // 4, n_samp=input_dim, sel_meth='lin', gap=4
-        )
+            emb_dim=context_dim, ant_samp=context_dim // 4, n_samp=input_dim, sel_meth='lin', gap=4)
         self.extra_linear1 = nn.Linear(context_dim, 2*context_dim)
         self.extra_linear2 = nn.Linear(2*context_dim, context_dim)
         self.context_linear = nn.Linear(context_dim, output_channels)

@@ -1,4 +1,11 @@
-# PARUS model training SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS model training script
+
+Train a PARUS signal-separation model on a simulated dataset, periodically validate it, and run a final testing pass.
+Hyperparameters can be overridden one-by-one on the command line; unspecified ones fall
+back to the project's persisted defaults.
+"""
 
 import os
 import time
@@ -14,12 +21,12 @@ from ..util import make_outdir
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusModTrn", description="Train Parus signal model",
-                                 epilog="Train signal separation model for spike detection")
-parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.5")
+parser = argparse.ArgumentParser(prog="ParusModTrn", description="Train PARUS signal model",
+                                 epilog="Train signal-separation model for spike detection")
+parser.add_argument('-v', '--version', action='version', version="Parus - Train signal model: v2.6")
 # Path definition (positional)
-parser.add_argument('art_dir', type=str, help="[%(type)s] Path to store model training artifacts")
-parser.add_argument('dat_dir', type=str, help="[%(type)s] Path to training datasets")
+parser.add_argument('art_dir', type=str, help="[%(type)s] Output directory for training artifacts")
+parser.add_argument('dat_dir', type=str, help="[%(type)s] Directory containing the training datasets")
 # Dataset hyperparameters (optional)
 pg_d = parser.add_argument_group("Dataset arguments")
 pg_d.add_argument('-dtn', '--smptrn', dest='n_trn_samples', type=int, default=argparse.SUPPRESS, metavar="[int]",
@@ -29,48 +36,47 @@ pg_d.add_argument('-dvl', '--smpvld', dest='n_vld_samples', type=int, default=ar
 pg_d.add_argument('-dts', '--smptst', dest='n_tst_samples', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Number of samples for testing")
 pg_d.add_argument('-dwk', '--numwkr', dest='n_worker', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of worker threads for dataset loading")
+                  help="Worker thread count for dataset loading")
 # Model definitions (optional)
 pg_m = parser.add_argument_group("Model definitions")
 pg_m.add_argument('-mid', '--modstr', dest='model_name', type=str, default=argparse.SUPPRESS, metavar="[str]",
                   help="Trained model name")
 pg_m.add_argument('-mls', '--lenseq', dest='sequence_length', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Model per sequence length")
+                  help="Model sequence length")
 pg_m.add_argument('-mdc', '--dimctx', dest='d_context', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of elements in context loader")
+                  help="Context loader element count")
 pg_m.add_argument('-mdm', '--dimmod', dest='d_model', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of expected features in the model input")
+                  help="Expected input feature count")
 pg_m.add_argument('-mnh', '--nummhd', dest='n_head', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of heads in the multi-head attention model")
+                  help="Multi-head attention head count")
 pg_m.add_argument('-mnl', '--numlyr', dest='n_layers', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of sub-encoder-layers in the encoder")
+                  help="Sub-encoder layer count")
 pg_m.add_argument('-mdf', '--dimffd', dest='d_feedforward', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Dimension of the feedforward network model")
+                  help="Feed-forward network dimension")
 # Training settings (optional)
 pg_t = parser.add_argument_group("Training settings")
 pg_t.add_argument('-tep', '--numeps', dest='total_epoch', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Total number of epoches for training")
+                  help="Total training epochs")
 pg_t.add_argument('-tbs', '--szsbat', dest='batch_size', type=int, default=argparse.SUPPRESS, metavar="[int]",
                   help="Training batch size")
 pg_t.add_argument('-tev', '--stpevl', dest='steps_per_eval', type=int, default=argparse.SUPPRESS, metavar="[int]",
-                  help="Number of training steps between each model validation")
+                  help="Steps between validations")
 pg_t.add_argument('-tlr', '--lrbase', dest='base_learning_rate', type=float, default=argparse.SUPPRESS,
-                  metavar="[float]", help="Base rate for dynamic learning rate")
+                  metavar="[float]", help="Base learning rate")
 pg_t.add_argument('-tlf', '--lrfact', dest='learning_rate_factor', type=float, default=argparse.SUPPRESS,
-                  metavar="[float]", help="Learning rate factor for dynamic learning rate")
+                  metavar="[float]", help="Dynamic learning-rate factor")
 pg_t.add_argument('-tlw', '--lrwarm', dest='learning_rate_warmup', type=int, default=argparse.SUPPRESS,
-                  metavar="[int]", help="Warmup steps for applying dynamic learning rate")
+                  metavar="[int]", help="Learning-rate warm-up steps")
 pg_t.add_argument('-tpc', '--prmclp', dest='model_param_clip', type=float, default=argparse.SUPPRESS,
-                  metavar="[float]", help="Clipping value to avoid exploding gradient")
+                  metavar="[float]", help="Gradient-norm clip value")
 pg_t.add_argument('-tls', '--lossfn', dest='loss_function', type=str, choices=['l1', 'mse', 'bce'],
                   default=argparse.SUPPRESS, metavar="{mse, l1, bce}",
-                  help="Loss function: 'l1' = Mean Absolute Error, 'mse' = Mean Squared Error, "
-                       "'bce' = Binary Cross Entropy with Sigmoid")
+                  help="Loss function (l1: MAE, mse: MSE, bce: BCE with sigmoid)")
 # Extra options
 parser.add_argument('-pth', '--pkdths', dest='pk_th', type=float, default=-50.0, metavar="[float]",
-                    help="Post-inference spike peak detection threshold (default: %(default)s)")
+                    help="Post-inference peak threshold (default: %(default)s)")
 parser.add_argument('-t', '--hint', dest='hint', type=str, choices=['text', 'disp', 'save', 'none'], default='text',
-                    metavar="{text, disp, save, none}", help="Validation result hinting method (default: %(default)s)")
+                    metavar="{text, disp, save, none}", help="Validation snapshot mode (default: %(default)s)")
 parser.add_argument('-d', '--debug', dest='debug', default=False, action="store_true", help="Run with debug settings")
 # Parse inputs
 args = parser.parse_args()
@@ -78,7 +84,7 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
-    print("Parus model training script initialized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
+    print("PARUS model training script initialized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
     dat_name = os.path.basename(args.dat_dir.rstrip('/\\'))
 
     # Load and update hyperparameters
@@ -162,4 +168,4 @@ if __name__ == '__main__':
     # Close test dataset
     tst_datagen.dataset.close()
 
-    print("Parus model training finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))
+    print("PARUS model training finalized at " + time.strftime('%Y-%m-%d %H:%M:%S'))

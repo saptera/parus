@@ -1,4 +1,10 @@
-# Model training GUI module
+# -*- coding: utf-8 -*-
+
+"""Model training GUI module
+
+Qt main windows for the PARUS training pipeline: archival-signal builder, simulated dataset generator,
+and model trainer.
+"""
 
 import os
 import re
@@ -23,21 +29,24 @@ from .elm_plot import ArcPreviewPlot
 
 __all__ = ['ArcPrv', 'ParusArc', 'ParusGen', 'ParusTrn']
 """
-Class list:
-  ArcPrv(data, parent=None): Archival signal data preview dialog.
-  ParusArc(parent=None): Parus archival file creation window.
-  ParusGen(parent=None): Parus simulated signal generation window.
-  ParusTrn(parent=None): Parus model training window.
+Public class list:
+
+- ArcPrv(data, parent)    : Archival signal data preview dialog
+- ParusArc(parent)        : PARUS archival file creation window
+- ParusGen(parent)        : PARUS simulated signal generation window
+- ParusTrn(parent)        : PARUS model training window
 """
 
 
 class ArcPrv(QtWidgets.QDialog):
+    """Archival signal preview dialog wrapping an :class:`ArcPreviewPlot` canvas with a Matplotlib toolbar."""
+
     def __init__(self, data, parent=None):
-        """ Archival signal data preview dialog.
+        """Build the dialog and embed the preview canvas.
 
         Args:
-            data (dict): Archival signal data, refer to [parus.fio.fdata -> ARC data structure definition]
-            parent (QtCore.QObject | None): Parent Qt object
+            data (dict): Archival signal data; see the ARC data structure definition in :mod:`parus.fio.fdata`
+            parent (QtCore.QObject | None): Parent Qt object (default: ``None``)
         """
         # Initialize GUI
         super().__init__(parent)
@@ -59,16 +68,23 @@ class ArcPrv(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def closeEvent(self, event):
-        """ Close clean-up. """
+        """Close the embedded preview canvas before letting Qt destroy the dialog."""
         self._arcplot.close()
 
 
 class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
+    """PARUS archival file creation window.
+
+    Loads a raw recording, lets the user mark a single spike and its refined range, collects metadata
+    (organism, region, neuron, system, probe, datetime), and writes the result as a ``*.arc`` archival
+    signal file via :func:`parus.fio.fdata.arc_write`.
+    """
+
     def __init__(self, parent=None):
-        """ Parus archival file creation window.
+        """Initialise the archival builder window and wire its widgets.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusArc, self).__init__(parent)
@@ -144,7 +160,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.__load_params()
 
     def closeEvent(self, event):
-        """ Window closed cleaning. """
+        """Close the active preview window (if any) before letting Qt destroy the main window."""
         # Close process informing dialog
         self.__save_msg.allow_close = True
         self.__save_msg.close()
@@ -156,10 +172,10 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
             pass
 
     def ctrl_enable(self, enable=True):
-        """ Set enable status of controls.
+        """Enable or disable every input control (used to lock the form while a subprocess runs).
 
         Args:
-            enable (bool): Enable status of controls (default: True)
+            enable (bool): :data:`True` re-enables the controls, :data:`False` locks them (default: ``True``)
         """
         # Source data IO controls
         self.srcFilePath.setEnabled(enable)
@@ -202,10 +218,10 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         save = False  # Save mode flag
 
         def __init__(self, parent):
-            """ Data process independent thread.
+            """Initialise the worker thread bound to a :class:`ParusArc` window.
 
             Args:
-                parent (ParusArc): Parus archival signal creation window caller
+                parent (ParusArc): Archival signal creation window that owns this worker
             """
             super(ParusArc._DataProcThread, self).__init__(parent)
             self.parent = parent
@@ -262,7 +278,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
                     self.file_saved = arc_write(self.parent.out_file, data)
 
     def __load_src_info(self, file):
-        """ Load current source file information. """
+        """Inspect the selected source file and populate the channel/waveform/spike comboboxes from it."""
         # Block signals
         self.datChnCombo.blockSignals(True)
         self.datWfmCombo.blockSignals(True)
@@ -328,13 +344,13 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.__set_meta_dict()
 
     def __preview(self):
-        """ Preview archived signal results. """
+        """Open an :class:`ArcPrv` dialog showing the archived signal preview."""
         self.__save_msg.show()
         self._proc_thread.save = False
         self._proc_thread.start()
 
     def __save(self):
-        """ Save archived signal to file. """
+        """Spawn the data-processing thread to write the archival ``*.arc`` (or ``*.noi``) file to disk."""
         # Disable controls
         self.__prw_ok = self.previewButton.isEnabled()
         self.ctrl_enable(False)
@@ -346,7 +362,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self._proc_thread.start()
 
     def __proc_finalize(self):
-        """ Process finished linked function. """
+        """Re-enable the form, dismiss the busy dialog, and report the save outcome on the status bar."""
         self.__save_msg.hide()
         # Save finalize
         if self._proc_thread.save:
@@ -369,7 +385,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
 
     # Control element related functions ------------------------------------------------------------------------------ #
     def __load_params(self):
-        """ Load GUI settings from previous execution. """
+        """Pre-fill the form from the last successful run's saved parameters (if any)."""
         par_json = os.path.join(pkg_data, '_arc_params.json')
         if os.path.isfile(par_json):
             # Load previous settings
@@ -405,7 +421,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
             self.prbNoteLine.setText(pars['probe_note'])
 
     def __save_params(self):
-        """ Save GUI settings of current execution. """
+        """Persist the current form values so the next run can pre-fill the same configuration."""
         pars = {}  # INIT VAR
         # Read source data IO controls
         pars['anterior_samples'] = self.smpAntSpinbox.value()
@@ -440,19 +456,19 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
             json.dump(pars, fp, indent=2)
 
     def __set_src_file(self):
-        """ Set source file path. """
+        """Validate the manually edited source file path and reload the dependent comboboxes."""
         file = self.srcFilePath.text()
         self.__load_src_info(file)
 
     def __sel_src_file(self):
-        """ Select source file path button connection. """
+        """Open a file picker for the source recording and write the selection to the form."""
         file = path_selector(self.srcFilePath, mode='file', caption="Select Source File",
                              flt="Signal Files (*.hdf *.h5 *.hdf5 *.he5)", parent=self)
         if file is not None:
             self.__load_src_info(file)
 
     def __set_dst_path(self):
-        """ Set output file path. """
+        """Validate the manually edited destination path and toggle the Save button accordingly."""
         path = self.dstDirPath.text()
         if os.path.isdir(path):
             self.__dst_ok = True
@@ -464,11 +480,11 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.__set_meta_dict()
 
     def __sel_dst_path(self):
-        """ Select output file path button connection. """
+        """Open a folder picker for the output directory and write the selection to the form."""
         path_selector(self.dstDirPath, mode='path', caption="Select Output Folder", parent=self)
 
     def __set_data_chn(self):
-        """ Set current source data channel. """
+        """React to a channel-combobox change by reloading the source signal for the new channel."""
         idx = self.datChnCombo.currentIndex()
         self.prbChnSpinbox.setValue(idx)
         # Block signals
@@ -487,7 +503,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.datSpkCombo.blockSignals(False)
 
     def __set_data_wfm(self):
-        """ Set current source data waveform. """
+        """React to a waveform-combobox change by refreshing the dependent spike-type combobox."""
         # Set control enable
         flag = self.datWfmCombo.currentIndex() != 0
         self.smpAntSpinbox.setEnabled(flag)
@@ -511,7 +527,7 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
         self.__set_meta_dict()
 
     def __set_meta_dict(self):
-        """ Set archival signal metadata. """
+        """Build (and validate) the archival metadata dictionary from the current form values."""
         # Get value
         ogn_dat = {
             'gn': self.ognGenLine.text(),
@@ -583,11 +599,18 @@ class ParusArc(QtWidgets.QMainWindow, Ui_ParusArcWindow):
 
 
 class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
+    """PARUS simulated signal generation window.
+
+    Drives the simulated dataset pipeline: collects archival signals, noise samples, and per-group
+    parameters, launches :mod:`parus.scripts.gen_sim` (and optionally :mod:`parus.scripts.gen_sta`) as a
+    subprocess, and streams the console output back to the GUI.
+    """
+
     def __init__(self, parent=None):
-        """ Parus simulated signal generation window.
+        """Initialise the generator window and wire its widgets.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize main UI
         super(ParusGen, self).__init__(parent)
@@ -703,21 +726,21 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         self.statBar.showMessage("System standby")
 
     def timerEvent(self, event):
-        """ Timer event for controls with delayed updating. """
+        """Tick callback for spinboxes that defer their effect until the user stops typing."""
         self.killTimer(self.__timer_val)
         self.__timer_val = -1
         self.spkGrpRate.setText(' '.join(self.grp_rat[1:]))
 
     def closeEvent(self, event):
-        """ Clean-ups upon close. """
+        """Terminate any running subprocesses before letting Qt close the window."""
         self._sim_proc.terminate()
         self._sta_proc.terminate()
 
     def gen_ctrl_enable(self, enable=True):
-        """ Set enable status of all generation related controls.
+        """Enable or disable every generation-related input control.
 
         Args:
-            enable (bool): Enable status of controls (default: True)
+            enable (bool): :data:`True` re-enables the controls, :data:`False` locks them (default: ``True``)
         """
         # Reset argument button
         self.clrSetButton.setEnabled(enable)
@@ -759,7 +782,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
 
     # Process related functions -------------------------------------------------------------------------------------- #
     def set_gensim_args(self):
-        """ Set arguments for simulated signal generation. """
+        """Recompute the simulated-signal subprocess arguments from the form state and toggle the run button."""
         if (self.arc_dir is None) or (self.noi_dir is None) or (self.out_dir is None) or (self.sampCnt.value() <= 0):
             self.genSimButton.setEnabled(False)
             self._sim_proc.reset_arguments()
@@ -783,7 +806,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.genSimButton.setEnabled(True)
 
     def __switch_gen_sim(self):
-        """ ParusGenSim button connected function. """
+        """Restyle the start/stop button in response to the simulated-signal subprocess running state."""
         if self.__sim_run:
             self.genSimButton.setStyleSheet('QPushButton {color: red}')
         else:
@@ -793,14 +816,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
                 self.genSimButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
     def __gen_sim_start(self):
-        """ ParusGenSim process STARTED connected function. """
+        """Lock the form and update the status bar when the simulated-signal subprocess starts."""
         self.__sim_run = True
         self.__switch_gen_sim()
         self.gen_ctrl_enable(False)
         self.statBar.showMessage("Simulated signal generation started")
 
     def __gen_sim_finish(self):
-        """ ParusGenSim process FINISHED connected function. """
+        """Unlock the form and update the status bar after the simulated-signal subprocess ends."""
         # Reset button
         self.__sim_run = False
         self.gen_ctrl_enable(True)
@@ -819,7 +842,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.statBar.showMessage("Simulated signal generation terminated")
 
     def __switch_gen_sta(self):
-        """ ParusGenSta button connected function. """
+        """Restyle the view/close button in response to the statistics-viewer subprocess running state."""
         if self.__sta_run:
             self.genStaButton.setStyleSheet('QPushButton {color: red}')
         else:
@@ -829,23 +852,23 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
                 self.genStaButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
     def __gen_sta_start(self):
-        """ ParusGenSta process STARTED connected function. """
+        """Update the button text and status bar when the statistics-viewer subprocess starts."""
         self.__sta_run = True
         self.__switch_gen_sta()
         self.statBar.showMessage("Viewing generation statistics")
 
     def __gen_sta_finish(self):
-        """ ParusGenSta process FINISHED connected function. """
+        """Update the button text and status bar after the statistics-viewer subprocess ends."""
         self.__sta_run = False
         self.__switch_gen_sta()
         self.statBar.showMessage("Generation statistics file closed")
 
     # Control element related functions ------------------------------------------------------------------------------ #
     def reset_all(self, notify=True):
-        """  Reset all controls to defaults.
+        """Reset every form control to its default value.
 
         Args:
-            notify (bool): Console/Statusbar notification flag (default: True)
+            notify (bool): When :data:`True`, post a status-bar/console notification on completion (default: ``True``)
         """
         self.arc_dir = self.sigPath.clear()
         self.noi_dir = self.noiPath.clear()
@@ -887,7 +910,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.statBar.showMessage("All parameters reset")
 
     def __load_params(self):
-        """ Load GUI settings from previous execution. """
+        """Pre-fill the form from the last successful run's saved parameters (if any)."""
         par_json = os.path.join(pkg_data, '_gen_params.json')
         if os.path.isfile(par_json):
             # Load previous settings
@@ -926,7 +949,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             self.reset_all(notify=False)
 
     def __save_params(self):
-        """ Save GUI settings of current execution. """
+        """Persist the current form values so the next run can pre-fill the same configuration."""
         pars = {}  # INIT VAR
         # Read current controls
         pars['archival_signal_folder'] = self.sigPath.text()
@@ -958,14 +981,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
             json.dump(pars, fp, indent=2)
 
     def __sel_sig_dir(self):
-        """ Select archived signal file (*.arc) folder button connection. """
+        """Open a folder picker for the archival signal source (``*.arc``) and write it to the form."""
         path = path_selector(self.sigPath, mode='path', caption="Select Archived Signal Folder", parent=self)
         self.arc_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
 
     def __set_sig_dir(self):
-        """ Select archived signal file (*.arc) folder line edit connection. """
+        """Validate the manually edited archival signal folder path and refresh the run arguments."""
         path = self.sigPath.text()
         if os.path.isdir(path):
             self.arc_dir = [path]
@@ -982,14 +1005,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.arc_dir
 
     def __sel_noi_dir(self):
-        """ Select archived noise file (*.noi) folder button connection. """
+        """Open a folder picker for the noise sample source (``*.noi``) and write it to the form."""
         path = path_selector(self.noiPath, mode='path', caption="Select Archived Noise Folder", parent=self)
         self.noi_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
 
     def __set_noi_dir(self):
-        """ Select archived noise file (*.noi) folder line edit connection. """
+        """Validate the manually edited noise sample folder path and refresh the run arguments."""
         path = self.noiPath.text()
         if os.path.isdir(path):
             self.noi_dir = [path]
@@ -1006,14 +1029,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.noi_dir
 
     def __sel_out_dir(self):
-        """ Select generation output folder button connection. """
+        """Open a folder picker for the generation output and write it to the form."""
         path = path_selector(self.outPath, mode='path', caption="Select Output Folder", parent=self)
         self.out_dir = None if path is None else [path]
         # Update process arguments
         self.set_gensim_args()
 
     def __set_out_dir(self):
-        """ Select generation output folder line edit connection. """
+        """Validate the manually edited generation output path and refresh the run arguments."""
         path = self.outPath.text()
         if os.path.isdir(path):
             self.out_dir = [path]
@@ -1030,42 +1053,42 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.out_dir
 
     def __set_num_sim(self):
-        """ Set number of simulated data to be generated. """
+        """Push the latest sample count to the simulated-signal subprocess arguments."""
         self.num_sim = [str(self.sampCnt.value())]
         # Update process arguments
         self.set_gensim_args()
         return self.num_sim
 
     def __set_freq(self):
-        """" Set sampling frequency of the system. """
+        """Push the latest sampling frequency to the simulated-signal subprocess arguments."""
         self.freq = ['-f', str(self.sampFreq.value())]
         # Update process arguments
         self.set_gensim_args()
         return self.freq
 
     def __set_tot_len(self):
-        """ Set total length of final signal sample. """
+        """Push the latest per-sample length to the simulated-signal subprocess arguments."""
         self.tot_len = ['-l', str(round(self.sampLen.value() * self.sampFreq.value() / 1000))]
         # Update process arguments
         self.set_gensim_args()
         return self.tot_len
 
     def __set_min_gap(self):
-        """ Set minimum index gap of signal events. """
+        """Push the latest minimum signal-event gap to the simulated-signal subprocess arguments."""
         self.min_gap = ['-ig', str(round(self.sampFreq.value() / self.minSpkFreq.value() / self.chnCellCnt.value()))]
         # Update process arguments
         self.set_gensim_args()
         return self.min_gap
 
     def __set_max_gap(self):
-        """ Set minimum index gap of signal events. """
+        """Push the latest maximum signal-event gap to the simulated-signal subprocess arguments."""
         self.max_gap = ['-xg', str(round(self.sampFreq.value() / self.maxSpkFreq.value()))]
         # Update process arguments
         self.set_gensim_args()
         return self.max_gap
 
     def __set_sig_grp(self):
-        """ Set signal grouping method. """
+        """Push the latest signal grouping method to the simulated-signal subprocess arguments."""
         if self.spkGrpMthd.currentIndex() == 0:
             self.sig_grp = None
         else:
@@ -1075,7 +1098,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.sig_grp
 
     def __set_grp_rat(self):
-        """ Set occurrence ratio of groups. """
+        """Parse the per-group occurrence ratios from the line edit and push them to the run arguments."""
         text = self.spkGrpRate.text()
         clr = re.sub(r'[^\d.\s\-]', "", text)
         num = re.findall(r'-?\d+(?:\.\d+)?', clr)
@@ -1089,14 +1112,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.grp_rat
 
     def __set_no_rat(self):
-        """ Set occurrence ratio of noise only data. """
+        """Push the latest noise-only sample ratio to the simulated-signal subprocess arguments."""
         self.no_rat = ['-no', str(self.noiOnlyRate.value() / 100)]
         # Update process arguments
         self.set_gensim_args()
         return self.no_rat
 
     def __set_sig_fac(self):
-        """ Set signal amplitude multiplication factor. """
+        """Push the latest signal-amplitude multiplier range to the simulated-signal subprocess arguments."""
         self.sig_fac = ['-sf', str(self.sigMultMin.value()), str(self.sigMultMax.value())]
         self.sigMultMin.setMaximum(self.sigMultMax.value() - 0.1)
         self.sigMultMax.setMinimum(self.sigMultMin.value() + 0.1)
@@ -1105,7 +1128,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.sig_fac
 
     def __set_noi_fac(self):
-        """ Set noise amplitude multiplication factor. """
+        """Push the latest noise-amplitude multiplier range to the simulated-signal subprocess arguments."""
         self.noi_fac = ['-nf', str(self.noiMultMin.value()), str(self.noiMultMax.value())]
         self.noiMultMin.setMaximum(self.noiMultMax.value() - 0.1)
         self.noiMultMax.setMinimum(self.noiMultMin.value() + 0.1)
@@ -1114,7 +1137,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.noi_fac
 
     def __set_bsl_aug(self):
-        """ Set baseline augmentation. """
+        """Push the latest baseline-shift method selection to the simulated-signal subprocess arguments."""
         # Initialize temporary variables
         meth = []
         comp = []
@@ -1146,7 +1169,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.bsl_meth, self.bsl_comp
 
     def __set_bsl_amps(self):
-        """ Set baseline shift amplitude. """
+        """Push the latest baseline-shift amplitude range to the simulated-signal subprocess arguments."""
         self.bsl_amps = ['-ba', str(self.bslAmpMin.value()), str(self.bslAmpMax.value())]
         self.bslAmpMin.setMaximum(self.bslAmpMax.value() - 1)
         self.bslAmpMax.setMinimum(self.bslAmpMin.value() + 1)
@@ -1155,7 +1178,7 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.bsl_amps
 
     def __set_bsl_freq(self):
-        """ Set baseline shift frequency. """
+        """Push the latest baseline-shift frequency range to the simulated-signal subprocess arguments."""
         self.bsl_freq = ['-bf', str(self.bslFrqMin.value()), str(self.bslFrqMax.value())]
         self.bslFrqMin.setMaximum(self.bslFrqMax.value() - 5)
         self.bslFrqMax.setMinimum(self.bslFrqMin.value() + 5)
@@ -1164,14 +1187,14 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.bsl_freq
 
     def __set_num_eg(self):
-        """ Number of extra examples to be generated. """
+        """Push the latest extra-examples count to the simulated-signal subprocess arguments."""
         self.num_eg = ['-eg', str(self.exEg.value())] if self.exEg.value() > 0 else []
         # Update process arguments
         self.set_gensim_args()
         return self.num_eg
 
     def __set_set_typ(self):
-        """ Set generation dataset type string. """
+        """Push the latest dataset usage tag (trn/vld/tst) to the simulated-signal subprocess arguments."""
         if self.setTypBox.currentIndex() == 0:
             self.set_typ = []
         else:
@@ -1181,12 +1204,12 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
         return self.set_typ
 
     def __sel_stat_path(self):
-        """ Select generation statistic file (*.cjh) button connection. """
+        """Open a file picker for the generation statistics file (``*.cjh``) and write it to the form."""
         path_selector(self.statFilePath, mode='file', caption="Select Generation Statistic File",
                       flt="Generation Statistic File (*.cjh)", parent=self)
 
     def __set_stat_path(self):
-        """ Set defined generation statistics file. """
+        """Validate the manually edited statistics file path and toggle the View button accordingly."""
         stat_path = self.statFilePath.text()
         chk_path = os.path.isfile(stat_path)
         chk_type = stat_path.endswith('.cjh')
@@ -1199,11 +1222,18 @@ class ParusGen(QtWidgets.QMainWindow, Ui_ParusGenWindow):
 
 
 class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
+    """PARUS model training window.
+
+    Drives the model training pipeline: collects training/validation/testing dataset paths and
+    hyperparameters, launches :mod:`parus.scripts.mod_trn` as a subprocess, and streams its console
+    output (and optionally a live validation snapshot) back to the GUI.
+    """
+
     def __init__(self, parent=None):
-        """ Parus model training window.
+        """Initialise the training window and wire its widgets.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize main UI
         super(ParusTrn, self).__init__(parent)
@@ -1283,14 +1313,14 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.statBar.showMessage("System standby")
 
     def closeEvent(self, event):
-        """ Clean-ups upon close. """
+        """Terminate any running subprocesses before letting Qt close the window."""
         self._trn_proc.terminate()
 
     def ctrl_enable(self, enable=True):
-        """ Set enable status of controls.
+        """Enable or disable every input control (used to lock the form while a subprocess runs).
 
         Args:
-            enable (bool): Enable status of controls (default: True)
+            enable (bool): :data:`True` re-enables the controls, :data:`False` locks them (default: ``True``)
         """
         self.simPath.setEnabled(enable)
         self.outPath.setEnabled(enable)
@@ -1305,7 +1335,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
 
     # Process related functions -------------------------------------------------------------------------------------- #
     def set_train_args(self):
-        """ Set arguments for model training. """
+        """Recompute the model-training subprocess arguments from the form state and toggle the run button."""
         if (self.sim_dir is None) or (self.out_dir is None):
             self.trnProcButton.setEnabled(False)
             self._trn_proc.reset_arguments()
@@ -1316,7 +1346,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.trnProcButton.setEnabled(True)
 
     def __switch_trn_btn(self):
-        """ ParusModTrn button connected function. """
+        """Restyle the run/abort button in response to the model-training subprocess running state."""
         if self.__trn_run:
             self.trnProcButton.setStyleSheet('QPushButton {color: red}')
         else:
@@ -1326,7 +1356,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
                 self.trnProcButton.setStyleSheet('QPushButton {color: black}' 'QPushButton:disabled {color: dimgray}')
 
     def __trn_proc_start(self):
-        """ ParusModTrn process STARTED connected function. """
+        """Lock the form and update the status bar when the model-training subprocess starts."""
         self.__trn_run = True
         self.__switch_trn_btn()
         self.ctrl_enable(False)
@@ -1336,10 +1366,10 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         time = datetime.now().strftime('%Y%m%d')
         self.__art_prf = '__'.join([name, dset, time])
         # Inform status bar
-        self.statBar.showMessage("Parus model training started")
+        self.statBar.showMessage("PARUS model training started")
 
     def __trn_proc_finish(self):
-        """ ParusModTrn process FINISHED connected function. """
+        """Unlock the form, persist the run parameters, and update the status bar after training ends."""
         # Reset button
         self.__trn_run = False
         self.ctrl_enable(True)
@@ -1359,7 +1389,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             self.statBar.showMessage("Model training terminated")
 
     def set_view_args(self):
-        """ Set arguments for test results viewing. """
+        """Recompute the test-viewer subprocess arguments from the form state and toggle the view button."""
         if self.tst_dir is None:
             self.tstViewButton.setEnabled(False)
             self._tst_view.reset_arguments()
@@ -1379,14 +1409,14 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
                                                QtWidgets.QMessageBox.StandardButton.Ok)
 
     def __tst_view_start(self):
-        """ ParusPrdDsp process STARTED connected function. """
+        """Update the button text and status bar when the test-viewer subprocess starts."""
         # Set button style
         self.tstViewButton.setStyleSheet('QPushButton {color: red}')
         # Inform status bar
         self.statBar.showMessage("Testing results view started")
 
     def __tst_view_finish(self):
-        """ ParusPrdDsp process FINISHED connected function. """
+        """Update the button text and status bar after the test-viewer subprocess ends."""
         # Set button style
         if cs_dark():
             self.tstViewButton.setStyleSheet('QPushButton {color: white}' 'QPushButton:disabled {color: dimgray}')
@@ -1400,7 +1430,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
 
     # Control element related functions ------------------------------------------------------------------------------ #
     def __load_params(self):
-        """ Load GUI settings from previous execution. """
+        """Pre-fill the form from the last successful run's saved parameters (if any)."""
         par_json = os.path.join(pkg_data, '_trn_params.json')
         if os.path.isfile(par_json):
             # Load previous settings
@@ -1420,7 +1450,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_train_args()
 
     def __save_params(self):
-        """ Save GUI settings of current execution. """
+        """Persist the current form values so the next run can pre-fill the same configuration."""
         pars = {}  # INIT VAR
         # Read current controls
         pars['dataset_path'] = self.simPath.text()
@@ -1438,14 +1468,14 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
             json.dump(pars, fp, indent=2)
 
     def __sel_sim_dir(self):
-        """ Select dataset (*.sim) folder button connection. """
+        """Open a folder picker for the simulated dataset (``*.sim``) and write it to the form."""
         path = path_selector(self.simPath, mode='path', caption="Select Dataset Folder", parent=self)
         self.sim_dir = None if path is None else [path]
         # Update process arguments
         self.set_train_args()
 
     def __set_sim_dir(self):
-        """ Select dataset (*.sim) folder line edit connection. """
+        """Validate the manually edited dataset folder path and refresh the run arguments."""
         path = self.simPath.text()
         if os.path.isdir(path):
             self.sim_dir = [path]
@@ -1457,14 +1487,14 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_train_args()
 
     def __sel_out_dir(self):
-        """ Select model training results output folder button connection. """
+        """Open a folder picker for the training output and write it to the form."""
         path = path_selector(self.outPath, mode='path', caption="Select Model Output Folder", parent=self)
         self.out_dir = None if path is None else [path]
         # Update process arguments
         self.set_train_args()
 
     def __set_out_dir(self):
-        """ Select model training results output folder line edit connection. """
+        """Validate the manually edited training output path and refresh the run arguments."""
         path = self.outPath.text()
         if os.path.isdir(path):
             self.out_dir = [path]
@@ -1476,35 +1506,35 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_train_args()
 
     def __set_num_trn(self):
-        """ Set number of training samples. """
+        """Push the latest training sample count to the model-training subprocess arguments."""
         num = self.trnSampSpinbox.value()
         self.num_trn = ['-dtn', str(num)]
         # Update process arguments
         self.set_train_args()
 
     def __set_num_vld(self):
-        """ Set number of validation samples. """
+        """Push the latest validation sample count to the model-training subprocess arguments."""
         num = self.vldSampSpinbox.value()
         self.num_vld = ['-dvl', str(num)]
         # Update process arguments
         self.set_train_args()
 
     def __set_num_tst(self):
-        """ Set number of testing samples. """
+        """Push the latest testing sample count to the model-training subprocess arguments."""
         num = self.tstSampSpinbox.value()
         self.num_tst = ['-dts', str(num)]
         # Update process arguments
         self.set_train_args()
 
     def __set_seq_len(self):
-        """ Set dataset/model sample sequence length. """
+        """Push the latest dataset/model sample sequence length to the model-training subprocess arguments."""
         num = self.seqLenSpinbox.value()
         self.seq_len = ['-mls', str(num)]
         # Update process arguments
         self.set_train_args()
 
     def __set_mod_name(self):
-        """ Set model name. """
+        """Sanitise the model identifier (alphanumeric only) and push it to the model-training subprocess arguments."""
         self.modNameLine.blockSignals(True)
         name = self.modNameLine.text()
         name = "".join(s for s in name if s.isalnum())
@@ -1515,35 +1545,39 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_train_args()
 
     def __set_num_ep(self):
-        """ Set number of epochs. """
+        """Push the latest training epoch count to the model-training subprocess arguments."""
         num = self.nEpSpinbox.value()
         self.num_ep = ['-tep', str(num)]
         # Update process arguments
         self.set_train_args()
 
     def __set_eval_stp(self):
-        """ Set training steps per evaluation. """
+        """Push the latest training-steps-per-evaluation value to the model-training subprocess arguments."""
         stp = self.stpEvalSpinbox.value()
         self.eval_stp = ['-tev', str(stp)]
         # Update process arguments
         self.set_train_args()
 
     def __set_eval_ind(self):
-        """ Set model evaluation results visualization method. """
+        """Push the selected evaluation-result visualisation mode to the model-training subprocess arguments."""
         ind = ['none', 'disp', 'save'][self.indEvalCombo.currentIndex()]
         self.eval_ind = ['-t', ind]
         # Update process arguments
         self.set_train_args()
 
     def __set_ex_opt(self):
-        """ Model training advance option. This function DOES NOT check input, error will be handled by the script. """
+        """Forward extra advanced training flags to the subprocess arguments without local validation.
+
+        Note:
+            Input is **not** validated here; any malformed flag is reported by the underlying training script.
+        """
         opt = self.exOptLine.text()
         self.ex_opt = [o for o in opt.split(' ') if o]
         # Update process arguments
         self.set_train_args()
 
     def __sel_tst_path(self):
-        """ Select test results (*.pklz) folder button connection. """
+        """Open a folder picker for the test-results ``*.pklz`` directory and write it to the form."""
         self.tstPathLine.blockSignals(True)
         path = path_selector(self.tstPathLine, mode='path', caption="Select Test Results Folder", parent=self)
         self.tstPathLine.blockSignals(False)
@@ -1552,7 +1586,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_view_args()
 
     def __set_tst_path(self):
-        """ Select test results (*.pklz) folder line edit connection. """
+        """Validate the manually edited test-results ``*.pklz`` directory path and refresh the view arguments."""
         path = self.tstPathLine.text()
         if os.path.isdir(path):
             self.tst_dir = path
@@ -1564,7 +1598,7 @@ class ParusTrn(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.set_view_args()
 
     def __set_tst_type(self):
-        """ Set test results linked model type. """
+        """Switch the loaded test-results checkpoint between the best (``tst_opt``) and final (``tst_fin``) snapshot."""
         idx = self.tstTypeBox.currentIndex()
         self.tst_typ = ['tst_opt.pklz', 'tst_fin.pklz'][idx]
         # Update process arguments

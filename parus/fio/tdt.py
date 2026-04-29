@@ -1,4 +1,9 @@
-# Tucker-Davis Technologies file import module
+# -*- coding: utf-8 -*-
+
+"""Tucker-Davis Technologies file import module
+
+Importers for the TDT ``*.tsq`` event header / ``*.tev`` raw voltage file pair.
+"""
 
 import copy
 import numpy as np
@@ -8,14 +13,17 @@ __name__ = 'parus.fio.tdt'
 
 __all__ = ['tdt_tsq_read', 'tdt_tev_read', 'tdt_chs_arng']
 """
-Function list:
-  tdt_tsq_read(tsq_file): Import Tucker-Davis Technologies data storage event headers.
-  tdt_tev_read(tev_file, tsq, name=None): Import Tucker-Davis Technologies data storage raw voltage traces.
-  tdt_chs_arng(ch_dat): Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
+Public function list:
+
+- tdt_tsq_read(tsq_file)            : Import Tucker-Davis Technologies data storage event headers
+- tdt_tev_read(tev_file, tsq, name) : Import Tucker-Davis Technologies data storage raw voltage traces
+- tdt_chs_arng(ch_dat)              : Arrange single-channel raw data into flat signal and time arrays
+
 Private constants:
-  __tsq_dt {np.dtype}: TDT event header structured array datatype definition.
-  __long2char4 {np.vectorize}: TDT event header store ID long to string conversion elementwise function.
-  __tev_dt {dict[str, list[int | str]]}: TDT raw voltage traces datatype definition.
+
+- __tsq_dt (np.dtype)               : TDT event header structured-array datatype definition
+- __long2char4 (np.vectorize)       : Element-wise long-to-4-char-string conversion for store IDs
+- __tev_dt (dict[str, list])        : TDT raw voltage trace datatype definition by format ID
 """
 
 
@@ -33,26 +41,29 @@ __tev_dt = {'count': [1, 1, 2, 4], 'dtype': ['float32', 'int32', 'int16', 'int8'
 
 
 def tdt_tsq_read(tsq_file):
-    """ Import Tucker-Davis Technologies data storage event headers.
+    """Import a Tucker-Davis Technologies ``*.tsq`` event header file.
+
+    The TSQ file is a flat array of fixed-size event records. The function reads the file as a structured NumPy array,
+    splits it into one column per field, and converts the four-character store IDs from their packed integer form to
+    readable strings.
 
     Args:
-        tsq_file (str): Tucker-Davis Technologies event header file (`*.tsq`)
+        tsq_file (str): Path to the Tucker-Davis Technologies event header file (``*.tsq``)
 
     Returns:
-        dict[str, np.ndarray]: Recording event headers
+        dict[str, np.ndarray]: One column per event field
 
-            - size (int32): The length of this record
+            - size (int32): Length of each record
             - type (int32): Event type
-            - name (str): Store ID, 4 characters string
+            - name (str): Store ID, four-character string
             - channel (uint16): Channel number
-            - sortcode (int32): Type for spike-sorting
-            - timestamp (int32): Data timestamps
-            - File storage position, only ONE valid at a time:
-                - fp_loc (int64): File pointer location in TEV where A/D samples reside
-                - strobe (float64): Data transfer strobe control
+            - sortcode (int32): Spike-sorting class
+            - timestamp (int32): Event timestamps
+            - fp_loc (int64): File pointer offset in the companion ``*.tev`` file (mutually exclusive with
+              ``strobe``)
+            - strobe (float64): Data transfer strobe value (mutually exclusive with ``fp_loc``)
             - format (int32): Data format ID
             - frequency (float32): Sampling frequency
-
     """
     # Read data
     raw = np.fromfile(tsq_file, dtype=__tsq_dt)
@@ -63,23 +74,28 @@ def tdt_tsq_read(tsq_file):
 
 
 def tdt_tev_read(tev_file, tsq, name=None):
-    """ Import Tucker-Davis Technologies data storage raw voltage traces.
+    """Import raw voltage traces from a Tucker-Davis Technologies ``*.tev`` file.
+
+    The TSQ event header is used to locate per-store, per-channel record offsets inside the TEV file. Epoch records
+    (format ID ``>= 4``) are skipped. For each requested store ID, signals are reassembled as a 2D array with one row
+    per record and one column per sample.
 
     Args:
-        tev_file (str): Tucker-Davis Technologies raw voltage trace file (`*.tev`)
-        tsq (dict[str, np.ndarray]): Tucker-Davis Technologies data storage event header info
-        name (str | list[str] | None): Store ID(s) to read, set None to read all (default: None)
+        tev_file (str): Path to the Tucker-Davis Technologies raw voltage trace file (``*.tev``)
+        tsq (dict[str, np.ndarray]): Event header dictionary returned by :func:`tdt_tsq_read`
+        name (str | list[str] | None): Store ID(s) to read; pass :data:`None` to read every store ID present
+            in ``tsq`` (default: ``None``)
 
     Returns:
         dict[str, dict[int, dict]]: Recording raw voltage traces
 
-            - store_id (dict[str, dict]): All channel data with defined store ID
-                - channel (dict[int, dict]): Single channel data with defined store ID
-                    - signal (np.ndarray): {2D} Raw voltage trace, row synced with [timestamp], col stored waveform
-                    - timestamp (np.ndarray): {1D} Timestamp of key positions
-                    - sortcode (np.ndarray): {1D} Raw trace sorting info
+            - store_id (dict[str, dict]): All channels recorded under a given store ID
+                - channel (dict[int, dict]): Per-channel content
+                    - signal (np.ndarray): {2D} Raw voltage trace; rows are synchronised with ``timestamp``,
+                      columns store waveform samples
+                    - timestamp (np.ndarray): {1D} Timestamp of each row
+                    - sortcode (np.ndarray): {1D} Sort-code class assigned by the recording system
                     - frequency (float): Sampling frequency of the trace
-
     """
     # Check input type
     if name is None:
@@ -121,17 +137,20 @@ def tdt_tev_read(tev_file, tsq, name=None):
 
 
 def tdt_chs_arng(ch_dat):
-    """ Arrange Tucker-Davis Technologies single channel raw data into 2 arrays of signal and time.
+    """Flatten a Tucker-Davis Technologies single-channel record into 1D signal and time arrays.
+
+    Each row of ``ch_dat['signal']`` is a contiguous waveform anchored to the matching entry in ``ch_dat['timestamp']``.
+    The function unrolls the matrix in row-major order and reconstructs a monotonically increasing timestamp vector by
+    adding per-sample offsets at ``1 / frequency``.
 
     Args:
-        ch_dat (dict[str, np.ndarray | float]): Tucker-Davis Technologies single channel raw data
+        ch_dat (dict[str, np.ndarray | float]): Single-channel record produced by :func:`tdt_tev_read`
 
     Returns:
-        dict[str, np.ndarray]: Arranged channel recording
+        dict[str, np.ndarray]: Flat channel recording
 
             - signal (np.ndarray): {1D} Channel voltage trace
-            - timestamp (np.ndarray): {1D} Channel timestamps
-
+            - timestamp (np.ndarray): {1D} Per-sample timestamps aligned with ``signal``
     """
     # Flatten signal
     signal = ch_dat['signal'].flatten(order='C')

@@ -1,4 +1,9 @@
-# Model operation IO module
+# -*- coding: utf-8 -*-
+
+"""Model operation IO module
+
+Hyperparameter, dataset, checkpoint, and training-log IO helpers for the model training pipeline.
+"""
 
 import os
 import time
@@ -16,17 +21,20 @@ __all__ = [
     'write_train_log', 'write_train_history'
 ]
 """
-Function list:
-  save_hparams(hparams_file, hparams=None): Save hyperparameters to a JSON file.
-  load_hparams(hparams_file=None, debug=False): Load model hyperparameters JSON file, use default if file unavailable.
-  load_all_datasets(dataset_dir, seq_len, batch_size, data_hparams): Get all dataset loaders from defined folder.
-  save_model(save_dir, model, optimizer, epoch, description=None): Save current model with optimizer info.
-  load_model(ckpt_path, model, remap=None): Load model checkpoint from file.
-  write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')): Write model training log file.
-  write_train_history(fp, ep, stp, lr, tls, vls, t): Write model training history file in JSON format.
+Public function list:
+
+- save_hparams(hparams_file, hparams)                          : Save hyperparameters to a JSON file
+- load_hparams(hparams_file, debug)                            : Load hyperparameters from a JSON file (or defaults)
+- load_all_datasets(dataset_dir, seq_len, batch_size, ...)     : Build training/validation/testing data loaders
+- save_model(save_dir, model, optimizer, epoch, description)   : Save a model checkpoint with optimizer state
+- load_model(ckpt_path, model, remap)                          : Load model weights from a checkpoint
+- write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, ...)   : Append a record to the training log file
+- write_train_history(fp, ep, stp, lr, tls, vls, t)            : Append a record to the JSON training history
+
 Protected constants:
-  _default_hparams {dict}: Default hyperparameters for model operation.
-  _debug_hparams {dict}: Debug hyperparameters for model test run.
+
+- _default_hparams (dict)                                      : Default hyperparameters for model operations
+- _debug_hparams (dict)                                        : Hyperparameter overrides used in debug mode
 """
 
 
@@ -79,14 +87,18 @@ _debug_hparams = {
 
 
 def save_hparams(hparams_file, hparams=None):
-    """ Save hyperparameters to a JSON file.
+    """Save model hyperparameters to a JSON file.
+
+    Starts from the built-in defaults in ``_default_hparams`` and overlays any keys present in ``hparams``
+    before writing. The resulting file is suitable for round-tripping through :func:`load_hparams`.
 
     Args:
-        hparams_file (str): Model hyperparameter file path
-        hparams (dict | None): Updated hyperparameter values
+        hparams_file (str): Output hyperparameter file path
+        hparams (dict | None): Per-section hyperparameter overrides; pass :data:`None` to write the defaults
+            unchanged (default: ``None``)
 
     Returns:
-        bool: File save status
+        bool: Always :data:`True` on successful write
     """
     # Load default hyperparameters
     hp = _default_hparams.copy()
@@ -100,14 +112,19 @@ def save_hparams(hparams_file, hparams=None):
 
 
 def load_hparams(hparams_file=None, debug=False):
-    """ Load model hyperparameters JSON file, use default if file unavailable.
+    """Load model hyperparameters from a JSON file, falling back to the defaults.
+
+    Starts from ``_default_hparams``, overlays the user-supplied JSON when available, and finally overlays
+    ``_debug_hparams`` when ``debug`` is :data:`True`.
 
     Args:
-        hparams_file (str | None): Model hyperparameter file path (default: None = load default hyperparameters)
-        debug (bool): Model debug mode flag (default: False)
+        hparams_file (str | None): Input hyperparameter file path; pass :data:`None` (or any non-existent
+            path) to use the built-in defaults (default: ``None``)
+        debug (bool): When :data:`True`, overlay the debug-mode hyperparameter overrides on top of the
+            loaded values (default: ``False``)
 
     Returns:
-        Model hyperparameters
+        dict: Resolved hyperparameter dictionary with the same nested structure as ``_default_hparams``
     """
     # Load default hyperparameters
     hp = _default_hparams.copy()
@@ -124,21 +141,29 @@ def load_hparams(hparams_file=None, debug=False):
 
 
 def load_all_datasets(dataset_dir, seq_len, batch_size, data_hparams):
-    """ Get training/validation/testing dataset loader from defined folder.
+    """Build training/validation/testing :class:`~torch.utils.data.DataLoader` instances from a folder.
+
+    Walks ``dataset_dir`` for files starting with ``trn``, ``vld``, ``tst`` (extension ``.sim``), wraps each
+    with a :class:`~parus.model.dset.TrainingDataset`, and returns the matching DataLoaders. The training
+    and validation loaders shuffle on every epoch; the testing loader does not.
 
     Args:
-        dataset_dir (str): Dataset folder, should contain training/validation/testing sets
+        dataset_dir (str): Folder containing the training/validation/testing dataset files
         seq_len (int): Model sequence length
-        batch_size (int): Model batch size
+        batch_size (int): Loader batch size
         data_hparams (dict[str, int]): Dataset hyperparameters
 
-            - n_trn_samples (int): Training set sample number
-            - n_vld_samples (int): Validation set sample number
-            - n_tst_samples (int): Testing set sample number
-            - n_worker (int): Multiprocess worker number for data loading
+            - n_trn_samples (int): Training set sample count
+            - n_vld_samples (int): Validation set sample count
+            - n_tst_samples (int): Testing set sample count
+            - n_worker (int): Number of multiprocessing workers per loader
 
     Returns:
-        tuple[data.DataLoader, data.DataLoader, data.DataLoader]: Data loaders for each dataset, in trn/vld/tst order
+        tuple[data.DataLoader, data.DataLoader, data.DataLoader]: Loaders in (training, validation, testing) order
+
+    Raises:
+        FileNotFoundError: If any of the three dataset files (``trn*.sim``, ``vld*.sim``, ``tst*.sim``) is
+            missing under ``dataset_dir``
     """
     # Unpack dataset hyperparameters
     num_smp = {'trn': data_hparams['n_trn_samples'],
@@ -166,14 +191,19 @@ def load_all_datasets(dataset_dir, seq_len, batch_size, data_hparams):
 
 
 def save_model(save_dir, model, optimizer, epoch, description=None):
-    """ Save current model with optimizer info.
+    """Save a model checkpoint with the matching optimizer state.
+
+    The checkpoint dictionary stores ``epoch``, ``description``, ``model_state_dict``, and
+    ``optimizer_state_dict``. The output filename is ``"{description}.ckpt"`` when ``description`` is a
+    non-empty string and ``"epoch_{epoch:03d}.ckpt"`` otherwise.
 
     Args:
-        save_dir (str): Target folder for saving checkpoint
-        model (torch.nn.Module): Current model
-        optimizer (torch.optim.optimizer.Optimizer): Current optimizer
+        save_dir (str): Output directory for the checkpoint file
+        model (torch.nn.Module): Model whose ``state_dict`` is captured
+        optimizer (torch.optim.Optimizer): Optimizer whose ``state_dict`` is captured
         epoch (int): Current epoch number
-        description (str | None): Checkpoint description
+        description (str | None): Custom checkpoint description; pass :data:`None` (or an empty string) to
+            use the epoch-based default name (default: ``None``)
     """
     # Validate description
     if description:  # Check for both None and EmptyStr
@@ -195,12 +225,19 @@ def save_model(save_dir, model, optimizer, epoch, description=None):
 
 
 def load_model(ckpt_path, model, remap=None):
-    """ Load model checkpoint from file.
+    """Load model weights from a checkpoint file in place and return the model.
+
+    Reads the checkpoint with ``weights_only=True`` for safety and applies ``model_state_dict`` to the
+    supplied model.
 
     Args:
-        ckpt_path (str): Model saved checkpoint path
-        model (torch.nn.Module): Current model
-        remap (str | dict[str, str] | torch.device | None): Remap storage locations (default: None = no remap)
+        ckpt_path (str): Path to the model checkpoint file
+        model (torch.nn.Module): Model instance to load the weights into
+        remap (str | dict[str, str] | torch.device | None): Storage-location remap argument forwarded to
+            :func:`torch.load`; pass :data:`None` to keep the saved device assignments (default: ``None``)
+
+    Returns:
+        torch.nn.Module: The same ``model`` instance, returned for chaining convenience
     """
     ckpt = torch.load(ckpt_path, map_location=remap, weights_only=True)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -208,18 +245,22 @@ def load_model(ckpt_path, model, remap=None):
 
 
 def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')):
-    """ Write records to model training log file.
+    """Append a single training-step record to a model training log file.
+
+    Writes one timestamped status line for the step and, when validation loss improved over ``curr_loss``,
+    a second line announcing the model save. The file pointer is flushed after each call so the log stays
+    up-to-date during long runs.
 
     Args:
-        fp (TextIO): {'r+' | 'w+' | 'a+'} Log file pointer
+        fp (TextIO): Log file pointer opened in a writable mode
         ep (int): Epoch number
-        stp (int): In epoch step number
-        lr (float): Learning rate
-        tls (float): Training loss
-        vls (float): Validation loss
-        t (float): Time used for this step
-        tot_ep (int): Total number of epoches
-        curr_loss (float): Current minimum loss in the training
+        stp (int): Step number within the epoch
+        lr (float): Current learning rate
+        tls (float): Training loss for this step
+        vls (float): Validation loss for this step
+        t (float): Wall-clock time used for this step in seconds
+        tot_ep (int): Total number of epochs for the run
+        curr_loss (float): Best validation loss seen so far (default: ``float('inf')``)
     """
     # Get event time
     t_str = time.strftime("[%Y-%m-%d %H:%M:%S] ")
@@ -237,16 +278,20 @@ def write_train_log(fp, ep, stp, lr, tls, vls, t, tot_ep, curr_loss=float('inf')
 
 
 def write_train_history(fp, ep, stp, lr, tls, vls, t):
-    """ Write model training history file in JSON format.
+    """Append a single training-step record to a JSON training history file.
+
+    The file is treated as an append-friendly JSON array on disk: the trailing ``]`` is replaced with the
+    new entry and a fresh closing ``]`` so that the file remains valid JSON after every call. The first
+    call to an empty file writes the opening ``[``.
 
     Args:
-        fp (TextIO): {'r+' | 'w+' | 'a+'} Training history file pointer
+        fp (TextIO): {``'r+'``, ``'w+'``, ``'a+'``} History file pointer opened in a read+write text mode
         ep (int): Epoch number
-        stp (int): In epoch step number
-        lr (float): Learning rate
-        tls (float): Training loss
-        vls (float): Validation loss
-        t (float): Time used for this step
+        stp (int): Step number within the epoch
+        lr (float): Current learning rate
+        tls (float): Training loss for this step
+        vls (float): Validation loss for this step
+        t (float): Wall-clock time used for this step in seconds
     """
     rec = {'epoch': ep, 'step': stp, 'learning_rate': lr, 'loss_training': tls, 'loss_validation': vls, 'time': t}
     jstr = '    ' + str(rec).replace("'", '"') + '\n]\n'

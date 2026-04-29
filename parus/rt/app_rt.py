@@ -1,4 +1,10 @@
-# PARUS real-time application module
+# -*- coding: utf-8 -*-
+
+"""PARUS real-time application module
+
+Top-level Qt main window for the PARUS real-time spike-detection application: streams data from a recording controller,
+runs model inference on the GPU, performs progressive spike sorting on the CPU, and visualises the results live.
+"""
 
 import os
 import time
@@ -20,13 +26,20 @@ from .intan_rhx import IntanRHXmTCP
 
 
 class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
+    """PARUS real-time data processing application.
+
+    Wires together the data-streaming, model-inference, and spike-sorting threads with the live PyQtGraph plots in the
+    main window. Sample buffers and inter-thread queues are created on construction and released by the close handler.
+    """
+
     def __init__(self, seq_len, version=None, parent=None):
-        """ Parus real-time data process application.
+        """Initialise the real-time window, data buffers, and worker threads.
 
         Args:
             seq_len (int): Model sequence length
-            version (int | float | str | None): App version
-            parent: Parent window or widget
+            version (int | float | str | None): App version label shown in the title bar; defaults to
+                ``"beta"`` when :data:`None` (default: ``None``)
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusRtApp, self).__init__(parent)
@@ -168,13 +181,13 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
 
     @staticmethod
     def __set_style():
-        """ Set GUI style. """
+        """Apply the Fusion Qt style to the running application."""
         app = QtWidgets.QApplication.instance()
         if app is not None:
             app.setStyle('fusion')
 
     def __load_params(self):
-        """ Load GUI settings from previous execution. """
+        """Pre-fill the form from the last successful run's saved parameters (if any)."""
         par_json = os.path.join(pkg_data, '_rtp_params.json')
         if os.path.isfile(par_json):
             # Load previous settings
@@ -192,7 +205,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.spkKvlSpinbox.setValue(pars['spike_kvalue'])
 
     def __save_params(self):
-        """ Save GUI settings of current execution. """
+        """Persist the current form values so the next run can pre-fill the same configuration."""
         pars = {}  # INIT VAR
         # Read current controls
         pars['device_address'] = self.ipLine.text()
@@ -210,11 +223,13 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
 
     # IO classes ----------------------------------------------------------------------------------------------------- #
     class _WaveformReader(QtCore.QThread):
+        """Worker thread that streams waveform data from the recording controller via :class:`IntanRHXmTCP`."""
+
         def __init__(self, parent):
-            """ Streaming data from recording controller.
+            """Wire the worker to the controller's TCP adapter.
 
             Args:
-                parent (ParusRtApp): Parus real-time data process application caller
+                parent (ParusRtApp): Owning real-time application window
             """
             # Connect to main GUI
             super(ParusRtApp._WaveformReader, self).__init__(parent)
@@ -232,11 +247,20 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
                 self.hw.config_channel(c[0], c[1], enable=False)
 
     class _ModelInference(QtCore.QThread):
+        """Worker thread that runs spike-detection model inference on the GPU.
+
+        Note:
+            The real-time module requires CUDA; instantiation raises :class:`OSError` when no CUDA device is available.
+        """
+
         def __init__(self, parent):
-            """ Inference for raw data signal separation.
+            """Pick the CUDA device and prepare the inference state machine.
 
             Args:
-                parent (ParusRtApp): Parus real-time data process application caller
+                parent (ParusRtApp): Owning real-time application window
+
+            Raises:
+                OSError: If no CUDA device is available
             """
             # Connect to main GUI
             super(ParusRtApp._ModelInference, self).__init__(parent)
@@ -270,7 +294,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
                 self.__app.mod_log.put(self.t_log.copy())
 
         def build_model(self):
-            """ Load model with pretrained weight to memory. """
+            """Load the configured checkpoint and its hyperparameters into memory and ready it for inference."""
             # Locate model checkpoint
             ckpt = self.__app.modelPath.text()
             if not os.path.isfile(ckpt):
@@ -304,17 +328,19 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.set_output_waveform()
 
         def set_output_waveform(self):
-            """ Set model output waveform for further processing. """
+            """Pick which model output channel feeds the spike-data plot and the spike-sorting thread."""
             self.wfm_idx = self.__app.srtWfmCombo.currentIndex()
             # Update plot text
             self.__app.plt_spk.setTitle("Spike Data [%s]" % self.__app.srtWfmCombo.currentText())
 
     class _SpikeSorter(QtCore.QThread):
+        """Worker thread that performs progressive spike sorting on the model's output channel."""
+
         def __init__(self, parent):
-            """ Progressive spike sort.
+            """Wire the worker to its parent and initialise the sorting state.
 
             Args:
-                parent (ParusRtApp): Parus real-time data process application caller
+                parent (ParusRtApp): Owning real-time application window
             """
             # Connect to main GUI
             super(ParusRtApp._SpikeSorter, self).__init__(parent)
@@ -398,7 +424,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
                 self.__app.cbuf_spk.put(spk)
 
         def set_index_feature(self):
-            """ Set spike sampling index tiles. """
+            """Recompute the per-spike sample-index tiles and the matching Gaussian peak-emphasis weights."""
             # Get values
             asp = self.__app.smpAntSpinbox.value()
             psp = self.__app.smpPstSpinbox.value()
@@ -412,15 +438,15 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.wt[asp] = 1  # Normalize, peak value was emphasized with value of 2 in Gaussian
 
         def set_threshold(self):
-            """ Set spike amplitude threshold value. """
+            """Re-read the spike-amplitude threshold from the spinbox and apply it to the worker."""
             self.th = self.__app.spkThsSpinbox.value()
 
         def set_k_value(self):
-            """ Set spike grouping K value. """
+            """Re-read the spike-grouping ``K`` value from the spinbox and apply it to the worker."""
             self.kv = self.__app.spkKvlSpinbox.value()
 
         def reset_history(self):
-            """ Reset spike history records. """
+            """Drop every cached cluster template and clear the visualisation buffer."""
             self.__hst = None
             self.__avg = None
             self.__nrm = None
@@ -434,7 +460,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
     # Data acquisition functions ------------------------------------------------------------------------------------- #
     @QtCore.Slot()
     def __controller_switch(self):
-        """ Connection switch of recording controller. """
+        """Toggle the connection to the recording controller and update the dependent controls."""
         if self.ct_on:
             self.statBar.showMessage("Disconnecting to recording controller")
             # Disconnect and set
@@ -488,7 +514,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.statBar.showMessage("Recording controller connected")
 
     def __set_sample_length(self):
-        """ Set visible sample length. """
+        """Resize the visualisation buffers and the plot x-axis to match the requested time window."""
         lim = round(self.xRngSpinbox.value() / 1000 * self.fs)
         tick = [[[i, str(round(j))] for i, j in zip(np.linspace(0, lim, num=5, endpoint=True),
                                                     np.linspace(0, self.xRngSpinbox.value(), num=5, endpoint=True))]]
@@ -511,7 +537,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
         None if self.st_on else self.plt_pos.hide()  # Hide if not show before
 
     def __set_amplitude_range(self):
-        """ Set signal amplitude range. """
+        """Apply the manual amplitude range from the spinboxes when the manual mode is selected."""
         if self.setAmpButton.isChecked():
             y_min = self.yMinSpinbox.value()
             y_max = self.yMaxSpinbox.value()
@@ -519,7 +545,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.plt_spk.setYRange(y_min, y_max, padding=0)
 
     def __set_amplitude_mode(self):
-        """ Set signal amplitude updating mode. """
+        """Switch the y-axis between the auto-fit mode and the user-defined manual range."""
         if self.autoAmpButton.isChecked():
             self.plt_raw.enableAutoRange(axis='y')
             self.plt_spk.enableAutoRange(axis='y')
@@ -527,7 +553,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.__set_amplitude_range()
 
     def __align_left_axis(self):
-        """ Align plot Y axis for visual. """
+        """Equalise the left-axis width across the active plots so their tracks line up vertically."""
         if self.st_on:
             sw = self.plt_pos.getAxis('left').width()
             mw = self.plt_spk.getAxis('left').width()
@@ -544,7 +570,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.plt_raw.getAxis('left').setWidth(w)
 
     def __update_plot(self):
-        """ Update spike plots. """
+        """Refresh the raw, spike, and spike-position plots from the visualisation buffers (60Hz timer)."""
         # Plot spike position
         if self.st_on:
             pos = self.cbuf_pos.get()
@@ -562,7 +588,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
 
     @QtCore.Slot()
     def __acquisition_switch(self):
-        """ Control waveform acquisition. """
+        """Toggle waveform acquisition for the selected channel and update the dependent controls."""
         if self.aq_on:
             self.statBar.showMessage("Stop recording")
             self.aq_on = False
@@ -609,7 +635,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
 
     # Model and data process functions ------------------------------------------------------------------------------- #
     def __sel_model_ckpt(self):
-        """ Select model pretrained weights. """
+        """Open a file picker for the model checkpoint and write the selection to the form."""
         self.__msg_timer_block = time.time() if self.aq_on else 0
         self.statBar.showMessage("Select model pretrained weights")
         file, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Model Weights", filter="Checkpoint (*.ckpt)")
@@ -628,7 +654,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
         self.modelPath.blockSignals(False)
 
     def __set_model_ckpt(self):
-        """ Set model pretrained weights. """
+        """Validate the manually edited checkpoint path and toggle the Load Model button accordingly."""
         file = self.modelPath.text()
         if file and os.path.isfile(file) and file.endswith('.ckpt'):
             self.modLoadButton.setEnabled(True)
@@ -640,7 +666,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.statBar.showMessage("Invalid model pretrained weight file")
 
     def __build_model(self):
-        """ Load model to memory. """
+        """Trigger the GPU worker to load the model checkpoint and unlock the dependent controls."""
         self.__msg_timer_block = time.time() if self.aq_on else 0
         self.statBar.showMessage("Loading defined model")
         self.gpu_proc.build_model()
@@ -673,7 +699,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
 
     @QtCore.Slot()
     def __inference_switch(self):
-        """ Control model inference. """
+        """Toggle the GPU inference and CPU sorting threads on or off."""
         if self.md_on:
             self.__msg_timer_block = time.time()
             self.statBar.showMessage("Stop data inference")
@@ -692,27 +718,27 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.statBar.showMessage("Data inference started")
 
     def __set_sort_waveform(self):
-        """ Set spike sorting model output waveform. """
+        """Switch which model output channel is fed to the sorter and clear the spike-data buffer."""
         self.gpu_proc.set_output_waveform()
         # Reset buffer
         self.cbuf_spk.flush()
         self.cbuf_spk.position(self.cbuf_raw.locate())
 
     def __set_sort_sample(self):
-        """ Set spike sorting sample range. """
+        """Push the latest anterior/posterior sample widths to the sorting worker."""
         self.cpu_proc.set_index_feature()
 
     def __set_sort_threshold(self):
-        """ Set spike sorting amplitude threshold. """
+        """Push the latest amplitude threshold to the sorting worker."""
         self.cpu_proc.set_threshold()
 
     def __set_sort_kvalue(self):
-        """ Set spike sorting grouping K value. """
+        """Push the latest spike-grouping ``K`` value to the sorting worker."""
         self.cpu_proc.set_k_value()
 
     @QtCore.Slot()
     def __sorting_switch(self):
-        """ Control spike sorting. """
+        """Attach or detach the spike sorter and adjust the dependent visualisation panels."""
         if self.st_on:
             self.st_on = False
             # Set plot widgets
@@ -750,7 +776,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
             self.statBar.showMessage("Spike sorter attached")
 
     def __clear_spike_history(self):
-        """ Clear previous spike history. """
+        """Drop the sorting worker's cluster history; bound to controls that change the source channel."""
         self.cpu_proc.reset_history()
 
     def __update_stat(self):
@@ -774,7 +800,7 @@ class ParusRtApp(QtWidgets.QMainWindow, Ui_ParusRtpWindow):
         self.statBar.showMessage(msg)
 
     def __clear_queue(self):
-        """ Clear all queued items. """
+        """Stop pushing new samples to the data queue and drop every queued item."""
         self.rec_ctrl.hw.write_data_queue(False)
         self.raw_queue.clear()
         self.spk_queue.queue.clear()

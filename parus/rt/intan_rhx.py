@@ -1,4 +1,9 @@
-# Intan RHX software TCP real-time data streaming module
+# -*- coding: utf-8 -*-
+
+"""Intan RHX software TCP real-time data streaming module
+
+TCP-based real-time waveform streaming adapter for the IntanTech RHX recording software.
+"""
 
 import time
 import socket
@@ -11,21 +16,32 @@ from .hwio import SingletonIO, CircularBufferFL, CircularBufferCR, MapArrayQueue
 
 __all__ = ['IntanRHXmTCP']
 """
-Class list:
-  IntanRHXmTCP(q_sp, q_ts): Real-time streaming waveform data from Intan RHX software with TCP protocol.
+Public class list:
+
+- IntanRHXmTCP(dq, cb)        : Real-time TCP waveform streaming adapter for the Intan RHX software
 """
 
 
 class IntanRHXmTCP(metaclass=SingletonIO):
+    """Real-time TCP waveform streaming adapter for the IntanTech RHX recording software.
+
+    Connects to the RHX command and waveform TCP servers, configures channel routing, and parses the
+    incoming binary blocks into per-frame microvolt samples that are pushed to a downstream
+    :class:`~parus.rt.hwio.MapArrayQueue` (for processing) and a
+    :class:`~parus.rt.hwio.CircularBufferFL`/:class:`~parus.rt.hwio.CircularBufferCR` (for visualisation).
+
+    The class uses :class:`~parus.rt.hwio.SingletonIO` as its metaclass so a single connection is shared
+    process-wide.
+    """
     frame_per_block = 128  # Hard-coded in RHX software to always handle data in blocks of 128 frames
     magic_number = 0x2ef07a08  # Intan RHX TCP magic number
 
     def __init__(self, dq, cb):
-        """ Real-time streaming waveform data from Intan RHX software with TCP protocol.
+        """Wire the streaming adapter to the supplied data queue and visualisation buffer.
 
         Args:
-            dq (MapArrayQueue): Sample data FIFO queue
-            cb (CircularBufferFL | CircularBufferCR): Data visualization buffer
+            dq (MapArrayQueue): FIFO queue that receives the parsed waveform samples
+            cb (CircularBufferFL | CircularBufferCR): Circular buffer that mirrors the same samples for visualisation
         """
         # Communication attributes
         self.sys_typ = None  # Intan controller type
@@ -44,46 +60,57 @@ class IntanRHXmTCP(metaclass=SingletonIO):
         self.__q_on = False
 
     def set_command_buffer_size(self, size):
-        """ Set buffer size for reading TCP command socket.
+        """Set the read buffer size for the TCP command socket.
 
-        Increase if many return commands are expected. 1024 bytes are sufficient for single command.
+        Increase this when many return commands are expected; ``1024`` bytes is sufficient for a single
+        command/response pair.
 
         Args:
-            size (int): Maximum number of bytes expected for 1 read
+            size (int): Maximum number of bytes expected per single read
         """
         self.buf_cmd = size
 
     def set_waveform_buffer_size(self, size):
-        """ Set buffer size for reading TCP waveform socket.
+        """Set the read buffer size for the TCP waveform socket.
 
-        Increase if channels, filter bands, or acquisition time increase.
-        TCP lag expected in both starting and stopping acquisition, the exact number of data blocks may vary.
+        Increase this when channels, filter bands, or acquisition time grow. TCP latency at start and stop
+        of acquisition means the exact number of data blocks per read may vary.
 
-        For 1 second of recoding, the size N can be computed with the following equation
-        N = (FramePerBlock * WaveformBytesPerFrame + SizeOfMagicNumber) * NumBlock
+        For one second of recording, the size ``N`` can be computed as ::
 
-            - FramePerBlock = 128 (hard-coded)
-            - WaveformBytesPerFrame = SizeOfTimestamp + SizeOfSample
-                - SizeOfTimestamp = 4 (int32)
-                - SizeOfSample = 2 * NumChannel (uint16)
-            - SizeOfMagicNumber = 4 (uint32, 0x2ef07a08)
-            - NumBlock = ceil(SamplingRate / FramePerBlock)
+            N = (FramePerBlock * WaveformBytesPerFrame + SizeOfMagicNumber) * NumBlock
+
+        with
+
+            - ``FramePerBlock = 128`` (hard-coded)
+            - ``WaveformBytesPerFrame = SizeOfTimestamp + SizeOfSample``
+                - ``SizeOfTimestamp = 4`` (int32)
+                - ``SizeOfSample = 2 * NumChannel`` (uint16)
+            - ``SizeOfMagicNumber = 4`` (uint32, ``0x2ef07a08``)
+            - ``NumBlock = ceil(SamplingRate / FramePerBlock)``
 
         Args:
-            size (int): Maximum number of bytes expected for 1 read
+            size (int): Maximum number of bytes expected per single read
         """
         self.buf_wfm = size
 
     def connect_to_server(self, svr_ip='localhost', cmd_port=5000, wfm_port=5001):
-        """ Connect to Intan RHX software TCP server.
+        """Open both TCP sockets, identify the controller, and stop the recording if it is already running.
+
+        After a successful connection the controller type, sampling rate, and timestep are populated and
+        any previously configured TCP data outputs are cleared.
 
         Args:
-            svr_ip (str): Intan RHX software TCP server IP address (default: 'localhost')
-            cmd_port (int): Intan RHX software command socket port (default: 5000)
-            wfm_port (int): Intan RHX software waveform socket port (default: 5001)
+            svr_ip (str): Intan RHX software TCP server IP address (default: ``'localhost'``)
+            cmd_port (int): Intan RHX software command socket port (default: ``5000``)
+            wfm_port (int): Intan RHX software waveform socket port (default: ``5001``)
 
         Returns:
-            bool: Connection status
+            bool: :data:`True` when both sockets connected; :data:`False` when the connection was refused
+
+        Raises:
+            ValueError: If the controller returns an unknown type string
+            IOError: If the controller does not return a sampling rate
         """
         try:
             # Connect to TCP command server
@@ -131,16 +158,25 @@ class IntanRHXmTCP(metaclass=SingletonIO):
         return True
 
     def config_channel(self, port, ch, sub=None, enable=True):
-        """ Configure controller channel for TCP data streaming.
+        """Enable or disable a single controller channel for TCP data streaming.
+
+        The accepted ports depend on the controller variant; using a port that is not supported by the
+        connected controller emits a :class:`RuntimeWarning` and the call is ignored.
 
         Args:
-            port (str): {'a'-'d', 'e'-'h'(1024CH), 'analog-in', 'analog-out', 'digital-in', 'digital-out'} Port name
-            ch (int): Channel number
-            sub (str | None): {'aux', 'vdd'} Sub-channels for amplifier
-            enable (bool): Channel enable status
+            port (str): Port name; one of ``{'a'-'d', 'e'-'h' (1024-channel only), 'analog-in', 'analog-out',
+                'digital-in', 'digital-out'}``
+            ch (int): Channel number on the port
+            sub (str | None): Sub-channel name for amplifier ports; one of ``{'aux', 'vdd'}``; pass
+                :data:`None` for the main amplifier channel (default: ``None``)
+            enable (bool): When :data:`True`, enable the channel; when :data:`False`, disable it (default: ``True``)
 
         Returns:
-            str | None: Configured channel name
+            str | None: Configured channel name on success; :data:`None` when the requested combination is
+                rejected (with a warning)
+
+        Warns:
+            RuntimeWarning: Emitted when ``port``/``sub`` combinations are invalid for the connected controller
         """
         # Arrange name
         port = port.strip().lower()
@@ -189,22 +225,32 @@ class IntanRHXmTCP(metaclass=SingletonIO):
         return name
 
     def write_data_queue(self, enable=True):
-        """ Set data queue writing status.
+        """Toggle whether incoming samples are pushed to the data queue (the visualisation buffer is always written).
 
         Args:
-            enable (bool): Writing enable status
+            enable (bool): When :data:`True`, enable writes to ``self.dq``; when :data:`False`, only the
+                visualisation buffer is updated (default: ``True``)
         """
         self.__q_on = enable
 
     def run(self):
-        """ Run controller for data streaming. """
+        """Compute the per-block byte size and start the controller's recording run mode."""
         waveform_bytes_per_frame = 4 + 2 * len(self.lst_chs)
         self.blk_bts = self.frame_per_block * waveform_bytes_per_frame + 4
         self.svr_cmd.sendall(b'set runmode run')
         self.running = True
 
     def read(self):
-        """ Read existing waveform data. """
+        """Read one batch from the waveform socket, parse it into samples, and push them downstream.
+
+        Each block starts with the ``0x2ef07a08`` magic number followed by ``frame_per_block`` frames; each
+        frame consists of an INT32 timestamp (ignored) and a UINT16 sample that is converted to microvolts
+        with the Intan factor ``0.195`` and zero-offset ``32768``.
+
+        Raises:
+            ValueError: If the received payload is not an integer multiple of ``blk_bts`` or any block's
+                magic number is wrong (indicating data corruption)
+        """
         raw = self.svr_wfm.recv(self.buf_wfm)
         blk_cnt, blk_rem = divmod(len(raw), self.blk_bts)
         if blk_rem != 0:
@@ -230,7 +276,7 @@ class IntanRHXmTCP(metaclass=SingletonIO):
             self.cb.put(smp)
 
     def stop(self):
-        """ Stop streaming data from controller. """
+        """Stop the controller's run mode and clear all configured TCP data outputs."""
         self.svr_cmd.sendall(b'set runmode stop')
         time.sleep(0.1)  # Wait controller
         self.svr_cmd.sendall(b'execute clearalldataoutputs')
@@ -238,7 +284,7 @@ class IntanRHXmTCP(metaclass=SingletonIO):
         self.running = False
 
     def disconnect_server(self):
-        """ Completely disconnect to the controller. """
+        """Stop streaming (if running) and close both TCP sockets."""
         # Stop running session
         if self.running:
             self.stop()

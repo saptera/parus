@@ -1,4 +1,10 @@
-# MATLAB file import module
+# -*- coding: utf-8 -*-
+
+"""MATLAB file import module
+
+Importers for MATLAB ``*.mat`` files spanning the v5/v7 format (handled by ``scipy.io``) and the v7.3
+HDF5-based format (handled by ``h5py``).
+"""
 
 import h5py as h5
 import numpy as np
@@ -10,26 +16,29 @@ from .hdf import h5_load_dat, h5_load_ref
 
 __all__ = ['mat_meta_read', 'mat_data_read']
 """
-Function list:
-  mat_meta_read(file): Read MATLAB MAT file header metadata.
-  mat_data_read(file, meta): Read MATLAB MAT file data.
+Public function list:
+
+- mat_meta_read(file)        : Read MATLAB MAT file header metadata
+- mat_data_read(file, rtmt)  : Read MATLAB MAT file data, optionally returning the metadata as well
 """
 
 
 def mat_meta_read(file):
-    """ Read MATLAB MAT file header metadata.
+    """Read MATLAB MAT file header metadata.
+
+    Parses the human-readable ASCII header that MATLAB writes at the start of every MAT file (v5, v7, and v7.3)
+    to recover the file version, the originating MATLAB platform, the HDF5 flag, and the recorded creation timestamp.
 
     Args:
-        file (str): MATLAB MAT file path
+        file (str): Path to the MATLAB MAT file (``*.mat``)
 
     Returns:
-        dict[str, float | str | bool | str]: MAT file header
+        dict[str, float | str | bool]: MAT file header
 
             - version (float): MAT file version
-            - platform (str): MATLAB platform
-            - hdf (bool): MAT file HDF standard flag
-            - date (str): MAT file creation time (locale format)
-
+            - platform (str): MATLAB platform string
+            - hdf (bool): :data:`True` if the file uses the HDF5-based v7.3 format
+            - date (str): MAT file creation timestamp as written by MATLAB (locale-dependent format)
     """
     # Read MAT file header
     header = ''  # INIT VAR
@@ -55,14 +64,20 @@ def mat_meta_read(file):
 
 
 def mat_data_read(file, rtmt=False):
-    """ Read MATLAB MAT file data.
+    """Read the data payload of a MATLAB MAT file.
+
+    The MAT file format is auto-detected via :func:`mat_meta_read`. v7.3 files are opened with ``h5py`` and
+    walked with :func:`parus.fio.hdf.h5_load_dat`/:func:`parus.fio.hdf.h5_load_ref`; v5/v7 files are opened
+    with :func:`scipy.io.loadmat` and unwrapped from the nested ``numpy.void`` structures that SciPy returns.
 
     Args:
-        file (str): MATLAB MAT file path
-        rtmt (bool): Return metadata with the data (default: False = return data only)
+        file (str): Path to the MATLAB MAT file (``*.mat``)
+        rtmt (bool): When :data:`True`, also return the parsed metadata dictionary alongside the data
+            (default: ``False``)
 
     Returns:
-        Loaded data
+        dict | tuple[dict, dict]: The decoded MAT file payload as a nested dictionary; when ``rtmt`` is
+            :data:`True`, a ``(data, meta)`` tuple where ``meta`` is the dictionary returned by :func:`mat_meta_read`
     """
     # Read metadata
     meta = mat_meta_read(file)
@@ -72,7 +87,18 @@ def mat_data_read(file, rtmt=False):
         fp = h5.File(file, mode='r')
 
         def __check_reference(obj):
-            """ HDF5-MAT recursive reading helper function. """
+            """Recursively dereference HDF5 object references that appear in v7.3 MAT files.
+
+            MATLAB encodes character arrays as ``uint16`` blobs and uses ``object`` arrays of HDF5 references for nested
+            structures. This helper folds both back into native Python types.
+
+            Args:
+                obj: Value drawn from the v7.3 MAT structure (typically the output of
+                    :func:`parus.fio.hdf.h5_load_dat`)
+
+            Returns:
+                The fully dereferenced value (string, list, dict, or :class:`numpy.ndarray` as appropriate)
+            """
             if isinstance(obj, np.ndarray):
                 if obj.dtype == 'uint16':
                     return bytes(obj).decode('utf-16')
@@ -107,7 +133,17 @@ def mat_data_read(file, rtmt=False):
         [raw.pop(k) for k in ddk]  # Remove dunder keys
 
         def __unpack_named(obj):
-            """ SciPy-MAT output rearrange function. """
+            """Flatten the nested ``numpy.void``/``object`` arrays produced by :func:`scipy.io.loadmat`.
+
+            SciPy wraps every cell, struct, and string in additional array dimensions. This helper unwraps
+            single-element wrappers and converts ``void`` records into regular dictionaries.
+
+            Args:
+                obj: Value drawn from the SciPy MAT structure
+
+            Returns:
+                The unwrapped value (string, list, dict, or :class:`numpy.ndarray` as appropriate)
+            """
             if isinstance(obj, np.ndarray):
                 if obj.dtype.type == np.void:
                     rtv = {}  # INIT VAR

@@ -1,4 +1,9 @@
-# PARUS real-time data processing package
+# -*- coding: utf-8 -*-
+
+"""PARUS real-time data processing package
+
+Hardware IO primitives and recording-controller adapters for the PARUS real-time spike-detection system.
+"""
 
 from PySide6 import QtCore, QtWidgets
 

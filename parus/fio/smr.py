@@ -1,5 +1,10 @@
-# CED Spike2 SMR file import module
-# Modified from NEO package (https://neuralensemble.org/) for pure and native file operation
+# -*- coding: utf-8 -*-
+
+"""CED Spike2 SMR file import module
+
+Memory-mapped reader for CED Spike2 ``*.smr`` files. Implemented with NumPy structured arrays only, with no external
+SMR-specific dependency. Adapted from the `Neo <https://neuralensemble.org/>`_ package by Neural Ensemble.
+"""
 
 import numpy as np
 
@@ -8,22 +13,28 @@ __name__ = 'parus.fio.smr'
 
 __all__ = ['smr_load', 'smr_parse_header', 'smr_read_raw', 'smr_read_chn', 'smr_conv_wfm', 'smr_conv_tsp']
 """
-Function list:
-  # Low level reading functions:
-    smr_parse_header(fm): Parse CED Spike 2 SMR file header information.
-    smr_conv_wfm(item, scale=1, offset=0): Convert raw SMR waveform data to the physical unit.
-    smr_conv_tsp(item, fac, stack=False): Convert raw SMR timestamp data to the physical seconds.
-    smr_read_raw(fm, chn_info, blk_info): Read raw data from SMR channel.
-  # Reading function:
-    smr_load(file): Load data from CED Spike2 SMR file.
-  # Private functions:
-    __d_chs_dt(kind, n_extra=0): Get channel data type definition.
-    __parse_struct(fm, dtype, seek=0): Parse data with defined structure.
-Private constants:
-  __h_sys_dt {np.dtype}: File header type definition.
-  __ch_type {dict}: Channel type definition.
-  __h_chs_dt {np.dtype}: Channel header type definition.
-  __h_blk_dt {np.dtype}: Block header type definition.
+Public function list:
+
+- Top-level reader:
+
+    - smr_load(file)                          : Load every non-empty channel from a CED Spike2 SMR file
+
+- Low-level helpers:
+
+    - smr_parse_header(fm)                    : Parse the system, channel, and block headers of a mapped SMR file
+    - smr_read_raw(fm, chn_info, blk_info)    : Read raw block data for a single channel
+    - smr_read_chn(fm, header, idx)           : Read and unit-convert data for a single channel
+    - smr_conv_wfm(item, scale, offset)       : Convert raw SMR waveform samples to physical units
+    - smr_conv_tsp(item, fac, stack)          : Convert raw SMR timestamp ticks to seconds
+
+Private members:
+
+- __h_sys_dt (np.dtype)                       : System (file) header structured datatype
+- __ch_type (dict[int, str])                  : Channel-kind to human-readable name mapping
+- __h_chs_dt (np.dtype)                       : Channel header structured datatype
+- __h_blk_dt (np.dtype)                       : Block header structured datatype
+- __d_chs_dt(kind, n_extra)                   : Build the channel data structured datatype for a given kind
+- __parse_struct(fm, dtype, seek)             : Parse a single structured record from the memory-mapped file
 """
 
 
@@ -92,14 +103,18 @@ __h_chs_dt = np.dtype([
 
 # Channel data type definition
 def __d_chs_dt(kind, n_extra=0):
-    """ Get channel data type definition.
+    """Build the structured NumPy datatype that describes the per-record layout of an SMR channel.
+
+    The SMR format encodes ADC waveforms, event timestamps, marker codes, and label text using a small set of channel
+    kinds. This helper returns the matching structured ``dtype`` so the channel's binary records can be parsed in-place.
 
     Args:
-        kind (int): Channel type
-        n_extra (int): Extra data type definition (default: 0)
+        kind (int): SMR channel kind code (1-9; ``0`` and unrecognised values fall back to a void placeholder)
+        n_extra (int): Number of extra bytes per record (used by ``AdcMark``, ``RealMark`` and ``TextMark``
+            channels) (default: ``0``)
 
     Returns:
-        np.dtype: Channel data type definitions
+        np.dtype: Structured datatype describing one record of the channel
     """
     # Adc: Raw half precision signal
     if kind == 1:
@@ -140,15 +155,18 @@ __h_blk_dt = np.dtype([
 
 
 def __parse_struct(fm, dtype, seek=0):
-    """ Parse data with defined structure.
+    """Parse a single structured record from the memory-mapped SMR file.
+
+    String fields are decoded as ISO-8859-1, NUL-padding is stripped, and the leading byte is interpreted as a
+    Pascal-style length prefix.
 
     Args:
-        fm (np.memmap): CED Spike2 SMR file memory mapping
-        dtype (np.dtype): NumPy data type definition
-        seek (int): File memory mapping offset
+        fm (np.memmap): Memory-mapped view of the SMR file
+        dtype (np.dtype): Structured datatype describing the record to parse
+        seek (int): Byte offset of the record within ``fm`` (default: ``0``)
 
     Returns:
-        dict: Parsed data
+        dict: Field-name to decoded-value mapping
     """
     last = seek + dtype.itemsize
     h = fm[seek:last].view(dtype)
@@ -167,13 +185,22 @@ def __parse_struct(fm, dtype, seek=0):
 # Low level reading functions ---------------------------------------------------------------------------------------- #
 
 def smr_parse_header(fm):
-    """ Parse CED Spike 2 SMR file header information.
+    """Parse the system, channel, and block headers of a memory-mapped SMR file.
+
+    The system header is parsed first; legacy systems with ``system_id < 6`` are normalised by patching the missing
+    time-base and datetime fields. Each channel header then contributes its kind-specific extension (scale/offset for
+    waveform channels, edge-state for ``EventBoth``, etc.) and finally every block header on the channel chain is
+    walked.
 
     Args:
-        fm (np.memmap): SMR file memory mapping
+        fm (np.memmap): Memory-mapped view of the SMR file
 
     Returns:
-        dict: SMR header information
+        dict: Three sub-dictionaries
+
+            - system (dict): File-level header fields, including ``time_factor`` (seconds per tick)
+            - channel (dict[int, dict]): Per-channel header keyed by channel index
+            - block (dict[int, list[dict]]): Per-channel list of block headers, each carrying its file offset
     """
     # Parse SMR file header
     sys_info = __parse_struct(fm, __h_sys_dt, seek=0)
@@ -228,15 +255,19 @@ def smr_parse_header(fm):
 
 
 def smr_conv_wfm(item, scale=1, offset=0):
-    """ Convert raw SMR waveform data to the physical unit.
+    """Convert raw SMR waveform samples to physical units.
+
+    The conversion follows the SMR specification ``physical = raw * scale / 6553.6 + offset``, where ``6553.6`` is the
+    ratio between the 16-bit ADC range (``65536``) and the SMR full-scale input range (``10`` V).
 
     Args:
-        item (list[np.ndarray]): Raw waveform data from SMR file
-        scale (float): Channel scaling factor
-        offset (float): Channel offset value
+        item (list[np.ndarray]): Per-block raw waveform arrays, in the order returned by :func:`smr_read_raw`
+        scale (float): Channel scale factor from the channel header (default: ``1``)
+        offset (float): Channel offset from the channel header (default: ``0``)
 
     Returns:
-        np.ndarray: {1D-float32} Converted waveform data
+        np.ndarray: {1D-float32} Concatenated waveform in the channel's physical unit, or an empty array
+            when ``item`` is empty
     """
     if item:
         item = np.hstack(item) * scale / 6553.6 + offset  # 6553.6 = [ADC range 65536] / [Input range 10(V)]
@@ -246,15 +277,19 @@ def smr_conv_wfm(item, scale=1, offset=0):
 
 
 def smr_conv_tsp(item, fac, stack=False):
-    """ Convert raw SMR timestamp data to the physical seconds.
+    """Convert raw SMR timestamp ticks to seconds.
+
+    The SMR file stores timestamps as integer ticks of the system time base. Multiplying by the recording
+    ``time_factor`` (returned by :func:`smr_parse_header`) yields seconds.
 
     Args:
-        item (list[np.ndarray]): Raw waveform data from SMR file
-        fac (float): Recording file time base factor
-        stack (bool): Stack timestamp control flag
+        item (list[np.ndarray]): Per-block raw timestamp arrays
+        fac (float): Recording time-base factor (seconds per tick)
+        stack (bool): When :data:`True` concatenate ``item`` along the last axis; when :data:`False`
+            squeeze a leading axis of size one (default: ``False``)
 
     Returns:
-        np.ndarray: {1D-float32} Converted timestamp data
+        np.ndarray: {1D-float32} Timestamps in seconds, or an empty array when ``item`` is empty
     """
     if item:
         item = np.hstack(item) if stack else np.squeeze(item, axis=0)
@@ -265,15 +300,21 @@ def smr_conv_tsp(item, fac, stack=False):
 
 
 def smr_read_raw(fm, chn_info, blk_info):
-    """ Read raw data from SMR channel.
+    """Read the raw block-level data of a single SMR channel.
+
+    Walks the block header list, slices each block out of the memory-mapped file using the channel's structured
+    datatype, and concatenates the per-field results into lists. For waveform-bearing channels a matching list of
+    per-block ``time`` arrays is also produced (linearly spaced between the block's ``start_time`` and ``end_time``).
 
     Args:
-        fm (np.memmap): SMR file memory mapping
-        chn_info (dict): Channel header
-        blk_info (dict): Channel block header
+        fm (np.memmap): Memory-mapped view of the SMR file
+        chn_info (dict): Channel header (entry of ``smr_parse_header(...)['channel']``)
+        blk_info (list[dict]): Block headers for the channel (entry of ``smr_parse_header(...)['block']``)
 
     Returns:
-        dict[list[np.ndarray]]: Raw data from file
+        dict[str, list[np.ndarray]]: Per-field, per-block raw arrays. The set of keys depends on the
+            channel kind (``waveform``, ``tick``, ``marker``, ``label``, ...); waveform-bearing channels
+            also have a ``time`` key
     """
     # Get data info
     dt = __d_chs_dt(chn_info['kind'], chn_info['n_extra'])
@@ -300,15 +341,18 @@ def smr_read_raw(fm, chn_info, blk_info):
 
 
 def smr_read_chn(fm, header, idx):
-    """ Read and convert data from SMR channel.
+    """Read and unit-convert the data of a single SMR channel.
+
+    Combines :func:`smr_read_raw` with :func:`smr_conv_wfm` and :func:`smr_conv_tsp` so the returned arrays are in
+    physical units (volts for waveforms, seconds for timestamps).
 
     Args:
-        fm (np.memmap): SMR file memory mapping
-        header (dict): SMR file header information
-        idx (int): Channel index
+        fm (np.memmap): Memory-mapped view of the SMR file
+        header (dict): Output of :func:`smr_parse_header`
+        idx (int): Channel index to read
 
     Returns:
-        dict[np.ndarray]: Raw data from file
+        dict[str, np.ndarray]: Field-name to converted-array mapping for the channel
     """
     chi = header['channel'][idx]
     bki = header['block'][idx]
@@ -326,13 +370,18 @@ def smr_read_chn(fm, header, idx):
 # Reading function --------------------------------------------------------------------------------------------------- #
 
 def smr_load(file):
-    """ Load data from CED Spike2 SMR file.
+    """Load every non-empty channel from a CED Spike2 SMR file.
+
+    The file is memory-mapped read-only, headers are parsed with :func:`smr_parse_header`, and each non-empty channel
+    is read with :func:`smr_read_chn`. Channels are keyed by their textual ``title`` from the channel header rather
+    than by index.
 
     Args:
-        file (str): CED Spike2 SMR file path (`*.smr`)
+        file (str): Path to the CED Spike2 SMR file (``*.smr``)
 
     Returns:
-        dict: Loaded data
+        dict[str, dict[str, np.ndarray]]: Mapping from channel title to the converted channel data returned
+            by :func:`smr_read_chn`
     """
     # Map file
     fm = np.memmap(file, dtype='u1', offset=0, mode='r')

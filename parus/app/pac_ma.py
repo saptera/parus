@@ -1,4 +1,10 @@
-# PARUS main application SCRIPT
+# -*- coding: utf-8 -*-
+
+"""PARUS main application script
+
+Launches either the PARUS data-processing or the model-training Qt application, selected by the ``-m`` flag.
+Used as the entry point for the bundled OS-level shortcuts.
+"""
 
 import sys
 import argparse
@@ -10,11 +16,11 @@ from ..gui.app_main import SysSet, ParusTrnApp, ParusDatApp
 
 
 # CLI inputs parser  ------------------------------------------------------------------------------------------------- #
-parser = argparse.ArgumentParser(prog="ParusApp", description="PARUS main application caller",
-                                 epilog="Call PARUS data and training applications")
+parser = argparse.ArgumentParser(prog="ParusApp", description="PARUS main application launcher",
+                                 epilog="Launch the PARUS data or training application")
 parser.add_argument('-v', '--version', action='version', version="PARUS system: v%s" % str(version))
 parser.add_argument('-m', '--mode', dest='mode', default='dat', type=str, choices=['trn', 'dat'], metavar="[str]",
-                    help="Application selection (default: %(default)s)")
+                    help="Application selection: 'dat' (data) or 'trn' (training) (default: %(default)s)")
 # Parse inputs
 args = parser.parse_args()
 # -------------------------------------------------------------------------------------------------------------------- #

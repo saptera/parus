@@ -1,4 +1,10 @@
-# GUI plotting module
+# -*- coding: utf-8 -*-
+
+"""GUI plotting module
+
+Matplotlib-on-Qt canvases and supporting artists used by the PARUS GUIs to render archival signal previews,
+clustering features, waveform markers, and analysis results.
+"""
 
 from typing import Iterable
 import numpy as np
@@ -22,38 +28,46 @@ from . import cs_dark
 
 __all__ = ['LoopedColormap', 'BlitManager', 'ArcPreviewPlot', 'ClstFeatViewer', 'WfmPosMarker', 'ResPltLoader']
 """
-Class list:
-  LoopedColormap(clst, name='loop_cmap'): Looped colormap with no resampling.
-  BlitManager(canvas, artists=()): Bit blit manager for data plotting.
-  ArcPreviewPlot(data): Plot and preview archival signal data.
-  ClstFeatViewer(raw, spk, t, asp, psp, clst, min_cnt=50, cmap=None): Cluster feature plots main class.
-  WfmPosMarker(canvas, axes, t, wfm=None, pos=None): Bit blit manager for assistive marking elements.
-  ResPltLoader(self, file, cmap='winter'): Load Parus analysis results for manual inspection.
+Public class list:
+
+- LoopedColormap(clst, name)                            : Looped Matplotlib colormap with no resampling
+- BlitManager(canvas, artists)                          : Blit-based animation manager for plotting
+- ArcPreviewPlot(data)                                  : Archival neural signal preview canvas
+- ClstFeatViewer(raw, spk, t, asp, psp, clst, ...)      : Spike-clustering feature visualiser
+- WfmPosMarker(canvas, axes, t, wfm, pos)               : Blit manager for assistive waveform-marking artists
+- ResPltLoader(file, cmap)                              : Load PARUS analysis results for manual inspection
 """
 
 
 class LoopedColormap(Colormap):
+    """Looped Matplotlib colormap that cycles through a fixed colour list without resampling.
+
+    Lookup wraps modulo the list length so values larger than ``N - 1`` reuse the earlier colours rather
+    than being clamped or resampled.
+    """
+
     def __init__(self, clst, name='loop_cmap'):
-        """ Looped colormap with no resampling.
+        """Build the colormap from a colour list.
 
         Args:
-            clst (list): List of colours
-            name (str): Colormap name (default: 'loop_cmap')
+            clst (list): Colour list passed to :class:`~matplotlib.colors.Colormap`
+            name (str): Colormap name (default: ``'loop_cmap'``)
         """
         self.colors = clst
         self.monochrome = len(clst) == 1
         super(LoopedColormap, self).__init__(name=name, N=len(clst))
 
     def __call__(self, x, alpha=None, *args):
-        """ Colormap sampling call.
+        """Sample the colormap at one or many positions, looping modulo the colour count.
 
         Args:
-            x (int | float | list[int | float] | np.ndarray): List of positions
-            alpha (float | None): {[0, 1]} Colour alpha level
-            *args: Parent class extra arguments, ignored
+            x (int | float | list[int | float] | np.ndarray): Sampling position(s)
+            alpha (float | None): Alpha level in ``[0, 1]`` (default: ``None``)
+            *args: Extra arguments accepted by the parent class signature; ignored
 
         Returns:
-            Colours
+            tuple[float, float, float, float] | np.ndarray: RGBA colour for a scalar ``x``, or an array of
+                RGBA colours for an iterable ``x``
         """
         if np.iterable(x):
             cnt = np.rint(x).astype(int) % self.N
@@ -65,17 +79,23 @@ class LoopedColormap(Colormap):
             return to_rgba(self.colors[c])
 
     def __getitem__(self, item):
-        """ Get color list item. """
+        """Return the colour at the given list index (looped modulo the colour count)."""
         return self.__call__(item, alpha=None)
 
 
 class BlitManager:
+    """Blit-based animation manager that captures the canvas background and selectively redraws artists.
+
+    Stores the static background of a canvas after each draw event so dynamic artists can be cheaply
+    redrawn without repainting the rest of the figure.
+    """
+
     def __init__(self, canvas, artists=()):
-        """ Bit blit manager for data plotting.
+        """Attach the manager to a canvas and register an initial set of dynamic artists.
 
         Args:
-            canvas (backend_agg.FigureCanvasAgg): The canvas to work with
-            artists (Iterable[artist.Artist]): List of the artists to manage
+            canvas (backend_agg.FigureCanvasAgg): Canvas whose background is captured between draws
+            artists (Iterable[artist.Artist]): Initial artists to manage (default: ``()``)
         """
         self.cvs = canvas
         self.artists = []
@@ -87,10 +107,10 @@ class BlitManager:
         self.cid = self.cvs.mpl_connect('draw_event', self.on_draw)
 
     def add_artist(self, art):
-        """ Add an artist to be managed.
+        """Register an artist as animated and start managing it.
 
         Args:
-            art (artist.Artist): The artist to be added.
+            art (artist.Artist): Artist to add (must belong to the manager's canvas)
         """
         if art.figure != self.cvs.figure:
             warnings.warn("Requested artist not on the targeted figure!", RuntimeWarning, stacklevel=2)
@@ -98,10 +118,10 @@ class BlitManager:
         self.artists.append(art)
 
     def remove_artist(self, art):
-        """ Remove an artist from the manager.
+        """Stop managing an artist and reset its animated flag.
 
         Args:
-            art (artist.Artist): The artist to be added.
+            art (artist.Artist): Artist to remove
         """
         if art.figure != self.cvs.figure:
             warnings.warn("Requested artist not on the targeted figure!", RuntimeWarning, stacklevel=2)
@@ -112,7 +132,7 @@ class BlitManager:
             warnings.warn("Requested artist not managed!", RuntimeWarning, stacklevel=2)
 
     def on_draw(self, event):
-        """ Callback to register with [draw_event]. """
+        """Capture the canvas background and redraw the managed artists; bound to ``draw_event``."""
         if event is not None:
             if event.canvas != self.cvs:
                 raise RuntimeError("Event canvas is not managed!")
@@ -122,7 +142,7 @@ class BlitManager:
             self.cvs.figure.draw_artist(a)
 
     def update(self):
-        """ Update the screen with animated artists. """
+        """Restore the cached background and blit every managed artist on top of it."""
         # Paranoia in case the draw event was missed
         if self.__bg is None:
             self.on_draw(None)
@@ -139,11 +159,13 @@ class BlitManager:
 
 
 class ArcPreviewPlot(FigureCanvasQTAgg):
+    """Qt canvas that renders an archival neural signal sample with its spike peak and refined range marked."""
+
     def __init__(self, data):
-        """ Plot and preview archival signal data.
+        """Build the figure, render the trace, and connect it to the Qt backend.
 
         Args:
-            data (dict): Archival signal data, refer to [parus.fio.fdata -> ARC data structure definition]
+            data (dict): Archival signal data; see the ARC data structure definition in :mod:`parus.fio.fdata`
         """
         t = list(range(len(data['sig'])))
         # Get spike peak labels
@@ -169,23 +191,29 @@ class ArcPreviewPlot(FigureCanvasQTAgg):
         super(ArcPreviewPlot, self).__init__(self.fig)
 
     def close(self):
-        """ Close clean-up. """
+        """Close the embedded Matplotlib figure to release its resources."""
         plt.close(self.fig)
 
 
 class ClstFeatViewer:
+    """Spike-clustering feature visualiser that aggregates per-cluster waveform and timing plots.
+
+    Builds the figure layout used by the spike-sorting GUI to display per-cluster waveforms, mean
+    waveforms, inter-spike interval histograms, and other derived features for one recording.
+    """
+
     def __init__(self, raw, spk, t, asp, psp, clst, min_cnt=50, cmap=None):
-        """ Cluster feature plots main class.
+        """Pre-aggregate per-cluster data and prepare the plot layout.
 
         Args:
             raw (np.ndarray): {2D-float32} Raw signal data
             spk (dict[str, np.ndarray]): {2D-float32} Spike signal data
             t (np.ndarray): {1D-float32} Time data
-            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices
-            asp (dict[str, int]): Total number of anterior samples
-            psp (dict[str, int]): Total number of posterior samples
-            min_cnt (int): Minimum cluster element number (default: 50)
-            cmap (LoopedColormap): Plotting colormap (default: None)
+            asp (dict[str, int]): Anterior sample count per spike type
+            psp (dict[str, int]): Posterior sample count per spike type
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices per spike type
+            min_cnt (int): Minimum number of elements required for a cluster to be plotted (default: ``50``)
+            cmap (LoopedColormap | None): Plotting colormap (default: ``None``)
         """
         # Get inputs
         self.raw = raw
@@ -214,11 +242,13 @@ class ClstFeatViewer:
         self.spk_feat = self._SpkFeat(self)
 
     class _ChnFeat(FigureCanvasQTAgg):
+        """Per-channel cluster feature canvas: amplitude scatter and waveform overlay."""
+
         def __init__(self, parent):
-            """ Cluster channel feature plots.
+            """Build the two-axis canvas, prepare per-cluster artists, and render the initial frame.
 
             Args:
-                parent (ClstFeatViewer): Parent class
+                parent (ClstFeatViewer): Owning :class:`ClstFeatViewer` instance
             """
             # Get inputs
             self._cfv = parent
@@ -254,11 +284,11 @@ class ClstFeatViewer:
             super(ClstFeatViewer._ChnFeat, self).__init__(self.fig)
 
         def plot_fig(self, start=0, reset_axes=True):
-            """ Plot data to figure.
+            """Render the amplitude-scatter and waveform views starting at ``start`` seconds.
 
             Args:
-                start (int | float): Plot start time (default: 0)
-                reset_axes (bool): Force reset exes features (default: True)
+                start (int | float): Plot start time in seconds (default: ``0``)
+                reset_axes (bool): When :data:`True`, reset the axis ticks and labels (default: ``True``)
             """
             # Get time
             sct_ti = start // 30 * 30.0
@@ -339,7 +369,7 @@ class ClstFeatViewer:
             self.__sct_frm = sct_ti
 
         def __clear_fig(self):
-            """ Clear current figure. """
+            """Clear axes and reset the per-cluster artist registries."""
             # Clear axes
             self.ax[0].clear()
             self.ax[1].clear()
@@ -351,7 +381,7 @@ class ClstFeatViewer:
             self.__rct = None
 
         def replot_fig(self):
-            """ Re-plotting figure. """
+            """Refresh data caches and redraw the figure from scratch (used after a cluster merge)."""
             # Flatten inference results
             con = np.asarray([self._cfv.spk[w][self._cfv.chn] for w in self._cfv.spk])
             sel = np.argmax(np.abs(con), axis=0)
@@ -370,10 +400,10 @@ class ClstFeatViewer:
             self.plot_fig(start=0, reset_axes=True)
 
         def switch_fig(self, typ='raw'):
-            """ Switch plot data between raw and spike.
+            """Switch the underlying source between the raw signal and the inferred spike signal.
 
             Args:
-                typ (str): {'raw' | 'spk'} Source data type (default: 'raw')
+                typ (str): Source data type; one of ``{'raw', 'spk'}`` (default: ``'raw'``)
             """
             if typ != self.__typ:
                 self.__typ = typ
@@ -387,10 +417,10 @@ class ClstFeatViewer:
                 self.plot_fig(start=time, reset_axes=True)
 
         def set_time(self, start):
-            """ Set x-axis (time) range.
+            """Move the x-axis window to start at ``start`` seconds (scatter marker tracks the change).
 
             Args:
-                start (int | float): Start time
+                start (int | float): Plot start time in seconds
             """
             # Set amplitude scatter position marker
             if self.__rct is not None:
@@ -399,10 +429,11 @@ class ClstFeatViewer:
             self.plot_fig(start=start, reset_axes=False)
 
         def set_act_clst(self, idx=None):
-            """ Set active cluster in figure.
+            """Restrict visible clusters to the indices in ``idx`` (or apply the size threshold).
 
             Args:
-                idx (list[int] | None): Cluster index (default: None = all cluster above [self._cfv.min_cnt])
+                idx (list[int] | None): Cluster indices to show; pass :data:`None` to fall back to the
+                    ``min_cnt`` size threshold (default: ``None``)
             """
             for i in range(len(self.ftc)):
                 flag = (len(self.ftc[i]) >= self._cfv.min_cnt) if idx is None else (i in idx)
@@ -414,11 +445,13 @@ class ClstFeatViewer:
             self.fig.canvas.flush_events()
 
     class _GrpFeat(FigureCanvasQTAgg):
+        """Per-group canvas showing the mean (± std) waveform of every cluster in the active group."""
+
         def __init__(self, parent):
-            """ Cluster channel feature plots.
+            """Build the canvas and render the initial mean-waveform overlay.
 
             Args:
-                parent (ClstFeatViewer): Parent class
+                parent (ClstFeatViewer): Owning :class:`ClstFeatViewer` instance
             """
             # Get inputs
             self._cfv = parent
@@ -440,7 +473,7 @@ class ClstFeatViewer:
             super(ClstFeatViewer._GrpFeat, self).__init__(self.fig)
 
         def __update_axis(self):
-            """ Update figure axis. """
+            """Refresh the axis title, limits, and the no-spike fallback marker."""
             # Remove previous marker
             if self.__mrk_txt is not None:
                 self.__mrk_txt.remove()
@@ -459,7 +492,7 @@ class ClstFeatViewer:
             self.fig.canvas.flush_events()
 
         def plot_fig(self):
-            """ Plot data to figure. """
+            """Compute mean and ±1-std waveform per cluster and draw them on the canvas."""
             self.__wfm_lst = []  # RESET VAR
             i = 0
             for w in self._cfv.spk:
@@ -486,7 +519,7 @@ class ClstFeatViewer:
             self.__update_axis()
 
         def replot_fig(self):
-            """ Re-plotting figure. """
+            """Clear the axes and redraw the figure (used after a cluster merge)."""
             # Clear axes
             self.ax.clear()
             self.__mrk_txt = None
@@ -494,10 +527,10 @@ class ClstFeatViewer:
             self.plot_fig()
 
         def set_spk_grp(self, grp):
-            """ Set plotting spike waveform.
+            """Switch which waveform group's mean traces are visible.
 
             Args:
-                grp (int): Waveform group index
+                grp (int): Index into the spike-group keys of the parent viewer
             """
             grp = list(self._cfv.spk.keys())[grp]
             if grp != self.__grp:
@@ -511,10 +544,11 @@ class ClstFeatViewer:
                 self.__update_axis()
 
         def set_act_clst(self, idx=None):
-            """ Set active cluster in figure.
+            """Highlight the listed clusters in colour, dimming everything else to grey.
 
             Args:
-                idx (list[int] | None): Cluster index (default: None = all cluster above [self._cfv.min_cnt])
+                idx (list[int] | None): Cluster indices to highlight; pass :data:`None` to fall back to
+                    the ``min_cnt`` size threshold (default: ``None``)
             """
             for i in range(len(self.__wfm_lst)):
                 flag = (self.__wfm_lst[i]['n'] >= self._cfv.min_cnt) if idx is None else (i in idx)
@@ -528,11 +562,13 @@ class ClstFeatViewer:
             self.fig.canvas.flush_events()
 
     class _SpkFeat(FigureCanvasQTAgg):
+        """Spike-train feature canvas: correlogram on top and per-cluster sample plot below."""
+
         def __init__(self, parent):
-            """ Spike train feature plots.
+            """Build the canvas, clear initial state, and connect to the Qt backend.
 
             Args:
-                parent (ClstFeatViewer): Parent class
+                parent (ClstFeatViewer): Owning :class:`ClstFeatViewer` instance
             """
             # Get inputs
             self._cfv = parent
@@ -552,13 +588,14 @@ class ClstFeatViewer:
             super(ClstFeatViewer._SpkFeat, self).__init__(self.fig)
 
         def plot_correlogram(self, px, py=None, tx="Trigger", ty="Triggered"):
-            """ Plot spike train correlogram.
+            """Render a spike-train correlogram (or autocorrelogram when ``py`` is :data:`None`).
 
             Args:
-                px (np.ndarray | None): Spike train as trigger
-                py (np.ndarray | None): Triggered spike train (default: None = autocorrelogram)
-                tx (str): Trigger spike train name (default: Trigger)
-                ty (str): Triggered spike train name (default: Triggered)
+                px (np.ndarray | None): Trigger spike train; pass :data:`None` to display a placeholder
+                py (np.ndarray | None): Triggered spike train; pass :data:`None` for an autocorrelogram of
+                    ``px`` (default: ``None``)
+                tx (str): Trigger spike train label (default: ``"Trigger"``)
+                ty (str): Triggered spike train label (default: ``"Triggered"``)
             """
             # Remove previous artist
             self.ax[0].clear()
@@ -604,13 +641,14 @@ class ClstFeatViewer:
             self.fig.canvas.flush_events()
 
         def plot_spksamp(self, pos, wfm, chs, name=None):
-            """ Plot spike sample over time or channel.
+            """Render per-channel spike samples in a tiled layout below the correlogram.
 
             Args:
-                pos (np.ndarray | None): {1D-int | 2D-int} Spike position indices
-                wfm (str | None): Waveform name
-                chs (list[int] | None): Channels to sample
-                name (str | None): Spike cell name
+                pos (np.ndarray | None): {1D-int | 2D-int} Spike position indices; pass :data:`None` to
+                    display a placeholder
+                wfm (str | None): Waveform group name to draw samples from
+                chs (list[int] | None): Channel indices to sample
+                name (str | None): Spike cell label used in the axis title (default: ``None``)
             """
             # Remove previous artist
             self.ax[1].clear()
@@ -691,31 +729,31 @@ class ClstFeatViewer:
             self.fig.canvas.flush_events()
 
         def reset_fig(self):
-            """ Reset figures. """
+            """Reset both axes to the empty/placeholder state."""
             self.plot_correlogram(None, None)
             self.plot_spksamp(None, None, None)
 
         def chk_channel(self, ch):
-            """ Check current plotting channel for plots.
+            """Reset the figure when ``ch`` is not in the currently plotted channel set.
 
             Args:
-                ch (int): Current active channel
+                ch (int): Active channel index to verify against the cached selection
             """
             if ch not in self.__chs:
                 self.reset_fig()
 
     # Main class functions ------------------------------------------------------------------------------------------- #
     def reload_data(self, raw, spk, t, asp, psp, clst, min_cnt=50):
-        """ Cluster feature plots main class.
+        """Replace the underlying recording data and redraw every embedded figure.
 
         Args:
             raw (np.ndarray): {2D-float32} Raw signal data
-            spk (np.ndarray): {2D-float32} Spike signal data
-            t (np.ndarray): {1D-float32} Time data
-            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices
-            asp (dict[str, int]): Total number of anterior samples
-            psp (dict[str, int]): Total number of posterior samples
-            min_cnt (int): Minimum cluster element number (default: 50)
+            spk (dict[str, np.ndarray]): {2D-float32} Spike signal data
+            t (np.ndarray): {1D-float32} Time vector
+            asp (dict[str, int]): Anterior sample count per spike type
+            psp (dict[str, int]): Posterior sample count per spike type
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Cluster indices per spike type
+            min_cnt (int): Minimum elements required for a cluster to be plotted (default: ``50``)
         """
         # Get inputs
         self.raw = raw
@@ -736,16 +774,16 @@ class ClstFeatViewer:
         self.spk_feat.reset_fig()
 
     def close(self):
-        """ Close function. """
+        """Close every embedded Matplotlib figure to release their resources."""
         plt.close(self.chn_feat.fig)
         plt.close(self.grp_feat.fig)
         plt.close(self.spk_feat.fig)
 
     def set_channel(self, ch):
-        """ Set current plotting channel for all plots.
+        """Set the active channel index for all embedded plots and refresh them.
 
         Args:
-            ch (int): Current active channel
+            ch (int): Channel index to activate; clamped to ``[0, max_ch]``
         """
         if ch != self.chn:
             # Validate input
@@ -757,19 +795,20 @@ class ClstFeatViewer:
             self.spk_feat.chk_channel(ch)
 
     def set_act_clst(self, idx):
-        """ Set active cluster in figure.
+        """Highlight the listed clusters across the channel and group canvases.
 
         Args:
-            idx (list[int] | None): Cluster index (default: None = all cluster above [self.min_cnt])
+            idx (list[int] | None): Cluster indices to highlight; pass :data:`None` to fall back to the
+                ``min_cnt`` size threshold
         """
         self.chn_feat.set_act_clst(idx)
         self.grp_feat.set_act_clst(idx)
 
     def update_cluster(self, clst):
-        """  Update plot after merge.
+        """Replace the cluster indices and redraw the embedded figures (used after a merge).
 
         Args:
-            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Updated cluster indices
+            clst (dict[str, list[list[np.ndarray]]]): {1D-int64} Updated per-channel cluster indices
         """
         self.clst = clst
         # Replot figures
@@ -779,16 +818,23 @@ class ClstFeatViewer:
 
 
 class WfmPosMarker(BlitManager):
+    """Blit manager that maintains assistive cursor and waveform/position marker artists across axes.
+
+    Extends :class:`BlitManager` with a cursor line, waveform-amplitude marker, and spike-position marker
+    that follow the user's interaction with the plot (e.g. for the manual labelling workflow).
+    """
+
     def __init__(self, canvas, axes, t, keys, wfm=None, pos=None):
-        """ Bit blit manager for assistive marking elements.
+        """Build the cursor and marker artists and attach them to the supplied axes.
 
         Args:
-            canvas (backend_agg.FigureCanvasAgg): The canvas to work with
-            axes (list[plt.Axes]): List of the axes to add cursor lines
-            t (np.ndarray): {1D-float} Time vector of plot
-            keys (dict[str, dict[str, list[str]]]): Position keys groups to manage
-            wfm (np.ndarray | None): {1D-float} Waveform data (default: None)
-            pos (tuple[np.ndarray, int] | None): {1D-int(0|1), Index} Spike position data (default: None)
+            canvas (backend_agg.FigureCanvasAgg): Canvas whose background is captured between draws
+            axes (list[plt.Axes]): Axes that share the cursor/marker overlay
+            t (np.ndarray): {1D-float} Time vector of the plot
+            keys (dict[str, dict[str, list[str]]]): Per-channel waveform/position key groups managed by this marker
+            wfm (np.ndarray | None): {1D-float} Waveform data displayed at the cursor (default: ``None``)
+            pos (tuple[np.ndarray, int] | None): One-hot spike position data and the current channel
+                index (default: ``None``)
         """
         # Get index search constants
         self.t = t
@@ -851,24 +897,25 @@ class WfmPosMarker(BlitManager):
         self.cid = self.cvs.mpl_connect('button_press_event', self.__on_click)
 
     def find_nearest(self, value):
-        """ Find the index of nearest value in array.
+        """Return the index of the time vector closest to ``value``.
 
         Args:
-            value (int | float): Value to be searched
+            value (int | float): Time value (in seconds) to locate
 
         Returns:
-            int: Index of nearest value in array
+            int: Sample index nearest to ``value``
         """
         return round((value - self.__t_ini) * self.__t_fac)
 
     def find_extremum(self, index):
-        """ Find the index of nearest extremum in array, assuming the extremum have the same sign.
+        """Return the index of the local extremum near ``index`` with the same sign as the waveform there.
 
         Args:
-            index (int): Initial index
+            index (int): Seed index from which the search starts
 
         Returns:
-            int | None: Index of nearest extremum
+            int | None: Index of the nearest extremum within ``±5`` samples; :data:`None` when no
+                waveform has been attached
         """
         if self._wfm is None:
             return None
@@ -879,10 +926,10 @@ class WfmPosMarker(BlitManager):
                 return np.argmin(self._wfm[index - 5:index + 6]).item() + index - 5
 
     def set_chn(self, chn):
-        """ Set current waveform channel to attach interactive objects.
+        """Make the marker artists of one channel visible and hide the rest.
 
         Args:
-            chn (int | str): Channel index
+            chn (int | str): Channel index of the active correction target
         """
         self.cor_chn = str(chn)
         # Set visibility of correction markers
@@ -896,23 +943,24 @@ class WfmPosMarker(BlitManager):
         self.update()
 
     def set_wfm(self, wfm):
-        """ Set waveform to attach interactive objects.
+        """Attach the active waveform trace used by :meth:`find_extremum`.
 
         Args:
-            wfm (np.ndarray | None):  {1D-float} Waveform data
+            wfm (np.ndarray | None): {1D-float} Waveform data; pass :data:`None` to detach
         """
         self._wfm = wfm
         self.__wfm_mkr.set_visible(wfm is not None)
         self.update()
 
     def set_pos(self, pos, y, wfm_key, pos_key):
-        """ Set spike position to attach interactive objects.
+        """Attach the active spike-position vector and enable position-correction marking.
 
         Args:
-            pos (np.ndarray | None): {1D-int(0|1)} Spike position data (default: None)
-            y (int): Spike position virtual Y data index
-            wfm_key (str | None): Waveform name
-            pos_key (str | None): Spike name
+            pos (np.ndarray | None): {1D-int(0|1)} One-hot spike-position vector; pass :data:`None` to
+                disable position correction
+            y (int): Virtual y-axis index where the position marker is drawn
+            wfm_key (str | None): Active waveform key (None when ``pos`` is :data:`None`)
+            pos_key (str | None): Active position key (None when ``pos`` is :data:`None`)
         """
         self._pos = pos
         self.cor_wfm = wfm_key
@@ -931,12 +979,12 @@ class WfmPosMarker(BlitManager):
         self.update()
 
     def add_pos(self, wfm_key, chn_key, pos_key):
-        """ Add spike position to interactive objects.
+        """Register a new ``(waveform, channel, position)`` triple and attach its correction artists.
 
         Args:
-            wfm_key (str): Waveform name
-            chn_key (str): Channel name
-            pos_key (str): Spike name
+            wfm_key (str): Waveform key (group name)
+            chn_key (str): Channel key
+            pos_key (str): Position key (spike name)
         """
         # Add insertion artist
         add_mrk, = self.__ax[1].plot([None], [None], marker='P', ms=8, color='crimson', ls='none')
@@ -951,12 +999,12 @@ class WfmPosMarker(BlitManager):
         self.__cor_mkr[wfm_key][chn_key][pos_key] = {'+': add_mrk, '-': rmv_mrk}
 
     def del_pos(self, wfm_key, chn_key, pos_key):
-        """ Remove spike position from interactive objects.
+        """Deregister a ``(waveform, channel, position)`` triple and remove its correction artists.
 
         Args:
-            wfm_key (str): Waveform name
-            chn_key (str): Channel name
-            pos_key (str): Spike name
+            wfm_key (str): Waveform key (group name)
+            chn_key (str): Channel key
+            pos_key (str): Position key (spike name)
         """
         # Remove from control variables
         self.__cor_idx[wfm_key][chn_key].pop(pos_key)
@@ -971,10 +1019,10 @@ class WfmPosMarker(BlitManager):
         mkr['-'].remove()
 
     def chk_cor(self):
-        """ Check if any manual correction has been made.
+        """Return :data:`True` when any manual addition or removal has been recorded.
 
         Returns:
-            bool: Correction made flag
+            bool: :data:`True` when at least one position has been added or removed manually
         """
         flag = False
         for k in self.__cor_idx:
@@ -993,10 +1041,11 @@ class WfmPosMarker(BlitManager):
         return flag
 
     def get_cor(self):
-        """ Get all manual correction data.
+        """Snapshot every manual correction as nested per-position one-hot trinary vectors.
 
         Returns:
-            {1D-int8(-1|0|1)} Manual correction data
+            dict[str, dict[str, dict[str, np.ndarray]]]: Nested ``{wfm: {chn: {pos: vector}}}`` with each
+                vector storing ``+1`` for added positions, ``-1`` for removed positions, and ``0`` elsewhere
         """
         cor = {}  # INIT VAR
         for k in self.__cor_idx:
@@ -1013,7 +1062,7 @@ class WfmPosMarker(BlitManager):
         return cor
 
     def reset_cor(self):
-        """ Reset all manual corrections. """
+        """Discard every manual correction and clear the matching marker artists."""
         for k in self.__cor_idx:
             for c in self.__cor_idx[k]:
                 for p in self.__cor_idx[k][c]:
@@ -1024,7 +1073,7 @@ class WfmPosMarker(BlitManager):
         self.update()
 
     def __plt_cor_mrk(self):
-        """ Plot manual correction marker """
+        """Refresh the ``+``/``-`` correction markers for the active waveform/channel/position."""
         # Plot added positions
         self.__cor_mkr[self.cor_wfm][self.cor_chn][self.cor_pos]['+'].set_data(
             self.t[list(self.__cor_idx[self.cor_wfm][self.cor_chn][self.cor_pos]['+'])],
@@ -1039,7 +1088,7 @@ class WfmPosMarker(BlitManager):
         self.update()
 
     def __on_motion(self, event):
-        """ Callback to register with [motion_notify_event]. """
+        """Track mouse motion: update cursor, waveform marker, and snap-to-spike marker accordingly."""
         if event.xdata is not None:
             # Set cursor lines
             for a in self._csr_ln:
@@ -1073,7 +1122,7 @@ class WfmPosMarker(BlitManager):
             self.update()
 
     def __on_click(self, event):
-        """ Callback to register with [button_press_event]. """
+        """Record a manual addition (left click) or removal (right click) of a spike position."""
         if event.button is MouseButton.LEFT:
             if self.__pos_on:
                 if self.idx in self.__cor_idx[self.cor_wfm][self.cor_chn][self.cor_pos]['-']:
@@ -1094,12 +1143,21 @@ class WfmPosMarker(BlitManager):
 
 
 class ResPltLoader(FigureCanvasQTAgg):
+    """Qt canvas that loads a PARUS analysis result file and renders it for manual inspection.
+
+    Reads the recording, the model's spike-signal predictions, and the detected spike positions from a
+    PARUS analysis HDF5 file, then composes them on a multi-axis figure ready for interactive review.
+
+    Note:
+        The HDF5 file is opened in read mode and stays open for the lifetime of the canvas.
+    """
+
     def __init__(self, file, cplt=None):
-        """ Load Parus analysis results for manual inspection.
+        """Open the HDF5 file, build the figure layout, and render the initial view.
 
         Args:
-            file (str): Parus analysis result HDF5 file
-            cplt (str | None): List of colour HEX codes for plotting
+            file (str): Path to the PARUS analysis result HDF5 file
+            cplt (str | list[str] | None): Colour HEX codes used for plotting (default: ``None``)
         """
         init_len = 0.1  # 100ms initial view time length
         # Load result data
@@ -1164,16 +1222,16 @@ class ResPltLoader(FigureCanvasQTAgg):
         self._wpm.set_chn(self.__ch)
 
     def close(self):
-        """ Object close function. """
+        """Close the underlying HDF5 file and the embedded Matplotlib figure."""
         self.fp.close()
         plt.close(self.fig)
 
     def set_time(self, start, stop):
-        """ Set x-axis (time) range.
+        """Update the x-axis range and reload the slice of every waveform that falls inside it.
 
         Args:
-            start (int | float): Start time
-            stop (int | float): Stop time
+            start (int | float): Start time in seconds
+            stop (int | float): Stop time in seconds
         """
         # Set axis bound
         self.ax[1].set_xlim(start, stop)
@@ -1191,12 +1249,13 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.fig.canvas.flush_events()
 
     def set_amp(self, low, high, reset=False):
-        """ Set y-axis (signal amplitude) range.
+        """Update the signal-amplitude y-axis range and refresh the major/minor tick layout.
 
         Args:
             low (int | float): Minimum amplitude
             high (int | float): Maximum amplitude
-            reset (bool): Reset range to default, ignore [low] and [high] (default: False)
+            reset (bool): When :data:`True`, restore the channel's default amplitude range and ignore
+                ``low``/``high`` (default: ``False``)
         """
         # Set axis bound
         if reset:
@@ -1215,10 +1274,10 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.fig.canvas.flush_events()
 
     def plt_ch(self, ch):
-        """ Plot defined channel index.
+        """Switch the canvas to a different recording channel and reload its waveforms and positions.
 
         Args:
-            ch (int): Channel index
+            ch (int): Channel index to activate; clamped to ``[0, nch - 1]``
         """
         # Check channel input
         ch = 0 if ch < 0 else ch if ch < self.nch else self.nch - 1
@@ -1301,14 +1360,15 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.__plt_init = True
 
     def sel_wfm(self, sel, lnk_pos=True):
-        """ Select waveform(s) to be visible.
+        """Toggle waveform visibility and (optionally) the matching spike-position rows.
 
         Args:
-            sel (list[str]): Waveform name keys
-            lnk_pos (bool): If corresponding position plot will be disabled (default: True)
+            sel (list[str]): Waveform keys to keep visible
+            lnk_pos (bool): When :data:`True`, also hide the position rows of the hidden waveforms
+                (default: ``True``)
 
         Returns:
-            list[str]: Possible spike position keys
+            list[str]: ``"<wfm> - <pos>"`` keys whose waveform is visible after the call
         """
         # Set waveform
         for k in self.wfm:
@@ -1347,10 +1407,10 @@ class ResPltLoader(FigureCanvasQTAgg):
         return pos_key
 
     def set_act_wfm(self, wfm_key):
-        """ Set active waveform to inspect.
+        """Mark a waveform as the active inspection target and refresh the active-trace legend.
 
         Args:
-            wfm_key (str | None): Waveform name key
+            wfm_key (str | None): Waveform key to activate; pass :data:`None` to deactivate
         """
         # Remove existing active waveform legend
         if self.__act_leg is not None:
@@ -1373,11 +1433,11 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.fig.canvas.flush_events()
 
     def set_act_pos(self, wfm_key, pos_key):
-        """ Set active spike position to verify.
+        """Mark a spike-position row as the active correction target.
 
         Args:
-            wfm_key (str | None): Waveform name key
-            pos_key (str | None): Spike position name key
+            wfm_key (str | None): Waveform key; ``'RAW'`` or :data:`None` deactivates correction
+            pos_key (str | None): Position key; :data:`None` deactivates correction
         """
         if (wfm_key is None) or (wfm_key == 'RAW') or (pos_key is None):
             self._wpm.set_pos(None, -1, None, None)
@@ -1396,11 +1456,11 @@ class ResPltLoader(FigureCanvasQTAgg):
                 self.set_act_wfm('RAW')
 
     def add_pos(self, wfm_key, pos_key):
-        """ Add cell to the results.
+        """Add a new spike-position row for the user to fill in via manual correction.
 
         Args:
-            wfm_key (str): Waveform name key
-            pos_key (str): Spike position name key
+            wfm_key (str): Waveform key under which the position belongs
+            pos_key (str): Position (spike cell) key for the new row
         """
         # Record added cell
         name = (wfm_key, str(self.__ch), pos_key)
@@ -1423,11 +1483,11 @@ class ResPltLoader(FigureCanvasQTAgg):
             self.fig.canvas.flush_events()
 
     def del_rcv_pos(self, wfm_key, pos_key):
-        """ Remove or restore cell from the results.
+        """Toggle the strikethrough marker that flags a cell for removal (clicking again restores it).
 
         Args:
-            wfm_key (str): Waveform name key
-            pos_key (str): Spike position name key
+            wfm_key (str): Waveform key under which the position belongs
+            pos_key (str): Position (spike cell) key to mark or unmark
         """
         name = (wfm_key, str(self.__ch), pos_key)
         if name in self._pos_del:
@@ -1441,12 +1501,12 @@ class ResPltLoader(FigureCanvasQTAgg):
         self.fig.canvas.flush_events()
 
     def check_correction(self):
-        """ Check if manual correction exist. """
+        """Return :data:`True` when any pending correction (deletion or position edit) exists."""
         flag = (len(self._pos_del) > 0) or self._wpm.chk_cor()
         return flag
 
     def make_correction(self):
-        """ Set all manual corrected position to current data. """
+        """Apply every pending correction to the underlying HDF5 file and refresh the canvas."""
         cor = self._wpm.get_cor()
         p_bin = h5_load_dat(self.fp['pos'])
         for k in p_bin:

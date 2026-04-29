@@ -1,4 +1,10 @@
-# Model data loader classes module
+# -*- coding: utf-8 -*-
+
+"""Model data loader classes module
+
+PyTorch :class:`~torch.utils.data.Dataset` implementations for model training and inference, backed by
+PARUS-defined HDF5 files.
+"""
 
 import numpy as np
 import torch
@@ -11,20 +17,39 @@ from ..fio import H5PklFile, sim_args_read, sim_data_read
 
 __all__ = ['TrainingDataset', 'InferenceDataset']
 """
-Class list:
-  TrainingDataset(file, n_sample, seq_len): Load simulated dataset for model training.
-  InferenceDataset(file, seq_len, overlap=10, to_mem=False): Load raw recording data for model inference.
+Public class list:
+
+- TrainingDataset(file, n_sample, seq_len)             : Load a simulated dataset for model training
+- InferenceDataset(file, seq_len, overlap, to_mem)     : Load raw recording data for model inference
 """
 
 
 class TrainingDataset(Dataset):
+    """Load a simulated dataset for model training.
+
+    Reads a PARUS-defined simulated signal HDF5 file via :func:`parus.fio.fdata.sim_args_read` and
+    :func:`parus.fio.fdata.sim_data_read` and exposes per-sample tuples of ``(signal, label_signal, label_position)``
+    shaped for direct consumption by a sequence model.
+
+    Note:
+        The underlying HDF5 file is opened in read mode and stays open for the lifetime of the dataset; call
+        :meth:`close` to release the handle when done.
+    """
+
     def __init__(self, file, n_sample, seq_len):
-        """ Load simulated dataset for model training.
+        """Initialise the dataset and validate the input arguments.
 
         Args:
-            file (str): Path to simulated dataset file (HDF5 format)
-            n_sample (int): Number of samples to load
-            seq_len (int): Model sequence length
+            file (str): Path to the simulated dataset file (HDF5 format)
+            n_sample (int): Number of samples to load; clipped to the dataset's ``num_sim`` when larger
+            seq_len (int): Model sequence length; must match the dataset's ``tot_len``
+
+        Raises:
+            ValueError: If ``seq_len`` does not match the dataset's stored ``tot_len``
+
+        Warns:
+            RuntimeWarning: Emitted when ``n_sample`` exceeds the available simulated samples; the value
+                is clipped to ``num_sim``
         """
         self.__fp = H5PklFile(file, 'r')
         self.meta = sim_args_read(self.__fp)
@@ -53,19 +78,35 @@ class TrainingDataset(Dataset):
         return X, y_spk, y_pos
 
     def close(self):
-        """ Close dataset HDF5 file. """
+        """Close the underlying HDF5 file handle."""
         self.__fp.close()
 
 
 class InferenceDataset(Dataset):
+    """Load raw recording data for model inference.
+
+    Reads a PARUS-defined raw recording HDF5 file and exposes per-sample windows of the signal trace,
+    one window per channel and per sliding-window step. Windows overlap by ``overlap`` samples; the last
+    window of each channel is right-padded with zeros so every window keeps length ``seq_len``.
+
+    Note:
+        The underlying HDF5 file is opened in append mode and stays open for the lifetime of the dataset
+        (so post-inference helpers can write back to it); call :meth:`close` to release the handle when
+        done.
+    """
+
     def __init__(self, file, seq_len, overlap=10, to_mem=False):
-        """ Load raw recording data for model inference.
+        """Initialise the dataset and validate the recording layout.
 
         Args:
-            file (str): Path to raw recording file (HDF5 format)
+            file (str): Path to the raw recording HDF5 file
             seq_len (int): Model sequence length
-            overlap (int): Sample overlapping length
-            to_mem (bool): Load all data into memory, accelerate speed at the risk of memory overflow (default: False)
+            overlap (int): Sample overlap between consecutive windows (default: ``10``)
+            to_mem (bool): When :data:`True`, eagerly load the entire recording into memory; trades
+                memory for inference throughput (default: ``False``)
+
+        Raises:
+            ValueError: If the recording's ``raw`` dataset is not 2D (channels, samples)
         """
         # Open and validate dataset file
         self.fp = H5PklFile(file, 'r+')
@@ -105,5 +146,5 @@ class InferenceDataset(Dataset):
         return torch.from_numpy(sample).type(torch.FloatTensor).view(1, self.seq_len)
 
     def close(self):
-        """ Close dataset HDF5 file. """
+        """Close the underlying HDF5 file handle."""
         self.fp.close()

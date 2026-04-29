@@ -1,4 +1,9 @@
-# Model training and optimization module
+# -*- coding: utf-8 -*-
+
+"""Model training and optimization module
+
+Training-loop driver and the dynamic learning-rate schedule used by the PARUS spike-detection model.
+"""
 
 import os
 import time
@@ -13,11 +18,14 @@ from .eval import validation
 
 __all__ = ['get_learning_rate', 'train']
 """
-Function list:
-  get_learning_rate(step, model_size, factor, warmup): Compute dynamic learning rate based on training steps.
-  train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device): General training function for models.
-Protected constant:
-  _loss_function_options {dict}: Selection of loss functions.
+Public function list:
+
+- get_learning_rate(step, model_size, factor, warmup)              : Compute the dynamic learning rate at a step
+- train(model, model_size, trn_data, vld_data, work_dir, ...)      : Drive the full model training loop
+
+Protected constants:
+
+- _loss_function_options (dict[str, nn.Module])                    : Mapping from loss-function name to module
 """
 
 
@@ -29,16 +37,19 @@ _loss_function_options = {
 
 
 def get_learning_rate(step, model_size, factor, warmup):
-    """ Compute dynamic learning rate based on training steps.
+    """Compute the dynamic learning rate at a given training step.
+
+    Implements the Transformer-style schedule
+    ``rate = factor * model_size ** -0.5 * min(step ** -0.5, step * warmup ** -1.5)``.
 
     Args:
-        step (int): Current model training step
-        model_size (int): Size of the model
-        factor (int | float): Learning rate factor for dynamic learning rate
-        warmup (int): Warmup steps for applying dynamic learning rate
+        step (int): Current training step (one-based; ``0`` is treated as ``1``)
+        model_size (int): Size of the model used to scale the schedule
+        factor (int | float): Multiplicative scaling factor
+        warmup (int): Warm-up step count after which the schedule decays as ``step ** -0.5``
 
     Returns:
-        float: Target learning rate
+        float: Target learning rate for the step
     """
     if step == 0:
         step = 1
@@ -47,34 +58,42 @@ def get_learning_rate(step, model_size, factor, warmup):
 
 
 def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device, hint='text'):
-    """ General training function for models.
+    """Drive a full model training run from start to finish.
+
+    Sets up :class:`~torch.optim.AdamW` with a :class:`~torch.optim.lr_scheduler.LambdaLR` schedule built from
+    :func:`get_learning_rate`, loops over epochs, validates every ``steps_per_eval`` steps, saves the best and final
+    checkpoint to ``work_dir``, and writes both a human-readable log and a JSON training history.
 
     Args:
-        model (nn.Module): PyTorch model
+        model (nn.Module): PyTorch model to train
         model_size (int): Number of expected features in the model input
         trn_data (torch.utils.data.DataLoader): Training dataset loader
         vld_data (torch.utils.data.DataLoader): Validation dataset loader
-        work_dir (str): Working directory to save model training artifacts
+        work_dir (str): Working directory for checkpoints, logs, and history
         train_hparams (dict): Training hyperparameters
 
             - start_epoch (int): Initial epoch number
-            - total_epoch (int): Total number of epoches for training
+            - total_epoch (int): Total number of epochs to run
             - batch_size (int): Training batch size
-            - steps_per_eval (str): Number of training steps between each model validation
-            - base_learning_rate (float): Base rate for dynamic learning rate
-            - learning_rate_factor (float): Learning rate factor for dynamic learning rate
-            - learning_rate_warmup (int): Warmup steps for applying dynamic learning rate
-            - model_param_clip (float): Clipping value to avoid exploding gradient
-            - loss_function (str): {mse, l1, bce} Loss function name
+            - steps_per_eval (int): Number of training steps between validations
+            - base_learning_rate (float): Base rate passed to :class:`~torch.optim.AdamW`
+            - learning_rate_factor (float): Schedule scaling factor
+            - learning_rate_warmup (int): Warm-up step count
+            - model_param_clip (float): Gradient-norm clipping value
+            - loss_function (str): One of ``{'mse', 'l1', 'bce'}``
 
-        device (torch.device): Device for model training
-        hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+        device (torch.device): Device on which the model and data live
+        hint (str): Visualisation method for the validation snapshot; one of
+            ``{'text', 'disp', 'save', 'none'}`` (default: ``'text'``)
 
-            - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
-            - 'disp': Show image with [matplotlib]
-            - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
-            - 'none': No hinting (fallback for invalid method input)
+            - ``'text'``: render an ASCII plot via ``plotext`` (recommended for CLI training)
+            - ``'disp'``: open a Matplotlib figure window
+            - ``'save'``: save the Matplotlib figure to ``work_dir`` (recommended for GUI training)
+            - ``'none'``: skip the validation snapshot
 
+    Note:
+        Side effects: writes ``train.log``, ``history.json``, and per-improvement checkpoints to
+        ``work_dir``; closes the underlying datasets of ``trn_data`` and ``vld_data`` after the final checkpoint.
     """
     # Set loss function
     criterion = _loss_function_options[train_hparams['loss_function']]
@@ -82,7 +101,7 @@ def train(model, model_size, trn_data, vld_data, work_dir, train_hparams, device
     optimizer = torch.optim.AdamW(model.parameters(), lr=train_hparams['base_learning_rate'])
     # Set learning rate scheduler
     scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer=optimizer, 
+        optimizer=optimizer,
         lr_lambda=lambda step: get_learning_rate(
             step, model_size, train_hparams['learning_rate_factor'], train_hparams['learning_rate_warmup']
         )

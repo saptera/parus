@@ -1,4 +1,10 @@
-# Spike clustering module
+# -*- coding: utf-8 -*-
+
+"""Spike clustering module
+
+Waveform-based spike clustering algorithms together with pre/post-processing helpers and multichannel
+cluster merging utilities.
+"""
 
 import numpy as np
 
@@ -10,36 +16,49 @@ __all__ = [
     'pos_ripple_flt', 'post_cls_chk', 'get_sig_nbr', 'find_crsch_sig', 'crsch_grp'
 ]
 """
-Function list:
-  # Signal clustering functions:
-    cls_cosamp_blk(sig, pos, asp, psp, k=0.6, w=True): Clustering spikes by cosine and amplitude similarity, block mode.
-    cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2): Clustering spikes cosine-amplitude, progressive mode.
-    cls_crscor_blk(sig, pos, asp, psp, k=0.8): Clustering spikes by Pearson correlation coefficient, block mode.
-    cls_crscor_prg(sig, pos, asp, psp, k=0.8, delta=0.2): Clustering spikes by Pearson crs-cor, progressive mode.
-  # Pre/Post clustering functions:
-    pos_ripple_flt(sig, pos, lim=3, neg=True): Filter out ripples from one-hot spike position array.
-    post_cls_chk(avg, mode='cosamp', beta=0.5): Post-check the means of clusters from clustering function.
-  # Multichannel cluster merge functions:
-    get_sig_nbr(prb, lim=60): Get neighbouring channels of multichannel probe for possible same cell source.
-    find_crsch_sig(cls, grp, tot, lim=0, rng=5, th=0.8): Find cross channel signal cells for multichannel probes.
-    crsch_grp(res): Grouping detected cross channel cells.
-Protected functions:
-  _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0): Create a Gaussian weight vector centered at peak index.
-  _get_wfm_smp(sig, pos, asp, psp): Get waveform samples for clustering algorithms.
+Public function list:
+
+- Signal clustering:
+
+    - cls_cosamp_blk(sig, pos, asp, psp, k, w)        : Cluster spikes by cosine-amplitude similarity, block mode
+    - cls_cosamp_prg(sig, pos, asp, psp, k, w, delta) : Cluster spikes by cosine-amplitude similarity, progressive mode
+    - cls_crscor_blk(sig, pos, asp, psp, k)           : Cluster spikes by Pearson correlation, block mode
+    - cls_crscor_prg(sig, pos, asp, psp, k, delta)    : Cluster spikes by Pearson correlation, progressive mode
+
+- Pre/post-clustering:
+
+    - pos_ripple_flt(sig, pos, lim, neg)              : Filter ripples from a one-hot spike position array
+    - post_cls_chk(avg, mode, beta)                   : Compute the inter-cluster similarity matrix from cluster means
+
+- Multichannel cluster merge:
+
+    - get_sig_nbr(prb, lim)                           : Find neighbouring channels of a multichannel probe
+    - find_crsch_sig(cls, grp, tot, lim, rng, th)     : Find cross-channel signal cells across neighbouring channels
+    - crsch_grp(res)                                  : Group detected cross-channel cells into shared cell groups
+
+Protected helpers:
+
+- _gaussian_weight(asp, psp, sigma, epsilon)          : Gaussian weight vector centred at the peak index
+- _get_wfm_smp(sig, pos, asp, psp)                    : Aligned waveform snippets and their source indices
 """
 
 
 def _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0):
-    """ Create a Gaussian weight vector centered at peak index.
+    """Build a Gaussian weight vector centred at the peak index.
+
+    The weight at offset ``x`` is ``sqrt(Gaussian(x) / epsilon)``, with the centre value forced to ``1`` so
+    that ``epsilon`` controls how strongly the peak dominates the weighted operations downstream.
 
     Args:
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
-        sigma (float): {>0} Standard deviation of Gaussian in samples (default: None = 0.05 sample length)
-        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
+        sigma (float): Standard deviation of the Gaussian in samples; pass ``0`` (or any value ``<= 0``) to
+            use ``5%`` of the total span (default: ``0.0``)
+        epsilon (float): Additive emphasis applied at the peak; ``2.0`` doubles the peak weight relative to
+            the Gaussian (default: ``2.0``)
 
     Returns:
-        np.ndarray: {1D-float32} Gaussian weight
+        np.ndarray: {1D-float32} Gaussian weight vector of length ``asp + psp + 1``
     """
     num = asp + psp + 1
     sigma = sigma if sigma > 0 else num * 0.05
@@ -50,20 +69,22 @@ def _gaussian_weight(asp, psp, sigma=0.0, epsilon=2.0):
 
 
 def _get_wfm_smp(sig, pos, asp, psp):
-    """ Get aligned waveform samples for clustering algorithms.
+    """Extract aligned waveform snippets from a signal at every one-hot spike index.
+
+    For each non-zero entry in ``pos``, a window of length ``asp + psp + 1`` centred on the spike is taken
+    from ``sig``. Indices that fall outside the bounds of ``sig`` are clamped to the nearest valid index.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: {2D-float, 1D-int} Waveform samples and associated location
+        tuple[np.ndarray, np.ndarray]: Aligned waveform snippets and their source indices
 
-            - smp (np.ndarray): {2D-float (Num, Val)} Waveform snippets, 1D = sample number | 2D = sample value
-            - loc (np.ndarray): {1D-int} Aligned sample associated location in original signal
-
+            - smp (np.ndarray): {2D-float (n_spikes, asp + psp + 1)} Per-spike snippets
+            - loc (np.ndarray): {1D-int} Source index of each snippet within ``sig``
     """
     # Check inputs
     asp = 0 if asp < 0 else asp
@@ -83,35 +104,34 @@ def _get_wfm_smp(sig, pos, asp, psp):
 # Signal clustering functions ---------------------------------------------------------------------------------------- #
 
 def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, w=True, **kwargs):
-    """ Clustering spikes by combining cosine and amplitude similarity, block mode.
+    """Cluster spikes by combining cosine and amplitude similarity, block mode.
 
-    The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
-    Where c = (A (dot) B) / (||A|| * ||B||), a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)
-    --------
-    This function runs with BLOCK mode, considering the all waveform snippets in the whole recording together.
-    This mode is more conservative and computes faster, but may perform worse in processing drifting samples.
-    For progressive processing of the waveform snippets pairwise, use [cls_cosamp_prg].
+    The similarity between two waveforms ``A`` and ``B`` is ``S = c * a ** beta`` where
+    ``c = (A · B) / (||A|| * ||B||)`` and ``a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)``. Block mode treats
+    every snippet in the recording together; it is conservative and fast but can struggle with drifting
+    waveforms. For a more sensitive pairwise variant, use :func:`cls_cosamp_prg`.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
-        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
-        w (bool): Gaussian weight flag (default: True)
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
+        k (float): Similarity threshold in ``(0, 1)`` for grouping (default: ``0.8``)
+        w (bool): When :data:`True`, apply a Gaussian peak emphasis weight to the snippets (default: ``True``)
         **kwargs: See below
 
     Keyword Args:
-        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
-        sigma (float): {>0} Standard deviation of Gaussian in samples (default: 0.05 sample length)
-        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
+        beta (int | float): Weight on the amplitude component (must be ``> 0``); default ``0.5`` gives a soft
+            amplitude effect
+        sigma (float): Standard deviation of the Gaussian weight in samples; default ``0`` falls back to ``5%``
+            of the snippet length
+        epsilon (float): Additive peak emphasis on the Gaussian weight; default ``2.0`` doubles the peak weight
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
 
-            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
-            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
-
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals (one array per cluster)
+            - avg (list[np.ndarray]): {1D-float} Mean waveform of each cluster
     """
     # Get keyword arguments
     beta = kwargs.get('beta', 0.5)
@@ -145,36 +165,37 @@ def cls_cosamp_blk(sig, pos, asp, psp, k=0.8, w=True, **kwargs):
 
 
 def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2, **kwargs):
-    """ Clustering spikes by combining cosine and amplitude similarity, progressive mode.
+    """Cluster spikes by combining cosine and amplitude similarity, progressive mode.
 
-    The similarity between 2 waveforms A and B is defined as: S = c * a ^ beta
-    Where c = (A (dot) B) / (||A|| * ||B||), a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)
-    --------
-    This function runs with PROGRESSIVE mode, considering the waveform snippets step-by-step.
-    This mode is more sensitive and not broadcasting, but may processing drifting samples better.
-    For block processing of the waveform snippets, use [cls_cosamp_blk].
+    The similarity between two waveforms ``A`` and ``B`` is ``S = c * a ** beta`` where
+    ``c = (A · B) / (||A|| * ||B||)`` and ``a = (2 * min(||A||, ||B||)) / (||A|| + ||B||)``. Progressive mode
+    walks the snippets one at a time and assigns each to the most similar existing cluster (or seeds a new
+    one), then drifts the cluster template by ``delta`` per assignment. It is more sensitive than block mode
+    and tracks drifting waveforms better. For a fast non-broadcasting variant, use :func:`cls_cosamp_blk`.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
-        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
-        w (bool): Gaussian weight flag (default: True)
-        delta (float | None): {[0, 1]} Weight for new samples
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
+        k (float): Similarity threshold in ``(0, 1)`` for grouping (default: ``0.6``)
+        w (bool): When :data:`True`, apply a Gaussian peak emphasis weight to the snippets (default: ``True``)
+        delta (float | None): Update weight on new samples in ``[0, 1]``; pass :data:`None` to use a plain
+            running average across all assigned snippets (default: ``0.2``)
         **kwargs: See below
 
     Keyword Args:
-        beta (int | float): {>0} Weight for amplitude component (default: 0.5 = soft effect)
-        sigma (float): {>0} Standard deviation of Gaussian in samples (default: 0.05 sample length)
-        epsilon (float): Additional additive weight applied at peak index (default: 2.0 = double peak weight)
+        beta (int | float): Weight on the amplitude component (must be ``> 0``); default ``0.5`` gives a soft
+            amplitude effect
+        sigma (float): Standard deviation of the Gaussian weight in samples; default ``0`` falls back to ``5%``
+            of the snippet length
+        epsilon (float): Additive peak emphasis on the Gaussian weight; default ``2.0`` doubles the peak weight
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
 
-            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
-            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
-
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals (one array per cluster)
+            - avg (list[np.ndarray]): {1D-float} Mean waveform of each cluster
     """
     # Get keyword arguments
     beta = kwargs.get('beta', 0.5)
@@ -221,28 +242,25 @@ def cls_cosamp_prg(sig, pos, asp, psp, k=0.6, w=True, delta=0.2, **kwargs):
 
 
 def cls_crscor_blk(sig, pos, asp, psp, k=0.8):
-    """ Clustering spikes by Pearson correlation coefficient, block mode.
+    """Cluster spikes by Pearson correlation coefficient, block mode.
 
-    The similarity between 2 waveforms A and B is defined as:
-    S = ((A - mean(A)) (dot) (B - mean(B))) / sqrt(sum((A - mean(A)) ^ 2) * sum((B - mean(B)) ^ 2))
-    --------
-    This function runs with BLOCK mode, considering the all waveform snippets in the whole recording together.
-    This mode is more conservative and computes faster, but may perform worse in processing drifting samples.
-    For progressive processing of the waveform snippets pairwise, use [cls_crscor_prg].
+    The similarity between two waveforms ``A`` and ``B`` is the Pearson correlation
+    ``S = ((A - mean(A)) · (B - mean(B))) / sqrt(sum((A - mean(A)) ** 2) * sum((B - mean(B)) ** 2))``. Block
+    mode treats every snippet in the recording together; it is conservative and fast but can struggle with
+    drifting waveforms. For a more sensitive pairwise variant, use :func:`cls_crscor_prg`.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
-        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
+        k (float): Similarity threshold in ``(0, 1)`` for grouping (default: ``0.8``)
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
 
-            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
-            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
-
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals (one array per cluster)
+            - avg (list[np.ndarray]): {1D-float} Mean waveform of each cluster
     """
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
@@ -268,29 +286,29 @@ def cls_crscor_blk(sig, pos, asp, psp, k=0.8):
 
 
 def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
-    """ Clustering spikes by Pearson correlation coefficient, progressive mode.
+    """Cluster spikes by Pearson correlation coefficient, progressive mode.
 
-    The similarity between 2 waveforms A and B is defined as:
-    S = ((A - mean(A)) (dot) (B - mean(B))) / sqrt(sum((A - mean(A)) ^ 2) * sum((B - mean(B)) ^ 2))
-    --------
-    This function runs with PROGRESSIVE mode, considering the waveform snippets step-by-step.
-    This mode is more sensitive and not broadcasting, but may processing drifting samples better.
-    For block processing of the waveform snippets, use [cls_crscor_blk].
+    The similarity between two waveforms ``A`` and ``B`` is the Pearson correlation
+    ``S = ((A - mean(A)) · (B - mean(B))) / sqrt(sum((A - mean(A)) ** 2) * sum((B - mean(B)) ** 2))``.
+    Progressive mode walks the snippets one at a time and assigns each to the most similar existing cluster
+    (or seeds a new one), then drifts the cluster template by ``delta`` per assignment. It is more sensitive
+    than block mode and tracks drifting waveforms better. For a fast non-broadcasting variant, use
+    :func:`cls_crscor_blk`.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        asp (int): {>0} Anterior samples to consider
-        psp (int): {>0} Posterior samples to consider
-        k (float): {(0, 1)} Threshold for the correlation value (default: 0.8)
-        delta (float | None): {[0, 1]} Weight for new samples
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        asp (int): Anterior samples to consider (must be ``> 0``)
+        psp (int): Posterior samples to consider (must be ``> 0``)
+        k (float): Similarity threshold in ``(0, 1)`` for grouping (default: ``0.9``)
+        delta (float | None): Update weight on new samples in ``[0, 1]``; pass :data:`None` to use a plain
+            running average across all assigned snippets (default: ``0.2``)
 
     Returns:
         tuple[list[np.ndarray], list[np.ndarray]]: Grouped waveforms and their means
 
-            - res (list[np.ndarray]): {1D-int} Indices of grouped signals
-            - avg (list[np.ndarray]): {1D-float} Mean of grouped signals
-
+            - res (list[np.ndarray]): {1D-int} Indices of grouped signals (one array per cluster)
+            - avg (list[np.ndarray]): {1D-float} Mean waveform of each cluster
     """
     # Get data
     smp, loc = _get_wfm_smp(sig, pos, asp, psp)
@@ -332,16 +350,21 @@ def cls_crscor_prg(sig, pos, asp, psp, k=0.9, delta=0.2):
 # Pre/Post clustering functions -------------------------------------------------------------------------------------- #
 
 def pos_ripple_flt(sig, pos, lim=3, neg=True):
-    """ Filter out ripples from one-hot spike position array.
+    """Filter ripples from a one-hot spike position array.
+
+    Consecutive spike indices closer than ``lim`` samples are interpreted as a single spike with ripple artefacts.
+    The function keeps the index of the local extremum (minimum when ``neg`` is :data:`True`, maximum otherwise)
+    and clears the surrounding ripple positions.
 
     Args:
         sig (np.ndarray): {1D-Scalar} Input signal
-        pos (np.ndarray): {1D-int} One-hot spike position
-        lim (int): Minimum index difference required (default: 3)
-        neg (bool): Search direction (default: True = negative peak)
+        pos (np.ndarray): {1D-int} One-hot spike position array
+        lim (int): Minimum index gap required between consecutive spikes (default: ``3``)
+        neg (bool): When :data:`True`, the kept index is the local minimum; when :data:`False`, the local
+            maximum (default: ``True``)
 
     Returns:
-        np.ndarray: {1D-int} Filtered one-hot spike position
+        np.ndarray: {1D-int} Filtered one-hot spike position array (same shape as ``pos``)
     """
     # Find consecutive indices from position
     pos = pos.copy()  # Avoid overwrite
@@ -358,15 +381,21 @@ def pos_ripple_flt(sig, pos, lim=3, neg=True):
 
 
 def post_cls_chk(avg, mode='cosamp', beta=0.5):
-    """ Post-check the means of clusters from clustering function.
+    """Compute the inter-cluster similarity matrix from cluster mean waveforms.
+
+    Used to verify the output of a clustering function: each entry ``[i, j]`` is the similarity between the
+    mean waveforms of clusters ``i`` and ``j`` under ``mode``. The matrix is symmetric with ``1`` on the diagonal.
 
     Args:
-        avg (list[np.ndarray]): Mean of clustered waveforms, returned from clustering functions
-        mode (str): {'cossim', 'ampsim', 'cosamp', 'crscor'} Check mode
-        beta (int | float): {>0} Weight for amplitude component, oly valid with [cosamp] (default: 0.5 = soft effect)
+        avg (list[np.ndarray]): Cluster mean waveforms returned by a clustering function
+        mode (str): Similarity mode; one of ``{'cossim', 'ampsim', 'cosamp', 'crscor'}`` (default: ``'cosamp'``)
+        beta (int | float): Amplitude weight (must be ``> 0``); only used when ``mode == 'cosamp'`` (default: ``0.5``)
 
     Returns:
-        np.ndarray: {2D-float32} Similarity matrix
+        np.ndarray: {2D-float32} Symmetric similarity matrix of shape ``(len(avg), len(avg))``
+
+    Raises:
+        ValueError: If ``mode`` is not one of ``{'cossim', 'ampsim', 'cosamp', 'crscor'}``
     """
     res = np.zeros((len(avg), len(avg)), dtype=np.float32)
     avg = np.asarray(avg)  # Cast type
@@ -413,14 +442,18 @@ def post_cls_chk(avg, mode='cosamp', beta=0.5):
 # Multichannel cluster merge functions ------------------------------------------------------------------------------- #
 
 def get_sig_nbr(prb, lim=60):
-    """ Get neighbouring channels of multichannel probe for possible same cell source.
+    """Find neighbouring channels of a multichannel probe within a distance limit.
+
+    Channels are considered neighbours when their geometric distance (Euclidean over the ``geo`` coordinates
+    of each site) is at most ``lim`` micrometres. Each channel is included in its own neighbour list.
 
     Args:
-        prb (dict): Multichannel probe geometry data
-        lim (int | float): Signal distance limit (μm, inclusive) for neighbouring channel (default: 60μm)
+        prb (dict): Probe geometry data with a ``'site'`` list of per-channel dictionaries holding ``'id'``
+            and ``'geo'`` keys
+        lim (int | float): Inclusive distance limit in micrometres (default: ``60``)
 
     Returns:
-        dict[int, list[int]]: Probe channel neighbours
+        dict[int, list[int]]: Mapping from probe channel ID to the list of neighbouring channel IDs
     """
     # Extract data from probe dictionary
     tot = len(prb['site'])
@@ -440,18 +473,24 @@ def get_sig_nbr(prb, lim=60):
 
 
 def find_crsch_sig(cls, grp, tot, lim=0, rng=5, th=0.8):
-    """ Find cross channel signal cells for multichannel probes.
+    """Find cross-channel signal cells for multichannel probes.
+
+    For every cluster in a main channel, the function searches its neighbouring channels (according to ``grp``)
+    for sub-clusters whose spike indices overlap with the main cluster's by at least ``th`` after expanding
+    each main spike to a ``2 * rng + 1`` window.
 
     Args:
-        cls (dict[int, list[np.ndarray]]): Multichannel spike cluster
-        grp (dict[int, list[int]]): Probe channel neighbours
+        cls (dict[int, list[np.ndarray]]): Per-channel clusters; each value is a list of one-hot spike index
+            arrays
+        grp (dict[int, list[int]]): Per-channel neighbour lists from :func:`get_sig_nbr`
         tot (int): Total length of the source signal
-        lim (int): Minimum number of spikes for cluster
-        rng (int): Allowed range for checking overlapping (default: 5)
-        th (float): {[0, 1]} Threshold rate of overlapping (default: 0.8)
+        lim (int): Minimum size for a sub-cluster to be considered (default: ``0``)
+        rng (int): Allowed index range for the overlap check (default: ``5``)
+        th (float): Inclusive overlap threshold in ``[0, 1]`` (default: ``0.8``)
 
     Returns:
-        list[dict[str, dict[str, int] | dict[str, int]]]: Main cell and sub cell information
+        list[dict[str, dict[str, int]]]: One entry per detected cross-channel match with layout
+            ``[{'main': {'ch': int, 'id': int}, 'sub': {'ch': int, 'id': int}}, ...]``
     """
     res = []  # INIT VAR
     # Get search indices range
@@ -489,13 +528,22 @@ def find_crsch_sig(cls, grp, tot, lim=0, rng=5, th=0.8):
 
 
 def crsch_grp(res):
-    """ Grouping detected cross channel cells.
+    """Group detected cross-channel cells into shared cell groups.
+
+    Walks the pairwise matches returned by :func:`find_crsch_sig` and merges any two clusters that share at
+    least one channel-and-index pair into a single group. A second pass produces a per-group sequence count
+    that flags channels that contribute multiple clusters within the same group.
 
     Args:
-        res (list[dict[str, dict[str, int] | dict[str, int]]]): Main cell and sub cell information
+        res (list[dict[str, dict[str, int]]]): Pairwise cross-channel match list returned by :func:`find_crsch_sig`
 
     Returns:
-        list[tuple(int, int)]: Signal group list as (channel, index) pair
+        tuple[list[list[tuple[int, int]]], list[list[int]]]: Grouping result
+
+            - grp (list[list[tuple[int, int]]]): Each entry lists the ``(channel, cluster_id)`` pairs that
+              belong to the same group
+            - cnt (list[list[int]]): Parallel list of per-pair occurrence counters (``0`` for unique pairs,
+              ``1`` for duplicates that should be retained)
     """
     if not res:
         return [], []

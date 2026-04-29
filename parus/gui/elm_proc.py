@@ -1,4 +1,10 @@
-# GUI process feature module
+# -*- coding: utf-8 -*-
+
+"""GUI process feature module
+
+Reusable Qt widgets and helpers shared across the PARUS GUIs: table cells, subprocess execution with a
+linked console, busy dialogs, and file/path selection utilities.
+"""
 
 import sys
 import os
@@ -14,29 +20,34 @@ from . import cs_dark
 __all__ = ['CellCheckbox', 'CellData', 'PyScriptExec', 'ProcConsole', 'ProgBusyDialog',
            'path_selector', 'table_loader', 'selection_operator']
 """
-Class list:
-  CellCheckbox(identifier=None, func=None): Table checkbox class.
-  CellData(val, aln='c', emp=None, clr=None, bkg=None, ro=False): Data selection table cell data class.
-  PyScriptExec: Execute Python script as a subprocess, with its console displayed.
-  ProcConsole: GUI process console control combo class.
-  ProgBusyDialog(parent=None, message="Please wait..", bar=False): Non-interactive, application-modal busy dialog.
-Functon list:
-  path_selector(line, mode=None, caption=None, flt=None, parent=None): Select signal folder or file dialog.
-  table_loader(table, record, select, mode=None, caption=None, flt=None, func=None, parent=None): Path item to table.
-  selection_operator(select, mode): Item selection checkbox group operation.
+Public class list:
+
+- CellCheckbox(identifier, checked, func)                    : Table-cell checkbox widget
+- CellData(val, size, aln, emp, clr, bkg, ro)                : Styled data-table cell item
+- PyScriptExec(script, console, trigger, ...)                : Run a Python script as a subprocess with console output
+- ProcConsole(console, btn_clr, btn_cpy, btn_scr, ...)       : Console-control combo for subprocess output
+- ProgBusyDialog(parent, message, bar)                       : Non-interactive, application-modal busy dialog
+
+Public function list:
+
+- path_selector(line, mode, caption, flt, parent)            : Open a file/folder selection dialog
+- table_loader(table, record, select, mode, caption, ...)    : Append selected paths/files to a table widget
+- selection_operator(select, mode)                           : Bulk select/deselect/invert table-item checkboxes
 """
 
 
 # Classes ------------------------------------------------------------------------------------------------------------ #
 
 class CellCheckbox(QtWidgets.QWidget):
+    """Centred checkbox widget for embedding inside a :class:`~PySide6.QtWidgets.QTableWidget` cell."""
+
     def __init__(self, identifier=None, checked=True, func=None):
-        """ Table checkbox class.
+        """Build the checkbox, set its initial state, and connect an optional click handler.
 
         Args:
-            identifier: Instance identifier
-            checked (bool): Initial check status
-            func (function | None): Checkbox clicked connect function
+            identifier: Free-form identifier attached to the instance for caller-side bookkeeping
+            checked (bool): Initial checked status (default: ``True``)
+            func (callable | None): Slot connected to the underlying checkbox's ``clicked`` signal (default: ``None``)
         """
         super(CellCheckbox, self).__init__()
         # Initialize a pre-checked checkbox
@@ -53,27 +64,32 @@ class CellCheckbox(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
     def isChecked(self):
-        """ Return checked status of checkbox. """
+        """Return checked status of checkbox."""
         return self.chkbox.isChecked()
 
     def setChecked(self, status: bool):
-        """ Set checked status of checkbox. """
+        """Set checked status of checkbox."""
         self.chkbox.setChecked(status)
         return status
 
 
 class CellData(QtWidgets.QTableWidgetItem):
+    """Styled :class:`~PySide6.QtWidgets.QTableWidgetItem` for the PARUS data-selection tables."""
+
     def __init__(self, val, size=None, aln='c', emp=None, clr=None, bkg=None, ro=False):
-        """ Data selection table cell data class.
+        """Build the cell with the given value, alignment, font emphasis, colours, and editability flag.
 
         Args:
-            val:Value to fill in the cell, any type can convert to string
-            size(int | None): Text point size
-            aln (str): Alignment method 'c' = centre | 'l' = left |  'r' = right (default: 'c' = centre)
-            emp (str | None): {'b' | 'i' | 'bi' | 'ib'} Text emphasize method 'b' = bold | 'i' = italic (default: None)
-            clr (tuple[int, int, int] | None): Text colour in RGB (default: None)
-            bkg (tuple[int, int, int] | None): Background colour in RGB (default: None)
-            ro (bool): Item read-only flag (default: False)
+            val: Value to display; converted to :class:`str` when not already a string
+            size (int | None): Text point size; pass :data:`None` to keep the default (default: ``None``)
+            aln (str): Alignment method; one of ``{'c', 'l', 'r'}`` (default: ``'c'``)
+            emp (str | None): Text emphasis flags; combination of ``'b'`` (bold) and ``'i'`` (italic);
+                pass :data:`None` for plain text (default: ``None``)
+            clr (tuple[int, int, int] | None): RGB foreground colour; pass :data:`None` for the default
+                (default: ``None``)
+            bkg (tuple[int, int, int] | None): RGB background colour; pass :data:`None` for the default
+                (default: ``None``)
+            ro (bool): When :data:`True`, the cell is read-only (default: ``False``)
         """
         super(CellData, self).__init__()
         # Set cell text
@@ -110,23 +126,37 @@ class CellData(QtWidgets.QTableWidgetItem):
 
 
 class PyScriptExec(QtCore.QObject):
+    """Run a Python script as a subprocess, mirroring its standard streams to a Qt rich-text console.
+
+    Wraps :class:`~PySide6.QtCore.QProcess` and forwards both the script's standard output and standard
+    error to the supplied console widget with timestamped, colour-coded formatting. The class also exposes
+    the process lifecycle as Qt signals (:attr:`started`, :attr:`cancelled`, :attr:`finished`) so callers
+    can connect cleanup or follow-up behaviour.
+
+    Note:
+        The subprocess is launched with the same Python interpreter as the parent process (:data:`sys.executable`),
+        so virtual-environment isolation is preserved.
+    """
+
     # Process control signals
     started = QtCore.Signal()
     cancelled = QtCore.Signal()
     finished = QtCore.Signal()
 
     def __init__(self, script, console, trigger, name=None, disp_time=True, clr_con=False, trig_txt=None, parent=None):
-        """ Execute Python script as a subprocess, with its console displayed.
+        """Wire the trigger button, console widget, and subprocess and prepare them for first run.
 
         Args:
-            script (str): Python script to execute
-            console (QtWidgets.QTextEdit): Qt rich text widget to display Python script commandline prints
-            trigger (QtWidgets.QPushButton): Qt push button to control script execution
-            name (str | None): Process name for this instance (default: None)
-            disp_time (bool): Print timestamp of commandline (default: True)
-            clr_con (bool): Clear console texts before start (default: False)
-            trig_txt (tuple[str, str] | None): Start and stop texts to display on push button (default: Start | Stop)
-            parent (QtCore.QObject | None): Parent Qt object
+            script (str): Path to the Python script to execute
+            console (QtWidgets.QTextEdit): Rich-text widget that displays the subprocess output
+            trigger (QtWidgets.QPushButton): Push button that toggles the subprocess on and off
+            name (str | None): Process name shown in console messages; defaults to ``"Process"`` when
+                :data:`None` (default: ``None``)
+            disp_time (bool): When :data:`True`, prepend a timestamp to every console line (default: ``True``)
+            clr_con (bool): When :data:`True`, clear the console before starting the subprocess (default: ``False``)
+            trig_txt (tuple[str, str] | None): Idle and running texts shown on the trigger button;
+                defaults to ``("Start", "Stop")`` when :data:`None` (default: ``None``)
+            parent (QtCore.QObject | None): Parent Qt object (default: ``None``)
         """
         super().__init__(parent)
         self.name = name if name else 'Process'
@@ -167,13 +197,13 @@ class PyScriptExec(QtCore.QObject):
         self.__process.finished.connect(self.__proc_finish)
 
     def set_arguments(self, args):
-        """ Set script argument(s) for execution, this will overwrite previous arguments.
+        """Replace the current script arguments with ``args``.
 
         Args:
-            args (list[str]): List of arguments for execution
+            args (list[str]): New argument list (each item must be a :class:`str`)
 
         Returns:
-            list: Current full argument
+            list: Full command including the script path and the new arguments
         """
         if isinstance(args, list) and all(isinstance(i, str) for i in args):
             self.command = [self.script] + args
@@ -182,13 +212,13 @@ class PyScriptExec(QtCore.QObject):
         return self.command
 
     def add_arguments(self, args):
-        """ Add script argument(s) for execution.
+        """Append script argument(s) to the current command.
 
         Args:
-            args (str | list[str]): List of arguments for execution
+            args (str | list[str]): Single argument or list of arguments to append
 
         Returns:
-            list: Current full argument
+            list: Full command including the script path and the updated arguments
         """
         if isinstance(args, str):
             self.command += [args]
@@ -199,22 +229,22 @@ class PyScriptExec(QtCore.QObject):
         return self.command
 
     def reset_arguments(self):
-        """ Reset script arguments.
+        """Reset the script arguments back to the bare script path.
 
         Returns:
-            list: Default command
+            list: Reset command containing just the script path
         """
         self.command = [self.script]
         return self.command
 
     def set_auto_scroll(self, flag=True):
-        """ Set console to auto scroll to vertical end.
+        """Enable or disable auto-scroll-to-end on the linked console.
 
         Args:
-            flag (bool): Vertical scroll mode to set
+            flag (bool): When :data:`True`, the console scrolls to the bottom on every new line (default: ``True``)
 
         Returns:
-            bool: Current vertical auto scroll mode
+            bool: Effective auto-scroll mode after the call
         """
         self.__auto_scr = flag
         if flag:
@@ -222,10 +252,10 @@ class PyScriptExec(QtCore.QObject):
         return self.__auto_scr
 
     def terminate(self):
-        """ Terminate current process.
+        """Kill the running subprocess and emit :attr:`cancelled`.
 
         Returns:
-            bool: If the process requires termination
+            bool: :data:`True` when a running subprocess was actually killed, :data:`False` when it was already idle
         """
         if self.__process.state() != QtCore.QProcess.ProcessState.NotRunning:
             self.__process.kill()
@@ -237,15 +267,15 @@ class PyScriptExec(QtCore.QObject):
 
     @staticmethod
     def _get_timestamp():
-        """ Get current timestamp. """
+        """Return a HTML-formatted timestamp string for prefixing console messages."""
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         return "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if cs_dark() else 'blue', time)
 
     def __append_message(self, message):
-        """ Append message to the console display.
+        """Append a rich-text message to the console and apply the current scroll policy.
 
         Args:
-            message (str): Rich text message to append to console
+            message (str): Rich-text message to append
         """
         pos = self._console.verticalScrollBar().value()  # Get current vertical scroll bar position
         self._console.append(message)
@@ -256,7 +286,7 @@ class PyScriptExec(QtCore.QObject):
             self._console.verticalScrollBar().setValue(pos)
 
     def __undo_message(self):
-        """ Undo last console display operation. """
+        """Roll back the last console append while keeping the current scroll-bar state."""
         # Get current vertical scroll bar limit and position
         max_pos = self._console.verticalScrollBar().maximum()
         pos = self._console.verticalScrollBar().value()
@@ -267,7 +297,7 @@ class PyScriptExec(QtCore.QObject):
         self._console.verticalScrollBar().setValue(pos)
 
     def __proc_control(self):
-        """ Trigger button process control function. """
+        """Toggle the subprocess on or off in response to the trigger button."""
         if self.__idle:
             # Prepare console
             self._console.clear() if self.cmd_rclr else None
@@ -301,7 +331,7 @@ class PyScriptExec(QtCore.QObject):
             self.cancelled.emit()
 
     def __read_stdout(self):
-        """ Read system standard output data. """
+        """Forward subprocess standard output to the console with carriage-return overwrite handling."""
         time = self._get_timestamp() if self.cmd_time else ''
         text = self.__process.readAllStandardOutput().data().decode()
         # Overwrite texts to meet the same behaviour as command line
@@ -315,7 +345,7 @@ class PyScriptExec(QtCore.QObject):
             self.last_line = last  # Record last print
 
     def __read_stderr(self):
-        """ Read system standard error data. """
+        """Forward subprocess standard error to the console; warnings are olive, errors are red."""
         time = self._get_timestamp() if self.cmd_time else ''
         text = self.__process.readAllStandardError().data().decode()
         # Process standard error texts
@@ -329,11 +359,11 @@ class PyScriptExec(QtCore.QObject):
         self.last_line = text.rstrip()  # Record last print
 
     def __proc_finish(self, ec, es):
-        """ Process finalizing function.
+        """Finalise the subprocess: report any error, write the closing message, and emit :attr:`finished`.
 
         Args:
-            ec (int): Exit code of the process (only valid for normal exits)
-            es (QtCore.QProcess.ExitStatus): Exit status of the process
+            ec (int): Subprocess exit code (only meaningful when ``es`` is normal exit)
+            es (QtCore.QProcess.ExitStatus): Subprocess exit status
         """
         # Prepare console
         None if self.__newline_flag else self.__undo_message()  # Cancel temporary prints
@@ -364,18 +394,24 @@ class PyScriptExec(QtCore.QObject):
 
 
 class ProcConsole:
+    """Bundle of console widgets and helper buttons that share a set of :class:`PyScriptExec` runners.
+
+    Centralises the clear, copy, and auto-scroll controls for a console that is shared by one or more
+    subprocess runners, so each runner stays responsible only for its own output.
+    """
+
     def __init__(self, console, btn_clr, btn_cpy, btn_scr, lnk_proc, stat_bar=None, disp_time=True, init_msg=None):
-        """ GUI process console control combo class.
+        """Wire the console widgets, link the runners, and write the initial message.
 
         Args:
-            console (QtWidgets.QTextEdit): Qt rich text widget to display Python script commandline prints
-            btn_clr (QtWidgets.QPushButton): Qt push button to clear console
-            btn_cpy (QtWidgets.QPushButton): Qt push button to copy console texts
-            btn_scr (QtWidgets.QPushButton): Qt push button to switch console auto-scroll feature
-            lnk_proc (list[PyScriptExec]): List of script execution class linked to this console
-            stat_bar (QtWidgets.QStatusBar | None): Status bar for displaying extra info (default: None)
-            disp_time (bool): Print timestamp of commandline (default: True)
-            init_msg (str | None): Message when the console is re-initialized (default: None)
+            console (QtWidgets.QTextEdit): Rich-text widget that displays the subprocess output
+            btn_clr (QtWidgets.QPushButton): Button that clears the console
+            btn_cpy (QtWidgets.QPushButton): Button that copies the console contents to the clipboard
+            btn_scr (QtWidgets.QPushButton): Button that toggles auto-scroll-to-end
+            lnk_proc (list[PyScriptExec]): Subprocess runners that share this console
+            stat_bar (QtWidgets.QStatusBar | None): Status bar for transient messages (default: ``None``)
+            disp_time (bool): When :data:`True`, prepend a timestamp to console lines (default: ``True``)
+            init_msg (str | None): Message displayed when the console is (re-)initialised (default: ``None``)
         """
         # Initialize attributes
         self.console = console
@@ -400,7 +436,7 @@ class ProcConsole:
         self.console.verticalScrollBar().sliderReleased.connect(self.__manual_slider_release)
 
     def console_init(self):
-        """ Initialize process system console. """
+        """Clear the console and write the initial timestamp/banner message."""
         if self.__disp_time:
             time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             time = "<span style=\"color:%s;white-space:pre;\">[%s] </span>" % ('skyblue' if cs_dark() else 'blue', time)
@@ -415,7 +451,7 @@ class ProcConsole:
             self.stat_bar.showMessage("Console cleared")
 
     def console_copy(self):
-        """ Copy all texts in console to clipboard. """
+        """Copy the console contents to the clipboard without disturbing the current scroll position."""
         pos = self.console.verticalScrollBar().value()
         # Copy all available messages
         self.console.selectAll()
@@ -430,10 +466,10 @@ class ProcConsole:
             self.stat_bar.showMessage("Console information successfully copied")
 
     def set_auto_scroll(self, mode):
-        """ Set console auto scroll to end status.
+        """Set the auto-scroll mode of this console and propagate it to every linked subprocess runner.
 
         Args:
-            mode (bool): Auto scroll to end status
+            mode (bool): When :data:`True`, the console scrolls to the bottom on every new line
         """
         self.__auto_scr = mode
         # Set auto scroll button features
@@ -449,27 +485,33 @@ class ProcConsole:
             p.set_auto_scroll(mode)
 
     def __switch_auto_scroll(self):
-        """ Auto scroll button connected function. """
+        """Toggle auto-scroll in response to the dedicated button."""
         self.set_auto_scroll(not self.__auto_scr)
 
     def __manual_slider_press(self):
-        """ Console vertical slider user PRESSED connected function. """
+        """Disable auto-scroll when the user grabs the vertical scroll bar."""
         self.set_auto_scroll(False)
 
     def __manual_slider_release(self):
-        """ Console vertical slider user RELEASED connected function. """
+        """Re-enable auto-scroll when the user releases the slider at the very bottom."""
         if self.console.verticalScrollBar().value() == self.console.verticalScrollBar().maximum():
             self.set_auto_scroll(True)
 
 
 class ProgBusyDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, message="Busy\nPlease wait..", bar=False):
-        """ Non-interactive, application-modal busy dialog.
+    """Non-interactive, application-modal busy dialog with an optional progress bar.
+
+    The window has no decorations and cannot be dismissed by the user; closing must be triggered
+    programmatically by setting ``allow_close`` to :data:`True` before invoking :meth:`close`.
+    """
+
+    def __init__(self, parent=None, message="Busy\nPlease wait...", bar=False):
+        """Build the busy dialog and (optionally) attach a progress bar.
 
         Args:
-            parent (QtCore.QObject | None): Parent Qt object
-            message (str): Messagebox message, support HTML formatting (default: "Please wait...")
-            bar (bool): Progress bar enable flag (default: False)
+            parent (QtCore.QObject | None): Parent Qt object (default: ``None``)
+            message (str): Dialog message; supports HTML rich text (default: ``"Busy\\nPlease wait..."``)
+            bar (bool): When :data:`True`, attach a progress bar to the dialog (default: ``False``)
         """
         super().__init__(parent)
         self.allow_close = False  # Avoid user close [Alt+F4] and early programmatic close
@@ -497,10 +539,10 @@ class ProgBusyDialog(QtWidgets.QDialog):
         event.accept() if self.allow_close else event.ignore()
 
     def set_progress(self, val):
-        """  Set progress bar value.
+        """Set the progress-bar value, clamped to ``[0, 100]``.
 
         Args:
-            val (int): {[0, 100]} Progress value between 0 to 100
+            val (int): Progress value; values outside ``[0, 100]`` are clamped to the nearest endpoint
         """
         if self.prog_bar is not None:
             val = 0 if val < 0 else 100 if val > 100 else val
@@ -510,17 +552,23 @@ class ProgBusyDialog(QtWidgets.QDialog):
 # Functions ---------------------------------------------------------------------------------------------------------- #
 
 def path_selector(line, mode=None, caption=None, flt=None, parent=None):
-    """ Select signal folder or file dialog.
+    """Open a file/folder selection dialog and write the result back to a line-edit widget.
+
+    On invalid input the user is prompted to retry; on cancel the line edit is cleared and :data:`None`
+    is returned.
 
     Args:
-        line (QtWidgets.QLineEdit): Text line edit for showing and editing the path
-        mode (str | None): {'path' | 'file' | 'list'} File dialog mode (default: None = open path)
-        caption (str | None): Window caption
-        flt (str | None): Selector filter (default: None)
-        parent (QtWidgets.QWidget | None): Parent Qt object
+        line (QtWidgets.QLineEdit): Line edit that displays and stores the selected path
+        mode (str | None): Dialog mode; one of ``{'path', 'file', 'list'}`` (default: ``None`` = ``'path'``)
+        caption (str | None): Dialog window caption (default: ``None``)
+        flt (str | None): File-name filter (default: ``None``)
+        parent (QtWidgets.QWidget | None): Parent Qt widget (default: ``None``)
 
     Returns:
-        str | list[str] | None: Selected path
+        str | list[str] | None: Selected path(s); :data:`None` when the dialog was cancelled
+
+    Raises:
+        ValueError: If ``mode`` is not one of ``{'path', 'file', 'list'}``
     """
     mode = 'path' if mode is None else mode
     caption = '' if caption is None else caption
@@ -580,27 +628,36 @@ def path_selector(line, mode=None, caption=None, flt=None, parent=None):
 
 
 def table_loader(table, record, select, mode=None, caption=None, flt=None, listdir=False, func=None, parent=None):
-    """ Load path item to table.
+    """Append the user-selected paths or files as new rows in a Qt table widget.
+
+    Each appended row carries a checkbox, a typed badge (``DIRS``/``FILE``/``LIST``), and the path. The
+    function deduplicates against ``record`` and reports a short status string describing the outcome.
 
     Args:
-        table (QtWidgets.QTableWidget): Path item view table widget
-        record (list[str]): Table item records for checking duplications
-        select (list[CellCheckbox]): Table item selection checkboxes
-        mode (str | None): {'path' | 'file'} File dialog mode (default: None = open path)
-        caption (str | None): Window caption
-        flt (str | None): Selector filter, valid for file and path-listdir mode (default: None)
-        listdir (bool): List all files in selected path, valid for path mode (default: False)
-        func (function | None): Checkbox clicked connected function (default: None)
-        parent (QtWidgets.QWidget | None): Parent Qt object
+        table (QtWidgets.QTableWidget): Target table widget
+        record (list[str]): Existing item paths used for duplicate detection
+        select (list[CellCheckbox]): Existing per-row checkboxes; the new rows are appended in place
+        mode (str | None): Dialog mode; one of ``{'path', 'file'}`` (default: ``None`` = ``'path'``)
+        caption (str | None): Dialog window caption (default: ``None``)
+        flt (str | None): File-name filter; used in ``'file'`` mode and when ``listdir`` is :data:`True`
+            (default: ``None``)
+        listdir (bool): When :data:`True` (and ``mode == 'path'``), list the files in the selected
+            directory rather than adding the directory itself (default: ``False``)
+        func (callable | None): Slot connected to each new checkbox's ``clicked`` signal (default: ``None``)
+        parent (QtWidgets.QWidget | None): Parent Qt widget (default: ``None``)
 
     Returns:
-        tuple[str, list[str], list[CellCheckbox]]: Loading status and updated [record] and [select] list
+        tuple[str, list[str], list[CellCheckbox]]: Status message and the (potentially extended) ``record``
+            and ``select`` lists
+
+    Raises:
+        ValueError: If ``mode`` is not one of ``{'path', 'file'}``
     """
     mode = 'path' if mode is None else mode
     caption = '' if caption is None else caption
 
     def __load_row(itm: str, typ: str, clr: tuple[int, int, int]):
-        """ Helper function to load table row. """
+        """Insert a new row carrying the item path, type badge, and selection checkbox."""
         record.append(itm)
         # Get current data
         curr_row = table.rowCount()
@@ -676,14 +733,15 @@ def table_loader(table, record, select, mode=None, caption=None, flt=None, listd
 
 
 def selection_operator(select, mode):
-    """ Item selection checkbox group operation.
+    """Apply a bulk select/deselect/invert operation to a list of table-row checkboxes.
 
     Args:
-        select (list[CellCheckbox]): Table item selection checkboxes
-        mode (str): {'all' | 'non' | 'inv'} Operation mode 'all' = all | 'non' = none | 'inv' = invert
+        select (list[CellCheckbox]): Table-row checkboxes to update
+        mode (str): Operation mode; one of ``{'all', 'non', 'inv'}`` (``'all'`` selects all, ``'non'``
+            deselects all, ``'inv'`` inverts the current selection)
 
     Returns:
-        str: Operation report
+        str: Status message describing the action applied (or an error message for an unknown mode)
     """
     if mode == 'all':
         [cb.setChecked(True) for cb in select]

@@ -45,7 +45,7 @@ autodoc_default_options = {
 autodoc_typehints = "description"   # Render type hints in the body
 autodoc_typehints_format = "short"  # `np.ndarray` instead of `numpy.ndarray`
 autodoc_preserve_defaults = True
-autoclass_content = "class"
+autoclass_content = "both"
 autosummary_generate = True
 
 napoleon_google_docstring = True

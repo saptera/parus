@@ -1,4 +1,9 @@
-# Basic utilities function module
+# -*- coding: utf-8 -*-
+
+"""Basic utility function module
+
+Fundamental helpers shared across the codebase.
+"""
 
 import sys
 import os
@@ -8,23 +13,27 @@ __name__ = 'parus.util.base'
 
 __all__ = ['make_outdir', 'altmk_outdirs', 'search_files', 'prog_print']
 """
-Function list:
-  make_outdir(out_dir, err_msg="Invalid output directory!"): Recursive create an output leaf directory for data.
-  altmk_outdirs(out_dir, alt_dir, err_msg="I..."): Recursive create an output leaf directory with alternative directory.
-  search_files(base_dir, fpre=str(), fsuf=str()):  Find all files meets the search conditions.
-  prog_print(iteration, total, prefix=str(), suffix=str()): Create a terminal progress bar for a loop.
+Public function list:
+
+- make_outdir(out_dir, err_msg)                : Recursively create an output directory if it does not already exist
+- altmk_outdirs(out_dir, alt_dir, err_msg)     : Recursively create an output directory, falling back to an alternative
+- search_files(base_dir, fpre, fsuf)           : Find all files under defined path matching the prefix/suffix conditions
+- prog_print(iteration, total, prefix, suffix) : Render an in-place terminal progress bar for a loop
 """
 
 
 def make_outdir(out_dir, err_msg="Invalid output directory!"):
-    """ Recursive create an output leaf directory for data.
+    """Recursively create an output directory if it does not already exist.
 
     Args:
-        out_dir (str): Output directory
-        err_msg (str): Error message when creation error happens
+        out_dir (str): Target output directory path
+        err_msg (str): Message printed when directory creation fails (default: ``"Invalid output directory!"``)
 
     Returns:
-        str: Created output directory
+        str: Path of the (newly created or pre-existing) output directory
+
+    Raises:
+        SystemExit: Terminates the process with code ``-1`` if :class:`OSError` is raised during creation
     """
     if not os.path.isdir(out_dir):  # Check if folder exists
         try:
@@ -36,15 +45,22 @@ def make_outdir(out_dir, err_msg="Invalid output directory!"):
 
 
 def altmk_outdirs(out_dir, alt_dir, err_msg="Invalid output directory!"):
-    """ Recursive create an output leaf directory with alternative directory.
+    """Recursively create an output directory, falling back to an alternative when none is provided.
+
+    When ``out_dir`` is empty or :data:`None`, ``alt_dir`` is created on disk if missing. Otherwise, the function
+    behaves like :func:`make_outdir` for ``out_dir``.
 
     Args:
-        out_dir (str): Output directory
-        alt_dir (str): Alternative directory when [out_dir] is missing
-        err_msg (str): Error message when creation error happens
+        out_dir (str | None): Primary output directory path; an empty string or :data:`None` triggers the
+            fallback to ``alt_dir``
+        alt_dir (str): Fallback directory used when ``out_dir`` is missing
+        err_msg (str): Message printed when directory creation fails (default: ``"Invalid output directory!"``)
 
     Returns:
-        str: Created output directory
+        str: The original ``out_dir`` value (unchanged)
+
+    Raises:
+        SystemExit: Terminates the process with code ``-1`` if :class:`OSError` is raised during creation
     """
     if (out_dir == str()) or (out_dir is None):
         out_path = alt_dir
@@ -60,19 +76,20 @@ def altmk_outdirs(out_dir, alt_dir, err_msg="Invalid output directory!"):
 
 
 def search_files(base_dir, fpre=str(), fsuf=str()):
-    """ Find all files meets the search conditions.
+    """Find all files under defined path matching the given prefix and suffix conditions.
+
+    The search walks ``base_dir`` recursively and groups matching files by the leaf folder containing them.
 
     Args:
-        base_dir (str): The base folder path to search files
-        fpre (str): Prefix of files to be found, use empty string to find all (default: str())
-        fsuf (str): Suffix of files to be found, use empty string to find all (default: str())
+        base_dir (str): Root directory to search
+        fpre (str): Required filename prefix; an empty string disables prefix filtering (default: ``""``)
+        fsuf (str): Required filename suffix; an empty string disables suffix filtering (default: ``""``)
 
     Returns:
-        tuple[list[list[str]], list[str]]: File absolute path and their leaf folders, the order of elements are matched
+        tuple[list[list[str]], list[str]]: Two parallel lists with matching ordering
 
-            - flst (list[list[str]]): A list of lists (leaf-folders) with absolute path of files meets search conditions
-            - dlst (list[str]): A list of all leaf folder names contains files found
-
+            - flst (list[list[str]]): For each leaf folder, the absolute paths of files that match
+            - dlst (list[str]): Leaf folder names relative to the longest common prefix of all matched folders
     """
     # Get files and their leaf-folder path
     flst = []  # INIT VAR
@@ -92,13 +109,16 @@ def search_files(base_dir, fpre=str(), fsuf=str()):
 
 
 def prog_print(iteration, total, prefix=str(), suffix=str()):
-    """Create a terminal progress bar for a loop.
+    """Render an in-place terminal progress bar for a loop.
+
+    Prints a fixed-width bar to ``sys.stdout`` and overwrites the current line on each call. When ``iteration``
+    reaches ``total``, a final newline is emitted to release the line.
 
     Args:
-        iteration (int): Current iteration (0-based)
-        total (int): Total iterations
-        prefix (str): Prefix string of progress bar (default: str())
-        suffix (str): Suffix string of progress bar (default: str())
+        iteration (int): Current iteration counter (0-based)
+        total (int): Total number of iterations expected
+        prefix (str): Text printed before the bar (default: ``""``)
+        suffix (str): Text printed after the bar (default: ``""``)
     """
     # Basic settings
     decimals = 2  # Decimals in percent completed

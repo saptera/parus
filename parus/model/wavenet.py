@@ -1,4 +1,10 @@
-# WaveNet model module
+# -*- coding: utf-8 -*-
+
+"""WaveNet model module
+
+WaveNet model and its building blocks (causal/dilated convolutions, residual blocks, residual stack, and
+the final dense network).
+"""
 
 import torch
 import torch.nn as nn
@@ -8,23 +14,33 @@ __name__ = 'parus.model.wavenet'
 
 __all__ = ['WaveNet']
 """
-Class list:
-  DilatedCausalConv1d(channels, dilation=1): Dilated Causal Convolution for WaveNet.
-  CausalConv1d(in_channels, out_channels): Causal Convolution for WaveNet.
-  ResidualBlock(res_channels, skip_channels, dilation=1): Residual block.
-  ResidualStack(layer_size, stack_size, res_channels, skip_channels): Stack residual blocks by layer and stack size.
-  DensNet(channels): The last network of WaveNet.
-  WaveNet(layer_size, stack_size, in_channels, res_channels): WaveNet model.
+Public class list:
+
+- WaveNet(layer_size, stack_size, in_channels, res_channels)   : Top-level WaveNet model
+
+Internal classes:
+
+- DilatedCausalConv1d(channels, dilation)                      : Dilated causal 1D convolution
+- CausalConv1d(in_channels, out_channels)                      : Causal 1D convolution
+- ResidualBlock(res_channels, skip_channels, dilation)         : Single residual block with PixelCNN gating
+- ResidualStack(layer_size, stack_size, res_channels, ...)     : Stack of residual blocks across layers and stacks
+- DensNet(channels)                                            : Final dense network sitting after the residual stack
 """
 
 
 class DilatedCausalConv1d(nn.Module):
+    """Dilated causal 1D convolution used inside a WaveNet residual block.
+
+    Wraps :class:`~torch.nn.Conv1d` with kernel size ``3`` and matching dilation/padding so that the output
+    is causal and shares the input length.
+    """
+
     def __init__(self, channels, dilation=1):
-        """ Dilated Causal Convolution for WaveNet.
+        """Build the dilated causal convolution.
 
         Args:
-            channels (int): Number of channels in the input/output
-            dilation (int): Spacing between kernel elements (default: 1)
+            channels (int): Number of channels in the input (and output)
+            dilation (int): Spacing between kernel elements (default: ``1``)
         """
         super(DilatedCausalConv1d, self).__init__()
         self.conv = nn.Conv1d(channels, channels,
@@ -35,7 +51,7 @@ class DilatedCausalConv1d(nn.Module):
         self.dilation = dilation
 
     def init_weights_for_test(self):
-        """ Weight initialization. """
+        """Initialise every :class:`~torch.nn.Conv1d` weight to ``0.5`` for deterministic test runs."""
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
                 m.weight.data.fill_(0.5)
@@ -46,12 +62,18 @@ class DilatedCausalConv1d(nn.Module):
 
 
 class CausalConv1d(nn.Module):
+    """Causal 1D convolution used as the front-end of WaveNet.
+
+    Wraps :class:`~torch.nn.Conv1d` with kernel size ``3`` and padding ``1`` so that the output length
+    matches the input length.
+    """
+
     def __init__(self, in_channels, out_channels):
-        """ Causal Convolution for WaveNet.
+        """Build the causal convolution.
 
         Args:
             in_channels (int): Number of channels in the input
-            out_channels (int): Number of channels for the output
+            out_channels (int): Number of channels in the output
         """
         super(CausalConv1d, self).__init__()
         # Padding 1 for same size/length between input and output for causal convolution
@@ -60,7 +82,7 @@ class CausalConv1d(nn.Module):
                               bias=True)  # Fixed for WaveNet
 
     def init_weights_for_test(self):
-        """ Weight initialization. """
+        """Initialise every :class:`~torch.nn.Conv1d` weight to ``0.5`` for deterministic test runs."""
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
                 m.weight.data.fill_(0.5)
@@ -72,13 +94,19 @@ class CausalConv1d(nn.Module):
 
 
 class ResidualBlock(nn.Module):
+    """Single WaveNet residual block with PixelCNN gating, residual output, and skip output.
+
+    The block applies a ``DilatedCausalConv1d``, splits the activation into ``tanh``/``sigmoid``
+    branches (PixelCNN gate), then projects through two ``1x1`` convolutions for the residual and skip outputs.
+    """
+
     def __init__(self, res_channels, skip_channels, dilation):
-        """ Residual block.
+        """Build the dilated convolution, gating, and 1x1 projections.
 
         Args:
-            res_channels (int): Number of residual channels for input
-            skip_channels (int): Number of skip channels for output
-            dilation (int): Spacing between kernel elements
+            res_channels (int): Number of residual channels for the input/residual path
+            skip_channels (int): Number of skip channels for the skip path
+            dilation (int): Spacing between kernel elements of the dilated convolution
         """
         super(ResidualBlock, self).__init__()
         self.dilated = DilatedCausalConv1d(res_channels, dilation=dilation)
@@ -104,12 +132,18 @@ class ResidualBlock(nn.Module):
 
 
 class ResidualStack(nn.Module):
+    """Stack of WaveNet residual blocks across layers and stacks.
+
+    The dilation of the ``i``-th block in a layer is ``2 ** i``; ``stack_size`` such layers are stacked back to back.
+    For example, ``layer_size=10`` and ``stack_size=5`` yields five layers of dilations ``[1, 2, 4, ..., 512]``.
+    """
+
     def __init__(self, layer_size, stack_size, res_channels, skip_channels):
-        """ Stack residual blocks by layer and stack size.
+        """Build every residual block defined by the dilation schedule.
 
         Args:
-            layer_size (int): Number of layers, 10 = layer[dilation=1, dilation=2, 4, 8, 16, 32, 64, 128, 256, 512]
-            stack_size (int): Number of stacks, 5 = stack[layer1, layer2, layer3, layer4, layer5]
+            layer_size (int): Number of blocks per layer (e.g. ``10`` → dilations ``1, 2, 4, ..., 512``)
+            stack_size (int): Number of layers in the stack
             res_channels (int): Number of residual channels for input/output
             skip_channels (int): Number of skip channels for output
         """
@@ -120,7 +154,7 @@ class ResidualStack(nn.Module):
 
     @staticmethod
     def _residual_block(res_channels, skip_channels, dilation):
-        """ Load residual block to device.
+        """Build a residual block and place it on CUDA (with :class:`~torch.nn.DataParallel` when available).
 
         Args:
             res_channels (int): Number of residual channels for input/output
@@ -128,7 +162,8 @@ class ResidualStack(nn.Module):
             dilation (int): Spacing between kernel elements
 
         Returns:
-            Loaded residual block
+            ResidualBlock | nn.DataParallel: The constructed residual block, optionally data-parallelised
+                across multiple GPUs and moved to CUDA when one is available
         """
         block = ResidualBlock(res_channels, skip_channels, dilation)
         if torch.cuda.device_count() > 1:
@@ -138,7 +173,11 @@ class ResidualStack(nn.Module):
         return block
 
     def build_dilations(self):
-        """ Build dilation levels with stack. """
+        """Return the dilation schedule for the full stack.
+
+        Returns:
+            list[int]: Dilation values for every block in the stack, in stack-then-layer order
+        """
         dilations = []
         # 5 = stack[layer1, layer2, layer3, layer4, layer5]
         for s in range(0, self.stack_size):
@@ -148,14 +187,15 @@ class ResidualStack(nn.Module):
         return dilations
 
     def stack_res_block(self, res_channels, skip_channels):
-        """ Prepare dilated convolution blocks by layer and stack size.
+        """Build every residual block defined by the stack's dilation schedule.
 
         Args:
             res_channels (int): Number of residual channels for input/output
             skip_channels (int): Number of skip channels for output
 
         Returns:
-            Stacked residual block
+            list[ResidualBlock | nn.DataParallel]: One residual block per dilation entry from
+                :meth:`build_dilations`, in the same order
         """
         res_blocks = []
         dilations = self.build_dilations()
@@ -175,11 +215,13 @@ class ResidualStack(nn.Module):
 
 
 class DensNet(nn.Module):
+    """Final dense network sitting after the WaveNet residual stack."""
+
     def __init__(self, channels):
-        """ The last network of WaveNet.
+        """Build the dense network.
 
         Args:
-            channels (int): Number of channels for input/output
+            channels (int): Number of channels for the intermediate convolutions
         """
         super(DensNet, self).__init__()
         self.conv1 = nn.Conv1d(1, channels, 1)
@@ -196,14 +238,20 @@ class DensNet(nn.Module):
 
 
 class WaveNet(nn.Module):
+    """WaveNet model for spike-detection prediction.
+
+    Composes a ``CausalConv1d`` front-end, a ``ResidualStack``, and a ``DensNet`` head. Inputs are amplitude-normalised
+    before the front-end and de-normalised on the way out so the model handles arbitrary recording scales.
+    """
+
     def __init__(self, layer_size, stack_size, in_channels, res_channels):
-        """ WaveNet model.
+        """Build the front-end, residual stack, and dense head.
 
         Args:
-            layer_size (int): Number of layers, 10 = layer[dilation=1, dilation=2, 4, 8, 16, 32, 64, 128, 256, 512]
-            stack_size (int): Number of stacks, 5 = stack[layer1, layer2, layer3, layer4, layer5]
-            in_channels (int): Number of channels for input
-            res_channels (int): Number of channels for output
+            layer_size (int): Number of blocks per residual layer (e.g. ``10`` → dilations ``1, 2, 4, ..., 512``)
+            stack_size (int): Number of layers in the residual stack
+            in_channels (int): Number of channels in the input
+            res_channels (int): Number of residual channels passed through the residual stack
         """
         super(WaveNet, self).__init__()
         self.causal = CausalConv1d(in_channels, res_channels)

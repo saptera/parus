@@ -1,4 +1,9 @@
-# Model evaluation and inference module
+# -*- coding: utf-8 -*-
+
+"""Model evaluation and inference module
+
+End-to-end inference helpers and quantitative evaluation routines for the PARUS spike-detection model.
+"""
 
 import threading
 import queue
@@ -13,29 +18,44 @@ from .post import peak_fwd_torch
 
 __all__ = ['Inference', 'validation', 'testing', 'eval_bin_cls']
 """
-Class list:
-  Inference(model, datagen, channel, device, cmp_lvl=4, disp=8): Inference data.
-Function list:
-  validation(model, datagen, criterion, device): Validation for model training.
-  testing(model, datagen, channel, device, th=-1): Testing for model training.
-  eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5): Binary detection evaluation.
+Public class list:
+
+- Inference(model, datagen, channel, device, cmp_lvl, disp)        : Threaded inference and HDF5 result storage
+
+Public function list:
+
+- validation(model, datagen, criterion, device, hint, image)       : Compute validation loss for one epoch
+- testing(model, datagen, channel, device, th)                     : Run the full testing set and collect predictions
+- eval_bin_cls(prediction, reference, allowed_distance, ...)       : Binary detection evaluation with tolerance
 """
 
 
 class Inference:
+    """Run model inference over a recording and stream results to an HDF5 file.
+
+    Two threads are used: the main thread runs the model and pushes per-batch results onto an internal
+    queue; a background thread merges those batches with :func:`parus.data.sig.sig_merge` and writes them
+    to per-channel datasets under ``spk/`` in the recording HDF5 file.
+
+    Note:
+        Calling :meth:`run` overwrites any existing ``spk`` group in the recording file. The underlying
+        HDF5 file remains open through the dataset's lifecycle; close it via the dataset's ``close()``
+        method.
+    """
+
     def __init__(self, model, datagen, channel, device, cmp_lvl=4, disp=8):
-        """ Inference data .
+        """Set up the inference runner and pre-allocate the per-channel output datasets.
 
         Args:
-            model (torch.nn.Module): PyTorch model
-            datagen (torch.utils.data.DataLoader): Dataset loader
-            channel (list[str]): Output channel name list
-            device (torch.device): Device for model training
-            cmp_lvl (int): {0 - 9} Output compression level (default: 4)
-            disp (int | None): Progress print indents, None = no print (default: 8)
-
-        Returns:
-            np.ndarray: {3D-float32 (Index, Channel, Sample)} Inference results
+            model (torch.nn.Module): PyTorch model to run
+            datagen (torch.utils.data.DataLoader): DataLoader wrapping a
+                :class:`~parus.model.dset.InferenceDataset`
+            channel (list[str]): Output channel names; one HDF5 dataset is created per name
+            device (torch.device): Device to which input batches are moved
+            cmp_lvl (int): gzip compression level for the per-channel datasets in ``[0, 9]``
+                (default: ``4``)
+            disp (int | None): Indent (in spaces) for terminal progress prints; pass :data:`None` to
+                silence progress output (default: ``8``)
         """
         # Store arguments
         self.model = model
@@ -65,7 +85,11 @@ class Inference:
         self.init_output()
 
     def init_output(self):
-        """ Preallocate dataset in HDF5 file for output. """
+        """Pre-allocate the per-channel output datasets in the underlying HDF5 file.
+
+        Removes any existing ``spk`` group, creates a fresh one, and adds one gzip-compressed dataset of
+        shape ``(n_channels, n_samples)`` per name in ``self.channel``.
+        """
         shape = self.datagen.dataset.data.shape
         # Remove existing groups
         if 'spk' in self.__fp:
@@ -77,7 +101,7 @@ class Inference:
                                compression='gzip', compression_opts=self.cmp)
 
     def _model_proc(self):
-        """ Process data inference. """
+        """Run the model over every batch from ``self.datagen`` and push the outputs onto the result queue."""
         self.__proc_fin = False
         for count, inputs in enumerate(self.datagen):
             # Process inference
@@ -92,7 +116,11 @@ class Inference:
         self.__inf_prt and print(self.__inf_prt)
 
     def _write_file(self):
-        """ Save results to data file. """
+        """Drain the result queue and merge each batch into the per-channel HDF5 datasets.
+
+        Runs until the model thread has finished and the queue is empty. Overlapping samples between
+        consecutive sliding windows are averaged so the merged trace is continuous across batch boundaries.
+        """
         while not (self.__proc_fin and self.__res_queue.empty()):
             count, res = self.__res_queue.get()
             # Process saving
@@ -118,31 +146,35 @@ class Inference:
         self.__fio_prt and print(self.__fio_prt)
 
     def run(self):
-        """ Inference threads running trigger function. """
+        """Start the file-writer thread, run the model on the main thread, and wait for both to finish."""
         self.__file_th.start()
         self._model_proc()  # Running model on the main thread
         self.__file_th.join()
 
 
 def validation(model, datagen, criterion, device, hint='text', image=None):
-    """ Validation for model training.
+    """Run a validation pass and return the mean loss across the loader.
+
+    Optionally renders the prediction-vs-label snapshot of the first sample using
+    :func:`parus.util.disp.plt_mod_cli` or :func:`parus.util.disp.plt_mod_img` according to ``hint``.
 
     Args:
         model (torch.nn.Module): PyTorch model
-        datagen (torch.utils.data.DataLoader): Dataset loader
+        datagen (torch.utils.data.DataLoader): Validation dataset loader
         criterion (torch.nn.Module): Loss function
-        device (torch.device): Device for model training
-        hint (str): {'text' | 'disp' | 'save' | 'none'} Result hinting method (default: 'text')
+        device (torch.device): Device on which the model and data live
+        hint (str): Visualisation method for the first-sample snapshot; one of ``{'text', 'disp', 'save', 'none'}``
+            (default: ``'text'``)
 
-            - 'text': Plot text image with [plotext] in the console, recommended for training in CLI
-            - 'disp': Show image with [matplotlib]
-            - 'save': Save image with [matplotlib] to the work directory, recommended for training in GUI
-            - 'none': No hinting (fallback for invalid method input)
+            - ``'text'``: render an ASCII plot via ``plotext`` (recommended for CLI training)
+            - ``'disp'``: open a Matplotlib figure window
+            - ``'save'``: save the Matplotlib figure to ``image`` (recommended for GUI training)
+            - ``'none'``: skip the snapshot
 
-        image (str | None): Image save path for [hint = 'save']
+        image (str | None): Output PNG path used when ``hint == 'save'`` (default: ``None``)
 
     Returns:
-        float: Mean loss
+        float: Mean of the per-batch validation losses
     """
     val_losses = []
     for i, (inputs, labels, _) in enumerate(datagen):
@@ -168,26 +200,29 @@ def validation(model, datagen, criterion, device, hint='text', image=None):
 
 
 def testing(model, datagen, channel, device, th=-1):
-    """ Testing for model training.
+    """Run the full testing set and collect inputs, predictions, and references in a single dictionary.
+
+    Builds binary spike-position predictions from the raw model output via :func:`parus.model.post.peak_fwd_torch`
+    with threshold ``th``.
 
     Args:
         model (torch.nn.Module): PyTorch model
-        datagen (torch.utils.data.DataLoader): Dataset loader
-        channel (int): Number of output channels of model
-        device (torch.device): Device for model training
-        th (int | float): Minimum peak threshold (default: -1 = avoid baseline fluctuation)
+        datagen (torch.utils.data.DataLoader): Testing dataset loader
+        channel (int): Number of model output channels
+        device (torch.device): Device on which the model and data live
+        th (int | float): Minimum peak threshold for :func:`parus.model.post.peak_fwd_torch`; the default
+            ``-1`` is chosen so the threshold sits below typical baseline fluctuation (default: ``-1``)
 
     Returns:
-        dict: {3D (Index, Channel, Sample)}Test dataset results
+        dict: Per-sample testing results
 
-            - 'inp': (np.ndarray): {3D-float32} Input signal
-            - 'prd': (dict): Model prediction results
-                - 'spk' (np.ndarray): {3D-float32} Predicted spike signal
-                - 'pos' (np.ndarray): {3D-int8} Predicted spike position
-            - 'lbl': (np.ndarray): Signal label
-                - 'spk' (np.ndarray): {3D-float32} Reference spike signal
-                - 'pos' (np.ndarray): {3D-int8} Reference spike position
-
+            - inp (np.ndarray): {3D-float32} Input signal arrays
+            - prd (dict): Model prediction
+                - spk (np.ndarray): {3D-float32} Predicted spike signal
+                - pos (np.ndarray): {3D-int8} Predicted spike position (one-hot)
+            - lbl (dict): Ground-truth labels
+                - spk (np.ndarray): {3D-float32} Reference spike signal
+                - pos (np.ndarray): {3D-int8} Reference spike position (one-hot)
     """
     bs = datagen.batch_size
     shape = (datagen.dataset.n_sample, channel, datagen.dataset.seq_len)
@@ -218,20 +253,23 @@ def testing(model, datagen, channel, device, th=-1):
 
 
 def eval_bin_cls(prediction, reference, allowed_distance=0, binary_threshold=0.5):
-    """ Binary detection evaluation.
+    """Evaluate binary spike detections with an index tolerance and report sensitivity/specificity factors.
+
+    Reports two numbers: the on-target accuracy (the percentage of reference spikes that have at least one
+    prediction within ``allowed_distance`` samples) and a per-element confusion vector summarising true
+    positives, true negatives, false positives, and false negatives across the whole tensor.
 
     Args:
-        prediction (torch.Tensor): Prediction tensor
-        reference (torch.Tensor): Ground truth tensor, the same shape as [prediction]
-        allowed_distance (int): Index tolerance for binary detection (default: 2)
-        binary_threshold (int | float): Threshold to make binary tensor (default: 0.5)
+        prediction (torch.Tensor): {3D} Model prediction tensor
+        reference (torch.Tensor): {3D} Ground-truth reference tensor with the same shape as ``prediction``
+        allowed_distance (int): Index tolerance in samples for the on-target accuracy (default: ``0``)
+        binary_threshold (int | float): Threshold used to binarise both tensors before counting (default: ``0.5``)
 
     Returns:
-        tuple[float, dict[str, int]]:
+        tuple[float, dict[str, int]]: On-target accuracy and confusion factors
 
-            - ota (float): On-target accuracy (%) of binary detection, with allowance defined by [allowed_distance]
-            - sas (dict[str, int]): Four factors for sensitivity and specificity (actual raw values)
-
+            - ota (float): On-target accuracy as a percentage
+            - sas (dict[str, int]): Confusion factors with keys ``tp``, ``tn``, ``fp``, ``fn``
     """
     # On-target accuracy #
     # Get basic info

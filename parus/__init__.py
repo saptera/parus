@@ -1,4 +1,10 @@
-# PARUS main package
+# -*- coding: utf-8 -*-
+
+"""PARUS spike analysis package
+
+A fully automated real-time spike analysis system. Sets the project version, registers the package on
+``sys.path``, and ensures the per-user settings directory exists before any submodule is imported.
+"""
 
 import sys
 import os

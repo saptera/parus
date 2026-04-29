@@ -1,4 +1,9 @@
-# Commandline interface module
+# -*- coding: utf-8 -*-
+
+"""Command line interface helper module
+
+Interactive prompt utilities for collecting validated user input from the terminal.
+"""
 
 import os
 from pathlib import Path
@@ -8,26 +13,28 @@ __name__ = 'parus.util.cli'
 
 __all__ = ['yn_query', 'cli_path_in', 'cli_file_in', 'cli_int_in', 'cli_float_in', 'cli_list_sel', 'cli_outdir']
 """
-Function list:
-  yn_query(query, default=None): Simple yes/no query.
-  cli_path_in(msg_ppt=None, msg_err=None): Get a command line input of path.
-  cli_file_in(msg_ppt=None, msg_err=None): Get a command line input of file.
-  cli_int_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None): Get a command line input of an integer.
-  cli_float_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None): Get a command line input of a float.
-  cli_list_sel(list_in, msg_ppt=None, msg_err=None): Get a command line selection of string list.
-  cli_outdir(msg_ppt=None, msg_err=None): Get a command line input of an output path.
+Public function list:
+
+- yn_query(query, default)                           : Prompt the user with a yes/no question
+- cli_path_in(msg_ppt, msg_err)                      : Prompt the user for an existing directory path
+- cli_file_in(msg_ppt, msg_err)                      : Prompt the user for an existing file path
+- cli_int_in(low, high, msg_ppt, msg_err, msg_rng)   : Prompt the user for an integer within an inclusive range
+- cli_float_in(low, high, msg_ppt, msg_err, msg_rng) : Prompt the user for a float within an inclusive range
+- cli_list_sel(list_in, msg_ppt, msg_err)            : Prompt the user to choose an element from a list
+- cli_outdir(msg_ppt, msg_err)                       : Prompt the user for an output directory, creating it if missing
 """
 
 
 def yn_query(query, default=None):
-    """ Simple yes/no query.
+    """Prompt the user with a yes/no question on the command line.
 
     Args:
-        query (str): Query message
-        default (bool | None): Default output with [ENTER], set to None to disable default (default: None)
+        query (str): Question text shown to the user
+        default (bool | None): Value returned when the user submits an empty response; pass :data:`None` to
+            require an explicit answer (default: ``None``)
 
     Returns:
-        bool: User response
+        bool: ``True`` for yes, ``False`` for no
     """
     if default is True:
         prompt = " [Y/n]: "
@@ -48,14 +55,18 @@ def yn_query(query, default=None):
 
 
 def cli_path_in(msg_ppt=None, msg_err=None):
-    """ Get a command line input of path.
+    """Prompt the user for an existing directory path on the command line.
+
+    Re-prompts until the entered path is a valid directory.
 
     Args:
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please define a path: "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when input is not a valid directory; pass :data:`None`
+            to use the built-in default ``"    Invalid path, please try again: "`` (default: ``None``)
 
     Returns:
-        str: Inputted path
+        str: Validated directory path entered by the user
     """
     msg_ppt = "Please define a path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid path, please try again: " if msg_err is None else msg_err
@@ -68,14 +79,18 @@ def cli_path_in(msg_ppt=None, msg_err=None):
 
 
 def cli_file_in(msg_ppt=None, msg_err=None):
-    """ Get a command line input of file.
+    """Prompt the user for an existing file path on the command line.
+
+    Re-prompts until the entered path is a valid file.
 
     Args:
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please define a file path: "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when input is not a valid file; pass :data:`None` to
+            use the built-in default ``"    Invalid file path, please try again: "`` (default: ``None``)
 
     Returns:
-        str: Inputted file path
+        str: Validated file path entered by the user
     """
     msg_ppt = "Please define a file path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid file path, please try again: " if msg_err is None else msg_err
@@ -88,17 +103,24 @@ def cli_file_in(msg_ppt=None, msg_err=None):
 
 
 def cli_int_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
-    """ Get a command line input of an integer.
+    """Prompt the user for an integer within an optional inclusive range.
+
+    Re-prompts until the input parses as an integer and lies within ``[low, high]`` when bounds are provided.
 
     Args:
-        low (int | None): Minimum value for input
-        high (int | None): Maximum value for input
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
-        msg_rng (str | None): Error message for invalid range
+        low (int | None): Inclusive lower bound; pass :data:`None` to disable the lower-bound check
+            (default: ``None``)
+        high (int | None): Inclusive upper bound; pass :data:`None` to disable the upper-bound check
+            (default: ``None``)
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please define an integer: "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when input does not parse as an integer; pass
+            :data:`None` to use the built-in default ``"    Invalid input, please try again: "`` (default: ``None``)
+        msg_rng (str | None): Re-prompt message used when input is out of range; pass :data:`None` to use a
+            bound-aware message generated from ``low`` and ``high`` (default: ``None``)
 
     Returns:
-        int: Inputted integer
+        int: Validated integer entered by the user
     """
     msg_ppt = "Please define an integer: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid input, please try again: " if msg_err is None else msg_err
@@ -141,17 +163,24 @@ def cli_int_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
 
 
 def cli_float_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
-    """ Get a command line input of a float.
+    """Prompt the user for a floating-point number within an optional inclusive range.
+
+    Re-prompts until the input parses as a float and lies within ``[low, high]`` when bounds are provided.
 
     Args:
-        low (float | None): Minimum value for input
-        high (float | None): Maximum value for input
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
-        msg_rng (str | None): Error message for invalid range
+        low (float | None): Inclusive lower bound; pass :data:`None` to disable the lower-bound check
+            (default: ``None``)
+        high (float | None): Inclusive upper bound; pass :data:`None` to disable the upper-bound check
+            (default: ``None``)
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please define an float number: "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when input does not parse as a float; pass :data:`None`
+            to use the built-in default ``"    Invalid input, please try again: "`` (default: ``None``)
+        msg_rng (str | None): Re-prompt message used when input is out of range; pass :data:`None` to use a
+            bound-aware message generated from ``low`` and ``high`` (default: ``None``)
 
     Returns:
-        float: Inputted float.
+        float: Validated floating-point number entered by the user
     """
     msg_ppt = "Please define an float number: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid input, please try again: " if msg_err is None else msg_err
@@ -194,15 +223,20 @@ def cli_float_in(low=None, high=None, msg_ppt=None, msg_err=None, msg_rng=None):
 
 
 def cli_list_sel(list_in, msg_ppt=None, msg_err=None):
-    """ Get a command line selection of string list.
+    """Prompt the user to choose an element from a string list on the command line.
+
+    Accepts either the literal element string or its zero-based index in ``list_in``. Re-prompts until a
+    valid selection is made.
 
     Args:
-        list_in (list[str]): List with element to select from
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
+        list_in (list[str]): Candidate elements to select from
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please select from following - "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when input is invalid; pass :data:`None` to use the
+            built-in default ``"    Invalid selection, please try again: "`` (default: ``None``)
 
     Returns:
-        str: Inputted path
+        str: Selected element from ``list_in``
     """
     msg_ppt = "Please select from following - " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid selection, please try again: " if msg_err is None else msg_err
@@ -225,14 +259,19 @@ def cli_list_sel(list_in, msg_ppt=None, msg_err=None):
 
 
 def cli_outdir(msg_ppt=None, msg_err=None):
-    """ Get a command line input of an output path.
+    """Prompt the user for an output directory, creating it on disk when missing.
+
+    If the requested directory already exists, the user is asked whether to reuse it (overwrite). On a
+    declined overwrite or a creation failure, the prompt is repeated.
 
     Args:
-        msg_ppt (str | None): Prompt message for input
-        msg_err (str | None): Error message for invalid input
+        msg_ppt (str | None): Initial prompt message; pass :data:`None` to use the built-in default
+            ``"Please define a path: "`` (default: ``None``)
+        msg_err (str | None): Re-prompt message used when directory creation fails; pass :data:`None` to use
+            the built-in default ``"    Invalid path, please try again: "`` (default: ``None``)
 
     Returns:
-        str: Inputted path
+        str: Validated output directory path
     """
     msg_ppt = "Please define a path: " if msg_ppt is None else msg_ppt
     msg_err = "    Invalid path, please try again: " if msg_err is None else msg_err

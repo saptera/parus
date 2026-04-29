@@ -1,4 +1,9 @@
-# PARUS GUI package
+# -*- coding: utf-8 -*-
+
+"""PARUS GUI package
+
+Qt-based desktop applications and shared widget helpers for the PARUS data, training, and inspection workflows.
+"""
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -10,9 +15,10 @@ __name__ = 'parus.gui'
 
 __all__ = ['cs_dark', 'set_color_scheme']
 """
-Function list:
-  cs_dark(): Get current dark color scheme flag.
-  set_color_scheme(app, mode='auto'): Set global application color scheme.
+Public function list:
+
+- cs_dark()                 : Get the current dark colour scheme flag
+- set_color_scheme(app, mode) : Set the global application colour scheme
 """
 
 
@@ -28,21 +34,25 @@ __cs_default = None  # Default colour scheme
 
 
 def cs_dark():
-    """ Get current dark color scheme flag.
+    """Return the current dark colour scheme flag.
 
     Returns:
-        bool: Dark mode on status
+        bool: :data:`True` when the GUI is currently in dark mode, :data:`False` otherwise
     """
     global __cs_dark
     return __cs_dark
 
 
 def set_color_scheme(app, mode='auto'):
-    """ Set global application color scheme.
+    """Set the global application colour scheme and synchronise the Matplotlib style.
+
+    Switches both the Qt application colour scheme and the active Matplotlib style so plots embedded in the
+    GUI render with matching backgrounds. When ``mode`` is ``'auto'``, the system colour scheme captured at
+    first call is reused on every subsequent call.
 
     Args:
-        app (QtCore.QCoreApplication | QtWidgets.QApplication): Qt application to set color scheme
-        mode (str): {'light' | 'dark' | 'auto'} Color scheme mode (default: 'auto' = follow system)
+        app (QtCore.QCoreApplication | QtWidgets.QApplication): Qt application to configure
+        mode (str): Colour scheme mode; one of ``{'light', 'dark', 'auto'}`` (default: ``'auto'``)
     """
     global __cs_dark, __cs_default
     app.setStyle('fusion')

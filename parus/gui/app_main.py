@@ -1,4 +1,9 @@
-# PARUS main application module
+# -*- coding: utf-8 -*-
+
+"""PARUS main application module
+
+Top-level Qt main windows for the PARUS training, data, and settings applications.
+"""
 
 import os
 import json
@@ -17,19 +22,26 @@ from .gui_dat import ParusInf, ParusSrt, ParusRes
 
 __all__ = ['SysSet', 'ParusTrnApp', 'ParusDatApp']
 """
-Class list:
-  SysSet(parent=None): Parus GUI general settings.
-  ParusTrnApp(set_win, version=None, parent=None): Parus model training toplevel application.
-  ParusDatApp(set_win, version=None, parent=None): Parus data pipeline toplevel application.
+Public class list:
+
+- SysSet(parent)                        : PARUS GUI general settings window
+- ParusTrnApp(set_win, version, parent) : PARUS model training top-level application
+- ParusDatApp(set_win, version, parent) : PARUS data pipeline top-level application
 """
 
 
 class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
+    """PARUS GUI general settings window.
+
+    Loads, displays, and persists the user's working directory and colour scheme preferences. Settings are
+    stored in ``~/.parus/_config.json`` and applied to the running Qt application on construction.
+    """
+
     def __init__(self, parent=None):
-        """ Parus GUI general settings.
+        """Initialise the settings window and load persisted configuration from disk.
 
         Args:
-            parent: Parent window or widget
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(SysSet, self).__init__(parent)
@@ -63,7 +75,7 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
         self.csButtonGroup.buttonReleased.connect(self.__set_cs)
 
     def __sel_cwd(self):
-        """ Set default working directory. """
+        """Set default working directory."""
         path = path_selector(self.cwdPath, mode='path', caption="Select Default Working Directory", parent=self)
         path = path if os.path.isdir(str(path)) else os.path.expanduser('~')
         # Set path value
@@ -74,7 +86,7 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
             json.dump(self.__cfg, fp, indent=2)
 
     def __set_cs(self):
-        """ Set GUI colour scheme. """
+        """Set GUI colour scheme."""
         btn = self.csButtonGroup.checkedButton().objectName()
         app = QtWidgets.QApplication.instance()
         if app is not None:
@@ -93,13 +105,20 @@ class SysSet(QtWidgets.QMainWindow, Ui_SysSetWindow):
 
 
 class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
+    """PARUS model training top-level application.
+
+    Hosts the entry buttons that open the archival-signal builder, dataset generator, model trainer, and
+    settings windows.
+    """
+
     def __init__(self, set_win, version=None, parent=None):
-        """ Parus model training toplevel application.
+        """Initialise the training top-level window and wire its entry buttons.
 
         Args:
-            set_win (SysSet): Setting window
-            version (int | float | str | None): App version
-            parent: Parent window or widget
+            set_win (SysSet): Shared settings window
+            version (int | float | str | None): App version label shown in the title bar; defaults to
+                ``"beta"`` when :data:`None` (default: ``None``)
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusTrnApp, self).__init__(parent)
@@ -122,33 +141,40 @@ class ParusTrnApp(QtWidgets.QMainWindow, Ui_ParusTrnWindow):
         self.settingButton.clicked.connect(self.__sys_set)
 
     def __arc_mks_win(self):
-        """ Open Parus archival signal file creation window. """
+        """Open PARUS archival signal file creation window."""
         self.__arc_win = ParusArc()
         self.__arc_win.show()
 
     def __dat_gen_win(self):
-        """ Open Parus dataset generation window. """
+        """Open PARUS dataset generation window."""
         self.__gen_win = ParusGen()
         self.__gen_win.show()
 
     def __mod_trn_win(self):
-        """ Open Parus model training window. """
+        """Open PARUS model training window."""
         self.__mod_win = ParusTrn()
         self.__mod_win.show()
 
     def __sys_set(self):
-        """ Open GUI general settings window. """
+        """Open GUI general settings window."""
         self.__set_win.show()
 
 
 class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
+    """PARUS data pipeline top-level application.
+
+    Hosts the entry buttons that open the model inference window, the spike-sorting window, and the result
+    viewer for one or more output files.
+    """
+
     def __init__(self, set_win, version=None, parent=None):
-        """ Parus data pipeline toplevel application.
+        """Initialise the data pipeline top-level window and wire its entry buttons.
 
         Args:
-            set_win (SysSet): Setting window
-            version (int | float | str | None): App version
-            parent: Parent window or widget
+            set_win (SysSet): Shared settings window
+            version (int | float | str | None): App version label shown in the title bar; defaults to
+                ``"beta"`` when :data:`None` (default: ``None``)
+            parent (QtCore.QObject | None): Parent window or widget (default: ``None``)
         """
         # Initialize GUI
         super(ParusDatApp, self).__init__(parent)
@@ -170,17 +196,17 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
         self.settingButton.clicked.connect(self.__sys_set)
 
     def __mod_inf_win(self):
-        """ Open Parus model inference window. """
+        """Open PARUS model inference window."""
         self.__inf_win = ParusInf()
         self.__inf_win.show()
 
     def __spk_set_win(self):
-        """ Open Parus spike sorting window. """
+        """Open PARUS spike sorting window."""
         self.__srt_win = ParusSrt()
         self.__srt_win.showMaximized()
 
     def __res_ver_win(self):
-        """ Open Parus result viewer window. """
+        """Open PARUS result viewer window."""
         file, _ = QtWidgets.QFileDialog.getOpenFileNames(self, "Select Data File",
                                                          filter="Signal Files (*.hdf *.h5 *.hdf5 *.he5)")
         if file:
@@ -189,5 +215,5 @@ class ParusDatApp(QtWidgets.QMainWindow, Ui_ParusDatWindow):
                 win.showMaximized()
 
     def __sys_set(self):
-        """ Open GUI general settings window. """
+        """Open GUI general settings window."""
         self.__set_win.show()
