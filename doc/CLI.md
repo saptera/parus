@@ -8,6 +8,16 @@ The absolute paths for CLI scripts can be retrieved (as `str`) with:
 
 ```python
 from parus.scripts import *
+
+"""
+Available script paths:
+
+    - gen_sim (str): Generate simulated neural signal datasets for model training
+    - gen_sta (str): Visualise the simulated-signal generation statistics
+    - mod_trn (str): Train a signal-separation model for spike detection
+    - mod_inf (str): Run model inference on raw recording data
+    - prd_dsp (str): Display model prediction results against the input signal
+"""
 ```
 
 All scripts support following flags:
@@ -37,6 +47,9 @@ Absolute path to the script:
 
 ```python
 from parus.scripts import gen_sim
+
+# The string value of [gen_sim] represents the absolute path to the script
+print(gen_sim)
 ```
 
 - Unix / Linux / macOS
@@ -111,6 +124,9 @@ Absolute path to the script:
 
 ```python
 from parus.scripts import gen_sta
+
+# The string value of [gen_sta] represents the absolute path to the script
+print(gen_sta)
 ```
 
 - Unix / Linux / macOS
@@ -151,6 +167,9 @@ Absolute path to the script:
 
 ```python
 from parus.scripts import mod_trn
+
+# The string value of [mod_trn] represents the absolute path to the script
+print(mod_trn)
 ```
 
 - Unix / Linux / macOS
@@ -230,6 +249,9 @@ Absolute path to the script:
 
 ```python
 from parus.scripts import prd_dsp
+
+# The string value of [prd_dsp] represents the absolute path to the script
+print(prd_dsp)
 ```
 
 - Unix / Linux / macOS
@@ -299,6 +321,9 @@ Absolute path to the script:
 
 ```python
 from parus.scripts import mod_inf
+
+# The string value of [mod_inf] represents the absolute path to the script
+print(mod_inf)
 ```
 
 - Unix / Linux / macOS
