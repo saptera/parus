@@ -8,7 +8,7 @@ SOURCEDIR     = source
 GENDOCDIR     = $(SOURCEDIR)/_api
 BUILDDIR      = build
 PACKAGEDIR    = ../../parus
-PUBLISHFILE   = api.zip
+PUBLISHFILE   = api.tar.gz
 
 # Sub-packages / modules to skip when generating the API stubs
 APIDOC_EXCLUDE = \
@@ -47,8 +47,7 @@ rebuild: clean generate html
 publish:
 ifeq ($(OS),Windows_NT)
 	@if exist "$(PUBLISHFILE)" del /f "$(PUBLISHFILE)"
-	@powershell -NoProfile -Command "Compress-Archive -Path '$(BUILDDIR)\\html\\*' -DestinationPath '$(PUBLISHFILE)'"
 else
 	@rm -f "$(PUBLISHFILE)"
-	@cd "$(BUILDDIR)/html" && zip -r "$(CURDIR)/$(PUBLISHFILE)" .
 endif
+	@cd "$(BUILDDIR)/html" && tar -c -z --option gzip:compression-level=9 -f "$(CURDIR)/$(PUBLISHFILE)" *

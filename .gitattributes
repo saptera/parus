@@ -21,4 +21,4 @@
 *.md     text eol=lf
 *.rst    text eol=lf
 *.css    text eol=lf
-*.zip    -text filter=lfs diff=lfs merge=lfs
+*.gz     -text filter=lfs diff=lfs merge=lfs

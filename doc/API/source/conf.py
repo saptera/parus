@@ -70,7 +70,7 @@ intersphinx_mapping = {
     "scipy":      ("https://docs.scipy.org/doc/scipy", None),
     "matplotlib": ("https://matplotlib.org/stable", None),
     "h5py":       ("https://docs.h5py.org/en/stable", None),
-    "torch":      ("https://pytorch.org/docs/stable", None)
+    "torch":      ("https://docs.pytorch.org/docs/stable", None)
 }
 
 # Shorthand aliases used in docstrings that intersphinx cannot resolve.
