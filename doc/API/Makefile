@@ -8,7 +8,7 @@ SOURCEDIR     = source
 GENDOCDIR     = $(SOURCEDIR)/_api
 BUILDDIR      = build
 PACKAGEDIR    = ../../parus
-PUBLISHFILE   = api.tar.gz
+ARCHIVEFILE   = api.tar.gz
 
 # Sub-packages / modules to skip when generating the API stubs
 APIDOC_EXCLUDE = \
@@ -19,7 +19,7 @@ APIDOC_EXCLUDE = \
     $(PACKAGEDIR)/rt/app_rt.py \
     $(PACKAGEDIR)/rt/desg_apprtp.py
 
-.PHONY: help clean generate html strict rebuild publish
+.PHONY: help clean generate html strict rebuild archive
 
 
 help:
@@ -44,10 +44,10 @@ strict:
 
 rebuild: clean generate html
 
-publish:
+archive:
 ifeq ($(OS),Windows_NT)
-	@if exist "$(PUBLISHFILE)" del /f "$(PUBLISHFILE)"
+	@if exist "$(ARCHIVEFILE)" del /f "$(ARCHIVEFILE)"
 else
-	@rm -f "$(PUBLISHFILE)"
+	@rm -f "$(ARCHIVEFILE)"
 endif
-	@cd "$(BUILDDIR)/html" && tar -c -z --option gzip:compression-level=9 -f "$(CURDIR)/$(PUBLISHFILE)" *
+	@cd "$(BUILDDIR)/html" && tar -czf "$(CURDIR)/$(ARCHIVEFILE)" --option gzip:compression-level=9 *

@@ -5,6 +5,8 @@
 
 # Semantic version number, allowed value `X.Y.Z` or `X.Y.ZrcN`
 VERSION    ?=
+# Clear API documentation builds switch for `gendoc`
+CLRDOC     ?=
 
 # OS based Python command
 ifeq ($(OS),Windows_NT)
@@ -13,35 +15,54 @@ else
     PYTHON := python3
 endif
 
-.PHONY: help clean semver build gendoc clrdoc release solopack
+.PHONY: help clean semver build gendoc pack release
 
 
 help:
 	@echo PARUS project build automation
-	@echo Valid targets ['clean', 'semver', 'build', 'gendoc', 'clrdoc', 'release', 'solopack']
+	@echo Valid targets ['clean', 'semver', 'build', 'gendoc', 'pack', 'release']
 
 clean:
+# Remove released package(s)
 ifeq ($(OS),Windows_NT)
 	@if exist "dist" rd /s /q "dist"
-	@if exist "parus.egg-info" rd /s /q "parus.egg-info"
+	@for /d %%i in ("*.egg-info") do (rd /s /q "%%i")
 else
-	@rm -rf "dist" "parus.egg-info"
+	@rm -rf "dist" "*.egg-info"
 endif
+# Remove API documentation build
+	@$(MAKE) -C "doc/API" clean
 
 semver:
+	@echo [INFO] Setting package version...
 	@$(PYTHON) "automation/environment/set_version.py" $(VERSION)
 
 build:
+	@echo [INFO] Building package...
 	@$(PYTHON) -m build
 
 gendoc:
-	@$(MAKE) -C "doc/API" rebuild publish
-
-clrdoc:
+	@echo [INFO] Generating API documentation...
+	@$(MAKE) -C "doc/API" rebuild archive
+ifdef CLRDOC
 	@$(MAKE) -C "doc/API" clean
+endif
+
+# Archive and compress project files
+pack:
+# Generate API documentation
+	@$(MAKE) gendoc CLRDOC=true
+# Archive and compress
+	@echo [INFO] Archiving and compressing project files...
+ifeq ($(OS),Windows_NT)
+	@if exist "parus.tar.gz" del /f "parus.tar.gz"
+else
+	@rm -f "parus.tar.gz"
+endif
+	@tar -czf "parus.tar.gz" --option gzip:compression-level=9 \
+        "parus" "automation" "doc" "README.md" "LICENSE" "Makefile" "pyproject.toml" ".gitattributes" ".gitignore"
+	@echo [INFO] Project files packed
 
 # Package release sequence
 release: semver build gendoc
-
-# Clean and single version project packing
-solopack: clean semver build gendoc clrdoc
+	@echo [INFO] Package released

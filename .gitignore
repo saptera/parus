@@ -24,6 +24,9 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+source.tar.gz
+source_code.tar.gz
+parus.tar.gz
 
 # PyInstaller
 *.manifest
