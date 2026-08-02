@@ -59,7 +59,9 @@ ifeq ($(OS),Windows_NT)
 else
 	@rm -f "parus.tar.gz"
 endif
-	@tar -czf "parus.tar.gz" --option gzip:compression-level=9 \
+	@tar -czf "parus.tar.gz" \
+        --option gzip:compression-level=9 \
+        --exclude="__pycache__" \
         "parus" "automation" "doc" "README.md" "LICENSE" "Makefile" "pyproject.toml" ".gitattributes" ".gitignore"
 	@echo [INFO] Project files packed
 
