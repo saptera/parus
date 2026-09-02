@@ -10,7 +10,7 @@ authors = [
     { name="XiaoLe Eddie Liu" }
 ]
 description = "PARUS - a fully automated real-time spike analysis system"
-readme = "README.md"
+readme = "README_PyPI.md"
 license = "AGPL-3.0"
 license-files = ["LICENSE"]
 classifiers = [
