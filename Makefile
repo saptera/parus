@@ -1,5 +1,6 @@
 # PARUS project main Makefile
 # Build requires:    Python-3 with `setuptools` `wheel` `build`
+# Publish requires:  Python-3 with `twine`
 # Autodoc requires:  Python-3 with `sphinx` `sphinx-autodoc-typehints` `sphinx-design` `pydata-sphinx-theme`
 
 
@@ -15,12 +16,12 @@ else
     PYTHON := python3
 endif
 
-.PHONY: help clean semver build gendoc pack release
+.PHONY: help clean semver build check publish gendoc pack release
 
 
 help:
 	@echo PARUS project build automation
-	@echo Valid targets ['clean', 'semver', 'build', 'gendoc', 'pack', 'release']
+	@echo Valid targets ['clean', 'semver', 'build', 'check', 'publish', 'gendoc', 'pack', 'release']
 
 clean:
 # Remove released package(s)
@@ -40,6 +41,14 @@ semver:
 build:
 	@echo [INFO] Building package...
 	@$(PYTHON) -m build
+
+check:
+	@echo [INFO] Checking package...
+	@$(PYTHON) -m twine check --strict dist/*
+
+publish:
+	@echo [INFO] Publishing package to PyPI...
+	@$(PYTHON) -m twine upload dist/*
 
 gendoc:
 	@echo [INFO] Generating API documentation...
@@ -66,5 +75,5 @@ endif
 	@echo [INFO] Project files packed
 
 # Package release sequence
-release: semver build gendoc
+release: semver build check gendoc publish
 	@echo [INFO] Package released
